@@ -5,9 +5,11 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Guru\DashboardController as GuruDashboardController;
 use App\Http\Controllers\Guru\TopicController;
+use App\Http\Controllers\Guru\PhaseController;
 use App\Http\Controllers\Siswa\ClassroomController as SiswaClassroomController;
 use App\Http\Controllers\Siswa\DashboardController as SiswaDashboardController;
 use App\Http\Controllers\Siswa\WorksheetController as SiswaWorksheetController;
+use App\Http\Controllers\Siswa\ChatbotController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -63,16 +65,16 @@ Route::middleware(['auth', 'role:GURU'])->prefix('guru')->name('guru.')->group(f
         ->parameters(['classes' => 'classroom'])
         ->only(['store', 'update', 'destroy', 'show']);
 
-    // Manajemen Fase (Phase)
-    Route::post('topics/{topic}/phases', [TopicController::class, 'storePhase'])->name('phases.store');
-    Route::get('classes/{classroom}/topics/{topic}/phases/{phase}', [TopicController::class, 'showPhase'])->name('phases.show');
-    Route::put('phases/{phase}', [TopicController::class, 'updatePhase'])->name('phases.update');
-    Route::delete('phases/{phase}', [TopicController::class, 'destroyPhase'])->name('phases.destroy');
+    // Manajemen Fase (Phase) menggunakan PhaseController
+    Route::post('classes/{classroom}/topics/{topic}/phases', [PhaseController::class, 'store'])->name('phases.store');
+    Route::get('classes/{classroom}/topics/{topic}/phases/{phase}', [PhaseController::class, 'show'])->name('phases.show');
+    Route::put('phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
+    Route::delete('phases/{phase}', [PhaseController::class, 'destroy'])->name('phases.destroy');
 
-    // Manajemen Konten (Content)
-    Route::post('phases/{phase}/contents', [TopicController::class, 'storeContent'])->name('contents.store');
-    Route::put('contents/{content}', [TopicController::class, 'updateContent'])->name('contents.update');
-    Route::delete('contents/{content}', [TopicController::class, 'destroyContent'])->name('contents.destroy');
+    // Manajemen Konten (Content) menggunakan PhaseController
+    Route::post('phases/{phase}/contents', [PhaseController::class, 'storeContent'])->name('contents.store');
+    Route::put('contents/{content}', [PhaseController::class, 'updateContent'])->name('contents.update');
+    Route::delete('contents/{content}', [PhaseController::class, 'destroyContent'])->name('contents.destroy');
 });
 
 // =================================================================
@@ -88,12 +90,15 @@ Route::middleware(['auth', 'role:SISWA'])->prefix('siswa')->name('siswa.')->grou
     Route::get('/classes/{classroom}', [SiswaClassroomController::class, 'show'])->name('classes.show');
 
     // Worksheet (Materi Siswa)
-    // Disesuaikan agar sinkron dengan WorksheetController
     Route::get('classes/{classroom}/topics/{topic}/phases/{phase}', [SiswaWorksheetController::class, 'show'])
         ->name('worksheet.show');
 
     Route::post('phases/{phase}/answers', [SiswaWorksheetController::class, 'storeAnswer'])
         ->name('answers.store');
+        
+    // PERBAIKAN DI SINI: Disesuaikan dengan struktur Group Route
+    Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot.index');
+    Route::post('/chatbot', [ChatbotController::class, 'store'])->name('chatbot.store');
 });
 
 require __DIR__.'/settings.php';

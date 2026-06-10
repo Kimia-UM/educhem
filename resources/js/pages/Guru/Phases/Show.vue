@@ -96,12 +96,16 @@ watch(
             // Migrasi tipe lama 'input_text' menjadi 'eval_essay'
             if (c.type === 'input_text') c.type = 'eval_essay';
             
-            if (['eval_essay', 'eval_short'].includes(c.type) && typeof c.content_data.question === 'undefined') {
+            if (['eval_essay', 'eval_short', 'eval_file'].includes(c.type) && typeof c.content_data.question === 'undefined') {
                 c.content_data.question = c.content_data.label || ''; // Support legacy label
             }
             if (['eval_mcq', 'eval_cmcq'].includes(c.type)) {
                 if (typeof c.content_data.question === 'undefined') c.content_data.question = '';
                 if (!Array.isArray(c.content_data.options)) c.content_data.options = ['Opsi 1', 'Opsi 2'];
+            }
+            // Inisialisasi untuk Forum Diskusi
+            if (c.type === 'discussion' && typeof c.content_data.topic === 'undefined') {
+                c.content_data.topic = '';
             }
         });
         localContents.value = cloned;
@@ -114,6 +118,9 @@ const addContent = (type: string) => {
     if (type === 'text') initialData = { body: '' };
     if (['eval_mcq', 'eval_cmcq'].includes(type)) initialData = { question: '', options: ['Pilihan A', 'Pilihan B'] };
     if (['eval_essay', 'eval_short'].includes(type)) initialData = { question: '' };
+    // Template data awal untuk tipe baru
+    if (type === 'eval_file') initialData = { question: 'Unggah foto hasil kerja atau buku catatan Anda di sini.' };
+    if (type === 'discussion') initialData = { topic: 'Mari berdiskusi! Apa pendapat Anda tentang materi di atas?' };
     
     router.post(route('guru.contents.store', { phase: props.phase.id }), { 
         type: type,
@@ -218,7 +225,9 @@ const removeOption = (content: any, index: number) => {
                                     <i class="pi pi-image mr-1 text-blue-400" v-if="content.type === 'image'"></i>
                                     <i class="pi pi-check-circle mr-1 text-emerald-500" v-if="content.type === 'eval_mcq'"></i>
                                     <i class="pi pi-list mr-1 text-emerald-500" v-if="content.type === 'eval_cmcq'"></i>
-                                    <i class="pi pi-pencil mr-1 text-amber-500" v-if="content.type === 'eval_short' || content.type === 'eval_essay'"></i>
+                                    <i class="pi pi-pencil mr-1 text-amber-500" v-if="['eval_short', 'eval_essay'].includes(content.type)"></i>
+                                    <i class="pi pi-upload mr-1 text-pink-500" v-if="content.type === 'eval_file'"></i>
+                                    <i class="pi pi-comments mr-1 text-sky-500" v-if="content.type === 'discussion'"></i>
                                     Blok {{ content.type.replace('eval_', '') }}
                                 </span>
                             </div>
@@ -269,7 +278,33 @@ const removeOption = (content: any, index: number) => {
                             <div v-if="['eval_short', 'eval_essay'].includes(content.type)" class="space-y-4">
                                 <label class="block text-[12px] font-bold text-slate-700">Pertanyaan / Instruksi Kerja</label>
                                 <RichTextEditor v-model="content.content_data.question" placeholder="Ketik pertanyaan / perintah untuk siswa..." />
-                                <div class="flex justify-end"><Button @click="saveContent(content)" size="sm" class="bg-amber-600 text-white hover:bg-amber-700">Simpan Evaluasi</Button></div>
+                                <div class="flex justify-end">
+                                    <Button @click="saveContent(content)" size="sm" class="bg-amber-600 text-white hover:bg-amber-700">Simpan Evaluasi</Button>
+                                </div>
+                            </div>
+
+                            <div v-if="content.type === 'eval_file'" class="space-y-4">
+                                <label class="block text-[12px] font-bold text-slate-700">Instruksi Upload File (Opsional)</label>
+                                <RichTextEditor v-model="content.content_data.question" placeholder="Ketik instruksi upload... (Contoh: Fotokan hasil coretan rumusmu)" />
+                                
+                                <div class="mt-4 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-6 text-center opacity-70">
+                                    <i class="pi pi-cloud-upload text-3xl text-slate-400 mb-2"></i>
+                                    <p class="text-sm font-bold text-slate-600">Area Upload Siswa</p>
+                                    <p class="text-[11px] text-slate-500">Siswa akan melihat area form unggah (Drag & Drop) foto/dokumen di sini.</p>
+                                </div>
+                                <div class="flex justify-end"><Button @click="saveContent(content)" size="sm" class="bg-pink-600 text-white hover:bg-pink-700">Simpan Instruksi</Button></div>
+                            </div>
+
+                            <div v-if="content.type === 'discussion'" class="space-y-4">
+                                <label class="block text-[12px] font-bold text-slate-700">Topik / Pemantik Diskusi</label>
+                                <RichTextEditor v-model="content.content_data.topic" placeholder="Ketik pertanyaan untuk memantik diskusi siswa..." />
+                                
+                                <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-6 text-center opacity-70">
+                                    <i class="pi pi-comments text-3xl text-slate-400 mb-2"></i>
+                                    <p class="text-sm font-bold text-slate-600">Forum Diskusi Kelas (Live)</p>
+                                    <p class="text-[11px] text-slate-500">Komentar siswa secara real-time akan muncul di sini. Siswa dapat saling me-reply.</p>
+                                </div>
+                                <div class="flex justify-end"><Button @click="saveContent(content)" size="sm" class="bg-sky-600 text-white hover:bg-sky-700">Simpan Forum Diskusi</Button></div>
                             </div>
 
                         </div>
@@ -289,12 +324,17 @@ const removeOption = (content: any, index: number) => {
                     <Button @click="addContent('text')" variant="outline" class="border-slate-200 bg-white text-slate-700 hover:bg-slate-50"><i class="pi pi-align-left mr-2 text-slate-400"></i> Teks Materi</Button>
                     <Button @click="addContent('h5p')" variant="outline" class="border-slate-200 bg-white text-slate-700 hover:bg-slate-50"><i class="pi pi-video mr-2 text-indigo-400"></i> Media H5P</Button>
                     
-                    <div class="w-px h-8 bg-indigo-200 mx-1 hidden sm:block"></div>
+                    <div class="w-px h-8 bg-indigo-200 mx-1 hidden lg:block"></div>
                     
                     <Button @click="addContent('eval_mcq')" variant="outline" class="border-slate-200 bg-white text-slate-700 hover:bg-slate-50"><i class="pi pi-check-circle mr-2 text-emerald-500"></i> Pilihan Ganda</Button>
                     <Button @click="addContent('eval_cmcq')" variant="outline" class="border-slate-200 bg-white text-slate-700 hover:bg-slate-50"><i class="pi pi-list mr-2 text-emerald-500"></i> Pilihan Kompleks</Button>
                     <Button @click="addContent('eval_short')" variant="outline" class="border-slate-200 bg-white text-slate-700 hover:bg-slate-50"><i class="pi pi-minus mr-2 text-amber-500"></i> Jawaban Singkat</Button>
                     <Button @click="addContent('eval_essay')" variant="outline" class="border-slate-200 bg-white text-slate-700 hover:bg-slate-50"><i class="pi pi-align-justify mr-2 text-amber-500"></i> Esai Panjang</Button>
+                    
+                    <div class="w-px h-8 bg-indigo-200 mx-1 hidden lg:block"></div>
+
+                    <Button @click="addContent('eval_file')" variant="outline" class="border-pink-200 bg-pink-50/50 text-pink-700 hover:bg-pink-100"><i class="pi pi-upload mr-2 text-pink-500"></i> Upload Gambar</Button>
+                    <Button @click="addContent('discussion')" variant="outline" class="border-sky-200 bg-sky-50/50 text-sky-700 hover:bg-sky-100"><i class="pi pi-comments mr-2 text-sky-500"></i> Forum Diskusi</Button>
                 </div>
             </div>
 

@@ -21,7 +21,7 @@ class RoleAndAdminSeeder extends Seeder
 
         // 3. Buat akun Admin Default
         $admin = User::firstOrCreate(
-            ['email' => 'admin@ppoe.interactive.com'],
+            ['email' => 'admin@pLC5E.interactive.com'],
             [
                 'name' => 'Super Admin',
                 'password' => Hash::make('Password123_'), // Ganti dengan password yang lebih aman di production

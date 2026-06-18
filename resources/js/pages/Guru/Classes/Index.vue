@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { toast } from 'vue-sonner';
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -8,9 +10,7 @@ import {
     CardTitle,
     CardDescription,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { toast } from 'vue-sonner';
 
 const props = defineProps<{
     classes: Array<{
@@ -26,9 +26,12 @@ const props = defineProps<{
 const searchQuery = ref('');
 
 const filteredClasses = computed(() => {
-    if (!searchQuery.value) return props.classes;
+    if (!searchQuery.value) {
+return props.classes;
+}
 
     const query = searchQuery.value.toLowerCase();
+
     return props.classes.filter(
         (cls) =>
             cls.class_name.toLowerCase().includes(query) ||
@@ -111,7 +114,9 @@ const closeEditModal = () => {
 };
 
 const submitEdit = () => {
-    if (!editingClassId.value) return;
+    if (!editingClassId.value) {
+return;
+}
 
     editForm.put(route('guru.classes.update', editingClassId.value), {
         preserveScroll: true,
@@ -144,7 +149,10 @@ const closeDeleteModal = () => {
 };
 
 const executeDelete = () => {
-    if (!classToDelete.value) return;
+    if (!classToDelete.value) {
+return;
+}
+
     isDeleting.value = true;
 
     router.delete(route('guru.classes.destroy', classToDelete.value.id), {
@@ -298,7 +306,7 @@ const executeDelete = () => {
                             >
                                 <span
                                     class="mb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase"
-                                    >Review POE</span
+                                    >Review LC5E</span
                                 >
                                 <div
                                     class="flex items-center gap-1.5 text-[14px] font-bold text-slate-700"

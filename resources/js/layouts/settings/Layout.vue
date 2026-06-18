@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
+import { User, Lock, Palette } from 'lucide-vue-next';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -14,14 +15,17 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Profile',
         href: editProfile(),
+        icon: User,
     },
     {
         title: 'Security',
         href: editSecurity(),
+        icon: Lock,
     },
     {
         title: 'Appearance',
         href: editAppearance(),
+        icon: Palette,
     },
 ];
 
@@ -52,7 +56,7 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
                         as-child
                     >
                         <Link :href="item.href">
-                            <component :is="item.icon" class="h-4 w-4" />
+                            <component :is="item.icon" class="mr-2 h-4 w-4" />
                             {{ item.title }}
                         </Link>
                     </Button>

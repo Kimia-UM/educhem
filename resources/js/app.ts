@@ -1,5 +1,7 @@
 import { createInertiaApp } from '@inertiajs/vue3';
+import Aura from '@primevue/themes/aura';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import PrimeVue from 'primevue/config';
 import { createApp, h } from 'vue';
 
 // 1. IMPORT LAYOUT
@@ -7,8 +9,6 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 
 // 2. IMPORT PRIMEVUE & TEMA
-import PrimeVue from 'primevue/config';
-import Aura from '@primevue/themes/aura';
 import 'primeicons/primeicons.css';
 
 
@@ -28,6 +28,7 @@ createInertiaApp({
         // PASANG LAYOUT SECARA OTOMATIS
         if (page.default.layout === undefined) {
             const lowerName = name.toLowerCase();
+
             if (lowerName.startsWith('auth/')) {
                 page.default.layout = AuthLayout;
             } else {

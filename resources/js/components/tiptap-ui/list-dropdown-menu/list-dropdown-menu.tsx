@@ -1,14 +1,14 @@
+import type {Editor} from "@tiptap/react";
 import { useCallback, useState } from "react"
-import { type Editor } from "@tiptap/react"
 
 // --- Hooks ---
-import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
 
 // --- Icons ---
 import { ChevronDownIcon } from "@/components/tiptap-icons/chevron-down-icon"
 
 // --- Tiptap UI ---
-import { ListButton, type ListType } from "@/components/tiptap-ui/list-button"
+import { ListButton  } from "@/components/tiptap-ui/list-button"
+import type {ListType} from "@/components/tiptap-ui/list-button";
 
 import { useListDropdownMenu } from "@/components/tiptap-ui/list-dropdown-menu/use-list-dropdown-menu"
 
@@ -22,6 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuGroup,
 } from "@/components/tiptap-ui-primitive/dropdown-menu"
+import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
 
 export interface ListDropdownMenuProps extends Omit<ButtonProps, "type"> {
   /**

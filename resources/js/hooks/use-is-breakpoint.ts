@@ -28,6 +28,7 @@ export function useIsBreakpoint(
 
     // Add listener
     mql.addEventListener("change", onChange)
+
     return () => mql.removeEventListener("change", onChange)
   }, [mode, breakpoint])
 

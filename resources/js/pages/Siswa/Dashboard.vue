@@ -1,11 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ref } from 'vue';
-
-// Mengimpor mesin asli Shadcn Vue Chart secara langsung beserta komponen Tooltip
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import {
     VisXYContainer,
     VisArea,
@@ -14,6 +8,12 @@ import {
     VisCrosshair,
     VisTooltip,
 } from '@unovis/vue';
+import { ref, computed } from 'vue';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+
+// Mengimpor mesin asli Shadcn Vue Chart secara langsung beserta komponen Tooltip
 
 const props = defineProps<{
     classrooms?: Array<{
@@ -22,7 +22,38 @@ const props = defineProps<{
         class_code: string;
         description: string | null;
         topics_count: number;
+        pivot?: {
+            pre_test_score: number | null;
+            post_test_score: number | null;
+            is_evaluation_sent: boolean;
+        };
     }>;
+    stats?: {
+        kelas_aktif: number;
+        kelas_aktif_sub?: string;
+        nilai_awal?: string | number;
+        nilai_akhir?: string | number;
+        peningkatan?: string | number;
+        progress_rata_rata: number;
+        progress_rata_rata_sub?: string;
+        modul_selesai: number;
+        modul_selesai_sub?: string;
+        rata_rata_tes: string | number;
+        rata_rata_tes_sub?: string;
+    };
+    chartDataWeek?: Array<{ name: string; 'Jam Belajar': number }>;
+    chartDataMonth?: Array<{ name: string; 'Jam Belajar': number }>;
+    recentActivities?: Array<{
+        id: number | string;
+        title: string;
+        subject: string;
+        time: string;
+        icon: string;
+        color: string;
+    }>;
+    aiInsights?: string[];
+    notifications?: Array<{ text: string; time: string }>;
+    unreadNotificationsCount?: number;
 }>();
 
 // Form Inertia untuk fitur Gabung Kelas
@@ -40,16 +71,41 @@ const submitJoinClass = () => {
     });
 };
 
-// Data Dummy untuk Grafik
-const chartData = ref([
-    { name: 'Sen', 'Jam Belajar': 1.5 },
-    { name: 'Sel', 'Jam Belajar': 2.5 },
-    { name: 'Rab', 'Jam Belajar': 1.0 },
-    { name: 'Kam', 'Jam Belajar': 3.0 },
-    { name: 'Jum', 'Jam Belajar': 4.0 },
-    { name: 'Sab', 'Jam Belajar': 3.5 },
-    { name: 'Min', 'Jam Belajar': 2.0 },
-]);
+// State filter grafik & notifikasi
+const selectedPeriod = ref('Minggu Ini');
+const showNotifications = ref(false);
+
+const refreshDashboard = () => {
+    router.reload({
+        preserveState: true,
+        preserveScroll: true,
+    });
+};
+
+// Data Dinamis / Fallback untuk Grafik
+const chartData = computed(() => {
+    const data = selectedPeriod.value === 'Minggu Ini' 
+        ? props.chartDataWeek 
+        : props.chartDataMonth;
+        
+    return data && data.length > 0 ? data : (selectedPeriod.value === 'Minggu Ini' ? [
+        { name: 'Sen', 'Jam Belajar': 0 },
+        { name: 'Sel', 'Jam Belajar': 0 },
+        { name: 'Rab', 'Jam Belajar': 0 },
+        { name: 'Kam', 'Jam Belajar': 0 },
+        { name: 'Jum', 'Jam Belajar': 0 },
+        { name: 'Sab', 'Jam Belajar': 0 },
+        { name: 'Min', 'Jam Belajar': 0 },
+    ] : [
+        { name: '01', 'Jam Belajar': 0 },
+        { name: '05', 'Jam Belajar': 0 },
+        { name: '10', 'Jam Belajar': 0 },
+        { name: '15', 'Jam Belajar': 0 },
+        { name: '20', 'Jam Belajar': 0 },
+        { name: '25', 'Jam Belajar': 0 },
+        { name: '30', 'Jam Belajar': 0 },
+    ]);
+});
 
 // Fungsi helper mutlak untuk Unovis
 const x = (d: any, i: number) => i;
@@ -64,39 +120,27 @@ const tooltipTemplate = (d: any) => `
     </div>
 `;
 
-// Dummy Data untuk Aktivitas & AI
-const recentActivities = [
-    {
-        id: 1,
-        title: 'Menyelesaikan Fase Observe',
-        subject: 'Ikatan Kimia',
-        time: '2 jam yang lalu',
-        icon: 'pi-check-circle',
-        color: 'text-green-500',
-    },
-    {
-        id: 2,
-        title: 'Bergabung dengan Kelas',
-        subject: 'Kimia Dasar X',
-        time: '5 jam yang lalu',
-        icon: 'pi-user-plus',
-        color: 'text-blue-500',
-    },
-    {
-        id: 3,
-        title: 'Menonton Video H5P',
-        subject: 'Struktur Atom',
-        time: 'Kemarin',
-        icon: 'pi-video',
-        color: 'text-purple-500',
-    },
-];
+// Data Dinamis / Fallback untuk Aktivitas & AI
+const recentActivities = computed(() => {
+    return props.recentActivities && props.recentActivities.length > 0 ? props.recentActivities : [
+        {
+            id: 'dummy_1',
+            title: 'Belum ada aktivitas baru',
+            subject: 'Kimia Dasar X',
+            time: 'Mulai sekarang',
+            icon: 'pi-info-circle',
+            color: 'text-slate-400',
+        }
+    ];
+});
 
-const aiInsights = [
-    "Pemahamanmu pada topik 'Sifat Periodik' meningkat 12% setelah menonton video simulasi.",
-    "Jangan lupa kerjakan Lembar Kerja (Worksheet) 'Energi Ionisasi' untuk membuka bab selanjutnya.",
-    "Gaya belajarmu sangat baik di fase 'Observe' (Observasi visual).",
-];
+const aiInsights = computed(() => {
+    return props.aiInsights && props.aiInsights.length > 0 ? props.aiInsights : [
+        "Belum ada masukan AI. Selesaikan latihan esai atau jawaban singkat di Worksheet untuk mendapatkan feedback AI!",
+        "Gunakan AI Tutor di pojok kanan bawah untuk bertanya kapan pun kamu bingung tentang konsep Kimia.",
+        "Siklus belajar POE (Predict-Observe-Explain) membantumu memahami konsep secara mendalam."
+    ];
+});
 </script>
 
 <template>
@@ -110,18 +154,52 @@ const aiInsights = [
         ></div>
 
         <header
-            class="sticky top-0 z-20 flex h-[80px] items-center justify-end border-b border-slate-100 bg-white/50 px-8 backdrop-blur-md"
+            class="sticky top-0 z-20 flex h-[80px] items-center justify-between border-b border-slate-100 bg-white/50 px-8 backdrop-blur-md"
         >
+            <div class="flex items-center">
+                <p class="text-lg md:text-xl font-bold text-slate-800">
+                    Selamat datang kembali, <span class="font-black text-[#0F5A53]">{{ $page.props.auth.user.name }}</span>! 👋
+                </p>
+            </div>
             <div class="flex items-center gap-5">
-                <button
-                    class="relative text-slate-400 transition-colors hover:text-slate-600"
-                >
-                    <i class="pi pi-bell text-xl"></i>
-                    <span
-                        class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-rose-500 text-[9px] font-bold text-white"
-                        >2</span
+                <div class="relative">
+                    <button
+                        @click="showNotifications = !showNotifications"
+                        class="relative text-slate-400 transition-colors hover:text-slate-600 focus:outline-none"
                     >
-                </button>
+                        <i class="pi pi-bell text-xl"></i>
+                        <span
+                            v-if="unreadNotificationsCount && unreadNotificationsCount > 0"
+                            class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-rose-500 text-[9px] font-bold text-white"
+                            >{{ unreadNotificationsCount }}</span
+                        >
+                    </button>
+                    <!-- Dropdown Notifikasi -->
+                    <div
+                        v-if="showNotifications"
+                        class="absolute right-0 mt-2 w-80 rounded-2xl border border-slate-100 bg-white p-4 shadow-xl z-30 transition-all duration-200"
+                    >
+                        <div class="mb-3 flex items-center justify-between">
+                            <h4 class="text-xs font-bold text-slate-800">Notifikasi</h4>
+                            <button
+                                @click="showNotifications = false"
+                                class="text-[10px] text-slate-400 hover:text-slate-600"
+                            >
+                                <i class="pi pi-times"></i>
+                            </button>
+                        </div>
+                        <div class="space-y-3 max-h-60 overflow-y-auto">
+                            <div
+                                v-for="(notif, idx) in notifications"
+                                :key="idx"
+                                class="border-b border-slate-50 pb-2 last:border-0 last:pb-0"
+                            >
+                                <p class="text-xs font-semibold text-slate-700 leading-normal">{{ notif.text }}</p>
+                                <span class="text-[10px] font-medium text-slate-400 mt-1 block">{{ notif.time }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="h-8 w-[1px] bg-slate-200"></div>
                 <div class="flex cursor-pointer items-center gap-3">
                     <div class="hidden text-right md:block">
@@ -135,7 +213,7 @@ const aiInsights = [
                         </p>
                     </div>
                     <img
-                        src="https://ui-avatars.com/api/?name=Siswa&background=0F5A53&color=fff"
+                        :src="`https://ui-avatars.com/api/?name=${encodeURIComponent($page.props.auth.user.name)}&background=0F5A53&color=fff`"
                         class="h-10 w-10 rounded-full border-2 border-white shadow-sm"
                         alt="Profile"
                     />
@@ -158,7 +236,7 @@ const aiInsights = [
                             class="mt-0.5 text-[13px] font-medium text-slate-500"
                         >
                             Sistem belajar kimia berbasis
-                            Predict-Observe-Explain (POE)
+                            Predict-Observe-Explain (LC5E)
                         </p>
                     </div>
 
@@ -216,15 +294,14 @@ const aiInsights = [
                             <div
                                 class="rounded-lg bg-blue-50 p-2 text-blue-500"
                             >
-                                <i class="pi pi-book"></i>
+                                <i class="pi pi-file-text"></i>
                             </div>
                         </div>
                         <h3 class="text-3xl font-black text-slate-900">
-                            {{ classrooms?.length || 0 }}
+                            {{ stats?.kelas_aktif ?? 0 }}
                         </h3>
-                        <p class="mt-2 text-[11px] font-medium text-slate-400">
-                            <span class="font-bold text-emerald-500">+1</span>
-                            bulan ini
+                        <p class="mt-2 text-[11px] font-bold text-emerald-600">
+                            {{ stats?.kelas_aktif_sub ?? '+0' }} bulan ini
                         </p>
                     </Card>
                     <Card
@@ -232,18 +309,19 @@ const aiInsights = [
                     >
                         <div class="mb-4 flex items-center justify-between">
                             <span class="text-[13px] font-bold text-slate-600"
-                                >Progress Rata-rata</span
+                                >Nilai Awal</span
                             >
                             <div
-                                class="rounded-lg bg-purple-50 p-2 text-purple-500"
+                                class="rounded-lg bg-violet-50 p-2 text-violet-500"
                             >
-                                <i class="pi pi-chart-line"></i>
+                                <i class="pi pi-bookmark"></i>
                             </div>
                         </div>
-                        <h3 class="text-3xl font-black text-slate-900">45%</h3>
-                        <p class="mt-2 text-[11px] font-medium text-slate-400">
-                            <span class="font-bold text-emerald-500">+12%</span>
-                            vs minggu lalu
+                        <h3 class="text-3xl font-black text-slate-900">
+                            {{ stats?.nilai_awal ?? '-' }}
+                        </h3>
+                        <p class="mt-2 text-[11px] font-bold text-emerald-600">
+                            Rata-rata Pre-Test
                         </p>
                     </Card>
                     <Card
@@ -251,18 +329,19 @@ const aiInsights = [
                     >
                         <div class="mb-4 flex items-center justify-between">
                             <span class="text-[13px] font-bold text-slate-600"
-                                >Modul Selesai</span
+                                >Nilai Akhir</span
                             >
                             <div
-                                class="rounded-lg bg-orange-50 p-2 text-orange-500"
+                                class="rounded-lg bg-emerald-50 p-2 text-emerald-500"
                             >
-                                <i class="pi pi-verified"></i>
+                                <i class="pi pi-check-circle"></i>
                             </div>
                         </div>
-                        <h3 class="text-3xl font-black text-slate-900">8</h3>
-                        <p class="mt-2 text-[11px] font-medium text-slate-400">
-                            <span class="font-bold text-emerald-500">+2</span>
-                            topik baru
+                        <h3 class="text-3xl font-black text-slate-900">
+                            {{ stats?.nilai_akhir ?? '-' }}
+                        </h3>
+                        <p class="mt-2 text-[11px] font-bold text-emerald-600">
+                            Rata-rata Post-Test
                         </p>
                     </Card>
                     <Card
@@ -270,18 +349,19 @@ const aiInsights = [
                     >
                         <div class="mb-4 flex items-center justify-between">
                             <span class="text-[13px] font-bold text-slate-600"
-                                >Rata-rata Tes</span
+                                >Peningkatan</span
                             >
                             <div
                                 class="rounded-lg bg-rose-50 p-2 text-rose-500"
                             >
-                                <i class="pi pi-star-fill"></i>
+                                <i class="pi pi-trending-up"></i>
                             </div>
                         </div>
-                        <h3 class="text-3xl font-black text-slate-900">82.5</h3>
-                        <p class="mt-2 text-[11px] font-medium text-slate-400">
-                            <span class="font-bold text-emerald-500">+5.0</span>
-                            vs tes sebelumnya
+                        <h3 class="text-3xl font-black text-slate-900">
+                            {{ stats?.peningkatan ?? '-' }}
+                        </h3>
+                        <p class="mt-2 text-[11px] font-bold text-emerald-600">
+                            Selisih Nilai Akhir & Awal
                         </p>
                     </Card>
                 </div>
@@ -298,10 +378,11 @@ const aiInsights = [
                                     Aktivitas Belajar Harian
                                 </h3>
                                 <select
-                                    class="rounded-lg border-slate-200 bg-slate-50 px-3 py-1.5 text-[12px] font-medium text-slate-500 focus:ring-0"
+                                    v-model="selectedPeriod"
+                                    class="rounded-lg border-slate-200 bg-slate-50 px-3 py-1.5 text-[12px] font-medium text-slate-500 focus:ring-0 cursor-pointer"
                                 >
-                                    <option>Minggu Ini</option>
-                                    <option>Bulan Ini</option>
+                                    <option value="Minggu Ini">Minggu Ini</option>
+                                    <option value="Bulan Ini">Bulan Ini</option>
                                 </select>
                             </div>
 
@@ -340,11 +421,11 @@ const aiInsights = [
                             <div class="mb-6 flex items-center justify-between">
                                 <h3
                                     class="text-[16px] font-extrabold text-slate-800"
-                                >
-                                    Kelas Aktif Saya
+                                  >
+                                    Kelas Anda
                                 </h3>
                                 <Link
-                                    href="#"
+                                    :href="route('siswa.classes.index')"
                                     class="text-[12px] font-bold text-[#0F5A53] hover:underline"
                                     >Lihat Semua</Link
                                 >
@@ -371,23 +452,31 @@ const aiInsights = [
                                             >
                                                 {{ kelas.class_name }}
                                             </h4>
-                                            <p
-                                                class="mt-0.5 text-[11px] font-medium text-slate-500"
-                                            >
-                                                <i
-                                                    class="pi pi-folder mr-1"
-                                                ></i>
-                                                {{ kelas.topics_count }} Topik
-                                                Materi
-                                            </p>
+                                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                                                <p
+                                                    class="text-[11px] font-semibold text-teal-600 flex items-center gap-1"
+                                                >
+                                                    <span>Nilai Awal:</span>
+                                                    <span class="font-black px-1.5 py-0.2 bg-teal-50 rounded text-[#0F5A53]">{{ kelas.pivot?.pre_test_score !== null && kelas.pivot?.pre_test_score !== undefined ? kelas.pivot.pre_test_score : '-' }}</span>
+                                                </p>
+                                                <div class="hidden sm:block h-3 w-[1px] bg-slate-200"></div>
+                                                <p
+                                                    class="text-[11px] font-semibold text-emerald-600 flex items-center gap-1"
+                                                >
+                                                    <span>Nilai Akhir:</span>
+                                                    <span class="font-black px-1.5 py-0.2 bg-emerald-50 rounded text-emerald-700">{{ kelas.pivot?.post_test_score !== null && kelas.pivot?.post_test_score !== undefined ? kelas.pivot.post_test_score : '-' }}</span>
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                    <Button
-                                        variant="outline"
-                                        class="h-9 rounded-xl border-slate-200 px-4 text-[12px] font-bold text-[#0F5A53] shadow-sm transition-all hover:bg-[#0F5A53] hover:text-white"
-                                    >
-                                        Lanjutkan
-                                    </Button>
+                                    <Link :href="route('siswa.classes.show', kelas.id)">
+                                        <Button
+                                            variant="outline"
+                                            class="h-9 rounded-xl border-slate-200 px-4 text-[12px] font-bold text-[#0F5A53] shadow-sm transition-all hover:bg-[#0F5A53] hover:text-white"
+                                        >
+                                            Lanjutkan
+                                        </Button>
+                                    </Link>
                                 </div>
                             </div>
                             <div v-else class="py-8 text-center">
@@ -402,62 +491,7 @@ const aiInsights = [
                     </div>
 
                     <div class="space-y-6">
-                        <Card
-                            class="group relative overflow-hidden rounded-2xl border-none bg-white p-6 shadow-sm"
-                        >
-                            <div
-                                class="absolute top-0 right-0 h-32 w-32 rounded-full bg-indigo-500/10 blur-3xl transition-all group-hover:bg-indigo-500/20"
-                            ></div>
 
-                            <div
-                                class="relative z-10 mb-5 flex items-center justify-between"
-                            >
-                                <div>
-                                    <h3
-                                        class="flex items-center gap-1.5 text-[15px] font-extrabold text-slate-900"
-                                    >
-                                        <i
-                                            class="pi pi-sparkles text-indigo-500"
-                                        ></i>
-                                        EduChem AI
-                                    </h3>
-                                    <p
-                                        class="mt-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase"
-                                    >
-                                        Smart Insights (POE)
-                                    </p>
-                                </div>
-                                <button
-                                    class="h-7 rounded-lg border border-slate-200 px-2.5 text-[11px] font-bold text-slate-500 shadow-sm transition-colors hover:bg-slate-50"
-                                >
-                                    Refresh
-                                </button>
-                            </div>
-
-                            <div class="relative z-10 space-y-3">
-                                <div
-                                    v-for="(insight, index) in aiInsights"
-                                    :key="index"
-                                    class="flex gap-3 rounded-xl border border-indigo-100/60 bg-indigo-50/50 p-3.5 transition-colors hover:bg-indigo-50"
-                                >
-                                    <i
-                                        class="pi pi-asterisk mt-1 text-[10px] text-indigo-400"
-                                    ></i>
-                                    <p
-                                        class="text-[12px] leading-relaxed font-medium text-slate-700"
-                                    >
-                                        {{ insight }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <Button
-                                class="relative z-10 mt-5 h-10 w-full rounded-xl border border-indigo-200 bg-indigo-100 text-[13px] font-bold text-indigo-700 shadow-sm transition-colors hover:bg-indigo-200"
-                            >
-                                <i class="pi pi-comment mr-2"></i> Tanya AI
-                                Sekarang
-                            </Button>
-                        </Card>
 
                         <Card
                             class="rounded-2xl border-none bg-white p-6 shadow-sm"

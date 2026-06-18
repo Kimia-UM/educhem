@@ -14,12 +14,14 @@ class PhaseContent extends Model
         'topic_phase_id',
         'type',
         'content_data',
+        'correct_answers',
         'order',
     ];
 
     // PENTING: Cast content_data menjadi array agar otomatis di-serialize/deserialize dari JSON
     protected $casts = [
         'content_data' => 'array',
+        'correct_answers' => 'array',
     ];
 
     // Relasi balik ke TopicPhase

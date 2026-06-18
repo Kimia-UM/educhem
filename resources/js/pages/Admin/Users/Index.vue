@@ -1,14 +1,8 @@
 <script setup lang="ts">
-import { ref, watch, h } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import DataTable from '@/components/DataTable.vue';
 import type { ColumnDef } from '@tanstack/vue-table';
-
-// IMPORT KOMPONEN ALERT DIALOG SHADCN
+import { ref, watch, h } from 'vue';
+import DataTable from '@/components/DataTable.vue';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +13,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+
+// IMPORT KOMPONEN ALERT DIALOG SHADCN
 
 type User = {
     id: number;
@@ -93,11 +93,21 @@ const columns: ColumnDef<User>[] = [
         header: 'Role',
         cell: ({ row }) => {
             const roles: Array<{ name: string }> = row.getValue('roles');
+
             return h('div', { class: 'flex flex-wrap gap-1.5' }, roles.map(role => {
                 let badgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
-                if (role.name === 'ADMIN') badgeClass = 'bg-purple-50 text-purple-700 border-purple-200';
-                if (role.name === 'GURU') badgeClass = 'bg-indigo-50 text-indigo-700 border-indigo-200';
-                if (role.name === 'SISWA') badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+
+                if (role.name === 'ADMIN') {
+badgeClass = 'bg-purple-50 text-purple-700 border-purple-200';
+}
+
+                if (role.name === 'GURU') {
+badgeClass = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+}
+
+                if (role.name === 'SISWA') {
+badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+}
 
                 return h(Badge, { 
                     variant: 'outline', 

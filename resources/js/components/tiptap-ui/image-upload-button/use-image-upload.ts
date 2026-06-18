@@ -1,18 +1,18 @@
 "use client"
 
+import type {Editor} from "@tiptap/react";
 import { useCallback, useEffect, useState } from "react"
 import { useHotkeys } from "react-hotkeys-hook"
-import { type Editor } from "@tiptap/react"
 
 // --- Hooks ---
-import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
+import { ImagePlusIcon } from "@/components/tiptap-icons/image-plus-icon"
 import { useIsBreakpoint } from "@/hooks/use-is-breakpoint"
+import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
 
 // --- Lib ---
 import { isExtensionAvailable } from "@/lib/tiptap-utils"
 
 // --- Icons ---
-import { ImagePlusIcon } from "@/components/tiptap-icons/image-plus-icon"
 
 export const IMAGE_UPLOAD_SHORTCUT_KEY = "mod+shift+i"
 
@@ -39,8 +39,13 @@ export interface UseImageUploadConfig {
  * Checks if image can be inserted in the current editor state
  */
 export function canInsertImage(editor: Editor | null): boolean {
-  if (!editor || !editor.isEditable) return false
-  if (!isExtensionAvailable(editor, "imageUpload")) return false
+  if (!editor || !editor.isEditable) {
+return false
+}
+
+  if (!isExtensionAvailable(editor, "imageUpload")) {
+return false
+}
 
   return editor.can().insertContent({ type: "imageUpload" })
 }
@@ -49,7 +54,10 @@ export function canInsertImage(editor: Editor | null): boolean {
  * Checks if image is currently active
  */
 export function isImageActive(editor: Editor | null): boolean {
-  if (!editor || !editor.isEditable) return false
+  if (!editor || !editor.isEditable) {
+return false
+}
+
   return editor.isActive("imageUpload")
 }
 
@@ -57,8 +65,13 @@ export function isImageActive(editor: Editor | null): boolean {
  * Inserts an image in the editor
  */
 export function insertImage(editor: Editor | null): boolean {
-  if (!editor || !editor.isEditable) return false
-  if (!canInsertImage(editor)) return false
+  if (!editor || !editor.isEditable) {
+return false
+}
+
+  if (!canInsertImage(editor)) {
+return false
+}
 
   try {
     return editor
@@ -82,13 +95,17 @@ export function shouldShowButton(props: {
 }): boolean {
   const { editor, hideWhenUnavailable } = props
 
-  if (!editor || !editor.isEditable) return false
+  if (!editor || !editor.isEditable) {
+return false
+}
 
   if (!hideWhenUnavailable) {
     return true
   }
 
-  if (!isExtensionAvailable(editor, "imageUpload")) return false
+  if (!isExtensionAvailable(editor, "imageUpload")) {
+return false
+}
 
   if (!editor.isActive("code")) {
     return canInsertImage(editor)
@@ -147,7 +164,9 @@ export function useImageUpload(config?: UseImageUploadConfig) {
   const isActive = isImageActive(editor)
 
   useEffect(() => {
-    if (!editor) return
+    if (!editor) {
+return
+}
 
     const handleSelectionUpdate = () => {
       setIsVisible(shouldShowButton({ editor, hideWhenUnavailable }))
@@ -163,12 +182,16 @@ export function useImageUpload(config?: UseImageUploadConfig) {
   }, [editor, hideWhenUnavailable])
 
   const handleImage = useCallback(() => {
-    if (!editor) return false
+    if (!editor) {
+return false
+}
 
     const success = insertImage(editor)
+
     if (success) {
       onInserted?.()
     }
+
     return success
   }, [editor, onInserted])
 

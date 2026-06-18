@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('poe_worksheets', function (Blueprint $table) {
+        Schema::create('LC5E_worksheets', function (Blueprint $table) {
             $table->id();
 
                 $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();    
@@ -34,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('poe_worksheets');
+        Schema::dropIfExists('LC5E_worksheets');
     }
 };

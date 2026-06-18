@@ -7,6 +7,7 @@ use App\Models\Classroom;
 use App\Models\Topic;
 use App\Models\TopicPhase;
 use App\Models\StudentAnswer;
+use App\Models\PhaseDiscussion;
 use App\Jobs\EvaluateStudentAnswerJob;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 class WorksheetController extends Controller
 {
     /**
-     * Menampilkan Halaman Belajar (Lembar Kerja) Fase POE kepada Siswa
+     * Menampilkan Halaman Belajar (Lembar Kerja) Fase LC5E kepada Siswa
      */
     public function show(Request $request, Classroom $classroom, Topic $topic, TopicPhase $phase)
     {
@@ -40,12 +41,25 @@ class WorksheetController extends Controller
         $studentAnswers = $studentData->pluck('answer_data', 'content_id')->toArray();
         $aiFeedbacks = $studentData->pluck('ai_feedback', 'content_id')->toArray();
 
+        // Ambil data diskusi untuk fase ini (komentar level atas + replies + user)
+        $discussions = PhaseDiscussion::where('phase_id', $phase->id)
+            ->whereNull('parent_id')
+            ->with([
+                'user:id,name',
+                'replies' => function ($query) {
+                    $query->with('user:id,name')->orderBy('created_at', 'asc');
+                },
+            ])
+            ->orderBy('created_at', 'asc')
+            ->get();
+
         return Inertia::render('Siswa/Worksheet/Show', [
             'classroom' => $classroom,
             'topic' => $topic,
             'phase' => $phase,
             'studentAnswers' => (object) $studentAnswers,
-            'aiFeedbacks' => (object) $aiFeedbacks, // KITA TAMBAHKAN INI
+            'aiFeedbacks' => (object) $aiFeedbacks,
+            'discussions' => $discussions,
         ]);
     }
 
@@ -61,6 +75,23 @@ class WorksheetController extends Controller
         ]);
 
         $userId = $request->user()->id;
+
+        // Validasi Keamanan: Pastikan siswa terdaftar di kelas yang memiliki akses ke topik fase ini
+        $topic = $phase->topic;
+        if (!$topic) {
+            abort(404, 'Topik tidak ditemukan.');
+        }
+
+        $hasAccess = DB::table('class_members')
+            ->join('class_topic_accesses', 'class_topic_accesses.class_id', '=', 'class_members.class_id')
+            ->where('class_members.user_id', $userId)
+            ->where('class_topic_accesses.topic_id', $topic->id)
+            ->exists();
+
+        if (!$hasAccess) {
+            abort(403, 'Akses ditolak. Anda tidak terdaftar di kelas yang memiliki akses ke materi ini.');
+        }
+
         $answerData = null;
 
         if ($request->hasFile('answer_file')) {

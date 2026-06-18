@@ -64,22 +64,63 @@ class ClassroomController extends Controller
     }
 
     public function show(Request $request, Classroom $classroom)
-{
-    // Pastikan siswa member kelas
-    if (!$request->user()->joinedClasses()->where('class_id', $classroom->id)->exists()) {
-        abort(403, 'Akses ditolak.');
+    {
+        $user = $request->user();
+        
+        // Pastikan siswa member kelas dan ambil pivot
+        $classroomMember = $user->joinedClasses()->where('class_id', $classroom->id)->first();
+        if (!$classroomMember) {
+            abort(403, 'Akses ditolak.');
+        }
+        
+        $isEvaluationSent = $classroomMember->pivot->is_evaluation_sent ?? false;
+
+        // Memuat topik yang sudah dipublish beserta fase-fasenya
+        $classroom->load(['teacher', 'topics' => function ($query) {
+            $query->where('is_published', true)
+                  ->with(['phases' => function($q) {
+                      $q->orderBy('order', 'asc');
+                  }]);
+        }]);
+
+        return inertia('Siswa/Classes/Show', [
+            'classroom' => $classroom,
+            'isEvaluationSent' => $isEvaluationSent
+        ]);
     }
 
-    // Memuat topik yang sudah dipublish beserta fase-fasenya
-    $classroom->load(['teacher', 'topics' => function ($query) {
-        $query->where('is_published', true)
-              ->with(['phases' => function($q) {
-                  $q->orderBy('order', 'asc');
-              }]);
-    }]);
+    public function evaluationResult(Request $request, Classroom $classroom)
+    {
+        $user = $request->user();
+        
+        // Pastikan siswa member kelas
+        $classroomMember = $user->joinedClasses()->where('class_id', $classroom->id)->first();
+        if (!$classroomMember) {
+            abort(403, 'Akses ditolak.');
+        }
 
-    return inertia('Siswa/Classes/Show', [
-        'classroom' => $classroom
-    ]);
-}
+        $isEvaluationSent = $classroomMember->pivot->is_evaluation_sent ?? false;
+
+        // Ambil semua topik dan fase
+        $topics = $classroom->topics()->where('is_published', true)->with(['phases' => function ($query) {
+            $query->orderBy('order', 'asc');
+        }])->orderBy('topics.id', 'asc')->get();
+
+        $phaseIds = $topics->flatMap->phases->pluck('id');
+
+        // Ambil semua jawaban siswa
+        $answers = \App\Models\StudentAnswer::where('user_id', $user->id)
+            ->whereIn('phase_id', $phaseIds)
+            ->with(['content' => function ($query) {
+                $query->select('id', 'topic_phase_id', 'type', 'content_data', 'correct_answers');
+            }])
+            ->get();
+
+        return inertia('Siswa/Classes/EvaluationResult', [
+            'classroom' => $classroom->load('teacher'),
+            'topics' => $topics,
+            'answers' => $answers,
+            'isEvaluationSent' => $isEvaluationSent
+        ]);
+    }
 }

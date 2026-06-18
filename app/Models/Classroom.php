@@ -36,6 +36,7 @@ class Classroom extends Model
     public function students(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'class_members', 'class_id', 'user_id')
+                    ->withPivot('is_evaluation_sent', 'pre_test_score', 'post_test_score')
                     ->withTimestamps();
     }
 

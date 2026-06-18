@@ -7,6 +7,7 @@ use App\Models\Classroom;
 use App\Models\Topic;
 use App\Models\TopicPhase;
 use App\Models\PhaseContent;
+use App\Models\PhaseDiscussion;
 use App\Services\PhaseService;
 use Illuminate\Http\Request;
 
@@ -37,10 +38,23 @@ class PhaseController extends Controller
             $query->orderBy('order', 'asc');
         }]);
 
+        // Ambil data diskusi siswa untuk ditampilkan di panel guru
+        $discussions = PhaseDiscussion::where('phase_id', $phase->id)
+            ->whereNull('parent_id')
+            ->with([
+                'user:id,name',
+                'replies' => function ($query) {
+                    $query->with('user:id,name')->orderBy('created_at', 'asc');
+                },
+            ])
+            ->orderBy('created_at', 'asc')
+            ->get();
+
         return inertia('Guru/Phases/Show', [
             'classroom' => $classroom,
             'topic' => $topic,
-            'phase' => $phase
+            'phase' => $phase,
+            'discussions' => $discussions,
         ]);
     }
 
@@ -49,7 +63,9 @@ class PhaseController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'is_ai_enabled' => 'boolean',
-            'ai_prompt_setting' => 'nullable|string'
+            'is_chatbot_enabled' => 'boolean',
+            'ai_prompt_setting' => 'nullable|string',
+            'chatbot_prompt_setting' => 'nullable|string'
         ]);
         
         $this->phaseService->updatePhase($phase, $validated);
@@ -69,7 +85,8 @@ class PhaseController extends Controller
     {
         $this->phaseService->createContent($phase, [
             'type' => $request->type,
-            'content_data' => $request->content_data
+            'content_data' => $request->content_data,
+            'correct_answers' => $request->correct_answers
         ]);
         return back();
     }
@@ -77,7 +94,8 @@ class PhaseController extends Controller
     public function updateContent(Request $request, PhaseContent $content)
     {
         $this->phaseService->updateContent($content, [
-            'content_data' => $request->content_data
+            'content_data' => $request->content_data,
+            'correct_answers' => $request->correct_answers
         ]);
         return back();
     }

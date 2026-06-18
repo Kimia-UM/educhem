@@ -4,7 +4,6 @@ import { forwardRef, useCallback, useState } from "react"
 import { ChevronDownIcon } from "@/components/tiptap-icons/chevron-down-icon"
 
 // --- Hooks ---
-import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
 
 // --- Tiptap UI ---
 import { HeadingButton } from "@/components/tiptap-ui/heading-button"
@@ -21,6 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuGroup,
 } from "@/components/tiptap-ui-primitive/dropdown-menu"
+import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
 
 export interface HeadingDropdownMenuProps
   extends Omit<ButtonProps, "type">, UseHeadingDropdownMenuConfig {
@@ -65,7 +65,10 @@ export const HeadingDropdownMenu = forwardRef<
 
     const handleOpenChange = useCallback(
       (open: boolean) => {
-        if (!editor || !canToggle) return
+        if (!editor || !canToggle) {
+return
+}
+
         setIsOpen(open)
         onOpenChange?.(open)
       },

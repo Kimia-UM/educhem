@@ -33,6 +33,9 @@ class PhaseService
         if (!isset($data['content_data'])) {
             $data['content_data'] = [];
         }
+        if (!isset($data['correct_answers'])) {
+            $data['correct_answers'] = [];
+        }
         return $phase->contents()->create($data);
     }
 

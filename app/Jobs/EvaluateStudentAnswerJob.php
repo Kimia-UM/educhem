@@ -20,7 +20,7 @@ class EvaluateStudentAnswerJob implements ShouldQueue
     public $systemPrompt;
 
     public $timeout = 120;
-    public $tries = 5; // Kita naikkan jadi 5 kali percobaan
+    public $tries = 50; // Kita naikkan jadi 50 kali percobaan untuk menghadapi rate limit Gemini
 
     public function __construct(StudentAnswer $answer, ?string $systemPrompt)
     {
@@ -37,7 +37,7 @@ class EvaluateStudentAnswerJob implements ShouldQueue
 
         if (empty($studentAnswerText)) return;
 
-        $defaultPrompt = "Kamu adalah guru Kimia yang suportif. Berikan umpan balik singkat atas jawaban siswa ini. Jangan berikan jawaban langsung, tapi berikan petunjuk/clue agar mereka berpikir.";
+        $defaultPrompt = "Kamu adalah guru Kimia yang menilai jawaban siswa. Berikan umpan balik atas jawaban siswa ini.";
         $instruction = $this->systemPrompt ?: $defaultPrompt;
 
         $userMessage = "PERTANYAAN:\n{$question}\n\nJAWABAN SISWA:\n{$studentAnswerText}\n\nBerikan evaluasi atau feedbackmu:";

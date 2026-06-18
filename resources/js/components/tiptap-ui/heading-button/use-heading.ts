@@ -1,10 +1,16 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import { type Editor } from "@tiptap/react"
 import { NodeSelection, TextSelection } from "@tiptap/pm/state"
+import type {Editor} from "@tiptap/react";
+import { useCallback, useEffect, useState } from "react"
 
 // --- Hooks ---
+import { HeadingFiveIcon } from "@/components/tiptap-icons/heading-five-icon"
+import { HeadingFourIcon } from "@/components/tiptap-icons/heading-four-icon"
+import { HeadingOneIcon } from "@/components/tiptap-icons/heading-one-icon"
+import { HeadingSixIcon } from "@/components/tiptap-icons/heading-six-icon"
+import { HeadingThreeIcon } from "@/components/tiptap-icons/heading-three-icon"
+import { HeadingTwoIcon } from "@/components/tiptap-icons/heading-two-icon"
 import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
 
 // --- Lib ---
@@ -18,12 +24,6 @@ import {
 } from "@/lib/tiptap-utils"
 
 // --- Icons ---
-import { HeadingOneIcon } from "@/components/tiptap-icons/heading-one-icon"
-import { HeadingTwoIcon } from "@/components/tiptap-icons/heading-two-icon"
-import { HeadingThreeIcon } from "@/components/tiptap-icons/heading-three-icon"
-import { HeadingFourIcon } from "@/components/tiptap-icons/heading-four-icon"
-import { HeadingFiveIcon } from "@/components/tiptap-icons/heading-five-icon"
-import { HeadingSixIcon } from "@/components/tiptap-icons/heading-six-icon"
 
 export type Level = 1 | 2 | 3 | 4 | 5 | 6
 
@@ -76,12 +76,16 @@ export function canToggle(
   level?: Level,
   turnInto: boolean = true
 ): boolean {
-  if (!editor || !editor.isEditable) return false
+  if (!editor || !editor.isEditable) {
+return false
+}
+
   if (
     !isNodeInSchema("heading", editor) ||
     isNodeTypeSelected(editor, ["image"])
-  )
-    return false
+  ) {
+return false
+}
 
   if (!turnInto) {
     return level
@@ -100,8 +104,9 @@ export function canToggle(
       "blockquote",
       "codeBlock",
     ])
-  )
-    return false
+  ) {
+return false
+}
 
   // Either we can set heading directly on the selection,
   // or we can clear formatting/nodes to arrive at a heading.
@@ -117,7 +122,9 @@ export function isHeadingActive(
   editor: Editor | null,
   level?: Level | Level[]
 ): boolean {
-  if (!editor || !editor.isEditable) return false
+  if (!editor || !editor.isEditable) {
+return false
+}
 
   if (Array.isArray(level)) {
     return level.some((l) => editor.isActive("heading", { level: l }))
@@ -135,12 +142,16 @@ export function toggleHeading(
   editor: Editor | null,
   level: Level | Level[]
 ): boolean {
-  if (!editor || !editor.isEditable) return false
+  if (!editor || !editor.isEditable) {
+return false
+}
 
   const levels = Array.isArray(level) ? level : [level]
   const toggleLevel = levels.find((l) => canToggle(editor, l))
 
-  if (!toggleLevel) return false
+  if (!toggleLevel) {
+return false
+}
 
   try {
     const view = editor.view
@@ -172,7 +183,10 @@ export function toggleHeading(
         editor,
         node: state.selection.$anchor.node(1),
       })?.pos
-      if (!isValidPosition(pos)) return false
+
+      if (!isValidPosition(pos)) {
+return false
+}
 
       tr = tr.setSelection(NodeSelection.create(state.doc, pos))
       view.dispatch(tr)
@@ -231,20 +245,27 @@ export function shouldShowButton(props: {
 }): boolean {
   const { editor, level, hideWhenUnavailable } = props
 
-  if (!editor) return false
+  if (!editor) {
+return false
+}
 
   if (!hideWhenUnavailable) {
     return true
   }
 
-  if (!editor.isEditable) return false
+  if (!editor.isEditable) {
+return false
+}
 
-  if (!isNodeInSchema("heading", editor)) return false
+  if (!isNodeInSchema("heading", editor)) {
+return false
+}
 
   if (!editor.isActive("code")) {
     if (Array.isArray(level)) {
       return level.some((l) => canToggle(editor, l))
     }
+
     return canToggle(editor, level)
   }
 
@@ -311,7 +332,9 @@ export function useHeading(config: UseHeadingConfig) {
   const isActive = isHeadingActive(editor, level)
 
   useEffect(() => {
-    if (!editor) return
+    if (!editor) {
+return
+}
 
     const handleSelectionUpdate = () => {
       setIsVisible(shouldShowButton({ editor, level, hideWhenUnavailable }))
@@ -327,12 +350,16 @@ export function useHeading(config: UseHeadingConfig) {
   }, [editor, level, hideWhenUnavailable])
 
   const handleToggle = useCallback(() => {
-    if (!editor) return false
+    if (!editor) {
+return false
+}
 
     const success = toggleHeading(editor, level)
+
     if (success) {
       onToggled?.()
     }
+
     return success
   }, [editor, level, onToggled])
 

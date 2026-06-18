@@ -38,7 +38,8 @@ class ChatbotController extends Controller
             // 1. Validasi Input
             $request->validate([
                 'prompt' => 'required|string',
-                'topic_context' => 'nullable|string'
+                'topic_context' => 'nullable|string',
+                'phase_id' => 'nullable|integer|exists:topic_phases,id'
             ]);
 
             // 2. Pastikan user valid dan terautentikasi (Mencegah error 'user_id cannot be null')
@@ -53,8 +54,21 @@ class ChatbotController extends Controller
                 'response' => null, // Dikosongkan karena menunggu AI
             ]);
 
+            // Ambil prompt chatbot dari fase jika ada
+            $chatbotPrompt = null;
+            if ($request->filled('phase_id')) {
+                $phase = \App\Models\TopicPhase::find($request->phase_id);
+                if ($phase) {
+                    $chatbotPrompt = $phase->chatbot_prompt_setting;
+                }
+            }
+
             // 4. Lempar ke Queue agar dieksekusi di belakang layar (Terminal)
-            ProcessAiChatJob::dispatch($chatLog, $request->topic_context ?? 'Materi Kimia');
+            ProcessAiChatJob::dispatch(
+                $chatLog, 
+                $request->topic_context ?? 'Materi Kimia',
+                $chatbotPrompt
+            );
 
             // 5. Kembalikan response sukses
             return response()->json([

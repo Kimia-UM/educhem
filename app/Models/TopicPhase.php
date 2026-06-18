@@ -17,11 +17,14 @@ class TopicPhase extends Model
         'description',
         'order',
         'is_ai_enabled',
+        'is_chatbot_enabled',
         'ai_prompt_setting',
+        'chatbot_prompt_setting',
     ];
 
     protected $casts = [
         'is_ai_enabled' => 'boolean',
+        'is_chatbot_enabled' => 'boolean',
     ];
 
     // Relasi balik ke Topic

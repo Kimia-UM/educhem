@@ -8,10 +8,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Laravel\Fortify\Contracts\PasskeyUser;
+use Laravel\Fortify\PasskeyAuthenticatable;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements PasskeyUser
 {
-    use HasFactory, Notifiable, HasRoles; // Spatie HasRoles sudah terpasang sempurna
+    use HasFactory, Notifiable, HasRoles, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
@@ -66,6 +69,7 @@ class User extends Authenticatable
     public function joinedClasses(): BelongsToMany
     {
         return $this->belongsToMany(Classroom::class, 'class_members', 'user_id', 'class_id')
+                    ->withPivot('is_evaluation_sent', 'pre_test_score', 'post_test_score')
                     ->withTimestamps();
     }
     

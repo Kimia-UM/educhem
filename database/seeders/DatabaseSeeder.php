@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
         // Memanggil seeder Role dan Admin
         $this->call([
             RoleAndAdminSeeder::class,
+            TestAccountsSeeder::class,
         ]);
     }
 }

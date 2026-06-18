@@ -26,23 +26,33 @@ class HandleInertiaRequests extends Middleware
         return parent::version($request);
     }
 
-    /**
-     * Define the props that are shared by default.
-     *
-     * @see https://inertiajs.com/shared-data
-     *
-     * @return array<string, mixed>
-     */
     public function share(Request $request): array
-{
-    return [
-        ...parent::share($request),
-        'auth' => [
-            'user' => $request->user() ? [
-                ...$request->user()->toArray(),
-                'roles' => $request->user()->getRoleNames()->map(fn($role) => ['name' => $role])
-            ] : null,
-        ],
-    ];
-}
+    {
+        $user = $request->user();
+        $sidebarClasses = [];
+
+        if ($user) {
+            // Eager load class beserta topic dan phase-nya
+            if ($user->hasRole(['SISWA', 'siswa', 'Siswa'])) {
+                $sidebarClasses = $user->joinedClasses()
+                                       ->with('topics.phases')
+                                       ->get();
+            } elseif ($user->hasRole(['GURU', 'guru', 'Guru'])) {
+                $sidebarClasses = $user->taughtClasses()
+                                       ->with('topics.phases')
+                                       ->get();
+            }
+        }
+
+        return [
+            ...parent::share($request),
+            'auth' => [
+                'user' => $user ? [
+                    ...$user->toArray(),
+                    'roles' => $user->getRoleNames()->map(fn($role) => ['name' => $role])
+                ] : null,
+            ],
+            'sidebarClasses' => $sidebarClasses,
+        ];
+    }
 }

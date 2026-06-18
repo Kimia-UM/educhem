@@ -1,16 +1,6 @@
 "use client"
 
 import {
-  cloneElement,
-  createContext,
-  forwardRef,
-  isValidElement,
-  useContext,
-  useMemo,
-  useState,
-  version,
-} from "react"
-import {
   useFloating,
   autoUpdate,
   offset,
@@ -23,11 +13,22 @@ import {
   useInteractions,
   useMergeRefs,
   FloatingPortal,
-  type Placement,
-  type UseFloatingReturn,
-  type ReferenceType,
-  FloatingDelayGroup,
+  
+  
+  
+  FloatingDelayGroup
 } from "@floating-ui/react"
+import type {Placement, UseFloatingReturn, ReferenceType} from "@floating-ui/react";
+import {
+  cloneElement,
+  createContext,
+  forwardRef,
+  isValidElement,
+  useContext,
+  useMemo,
+  useState,
+  version,
+} from "react"
 import "@/components/tiptap-ui-primitive/tooltip/tooltip.scss"
 
 interface TooltipProviderProps {
@@ -169,9 +170,9 @@ export const TooltipTrigger = forwardRef<HTMLElement, TooltipTriggerProps>(
     const context = useTooltipContext()
     const childrenRef = isValidElement(children)
       ? parseInt(version, 10) >= 19
-        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ?  
           (children as { props: { ref?: React.Ref<any> } }).props.ref
-        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        :  
           (children as any).ref
       : undefined
     const ref = useMergeRefs([context.refs.setReference, propRef, childrenRef])
@@ -212,7 +213,9 @@ export const TooltipContent = forwardRef<HTMLDivElement, TooltipContentProps>(
     const context = useTooltipContext()
     const ref = useMergeRefs([context.refs.setFloating, propRef])
 
-    if (!context.open) return null
+    if (!context.open) {
+return null
+}
 
     const content = (
       <div

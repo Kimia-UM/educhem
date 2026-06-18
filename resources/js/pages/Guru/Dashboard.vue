@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Head, useForm, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { toast } from 'vue-sonner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -8,10 +11,7 @@ import {
     CardTitle,
     CardDescription,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'vue-sonner';
 
 const props = defineProps<{
     classes: Array<{
@@ -112,8 +112,8 @@ const recentActivities = [
                     Workspace Guru
                 </h1>
                 <p class="mt-1 text-[14px] font-medium text-slate-500">
-                    Kelola kelas, pantau progress metode POE, dan evaluasi siswa
-                    Anda.
+                    Kelola kelas, pantau progress metode LC5E, dan evaluasi
+                    siswa Anda.
                 </p>
             </div>
 
@@ -207,7 +207,7 @@ const recentActivities = [
                             <p
                                 class="mb-2 text-[11px] font-bold tracking-wider text-emerald-100 uppercase"
                             >
-                                Perlu Evaluasi (POE)
+                                Perlu Evaluasi (LC5E)
                             </p>
                             <h2 class="text-3xl font-extrabold text-white">
                                 {{ stats.pending_reviews }}
@@ -233,7 +233,6 @@ const recentActivities = [
         </div>
 
         <div class="mx-auto grid max-w-7xl grid-cols-1 gap-8 lg:grid-cols-3">
-            
             <div class="flex flex-col gap-5 lg:col-span-2">
                 <div class="flex items-center justify-between">
                     <h3 class="text-[17px] font-bold text-slate-800">
@@ -271,10 +270,14 @@ const recentActivities = [
                                     <p
                                         class="mt-1 flex items-center gap-1.5 text-[12px] text-slate-500"
                                     >
-                                        <i class="pi pi-calendar text-[10px]"></i>
+                                        <i
+                                            class="pi pi-calendar text-[10px]"
+                                        ></i>
                                         Dibuat:
                                         {{
-                                            new Date(cls.created_at).toLocaleDateString('id-ID')
+                                            new Date(
+                                                cls.created_at,
+                                            ).toLocaleDateString('id-ID')
                                         }}
                                     </p>
                                 </div>
@@ -286,26 +289,38 @@ const recentActivities = [
                                 </div>
                             </div>
 
-                            <p class="mb-5 line-clamp-2 flex-1 text-[13px] text-slate-600">
+                            <p
+                                class="mb-5 line-clamp-2 flex-1 text-[13px] text-slate-600"
+                            >
                                 {{
                                     cls.description ||
                                     'Belum ada deskripsi untuk kelas ini.'
                                 }}
                             </p>
 
-                            <div class="mt-auto flex items-center justify-between border-t border-slate-100 pt-4">
+                            <div
+                                class="mt-auto flex items-center justify-between border-t border-slate-100 pt-4"
+                            >
                                 <div class="flex -space-x-2 overflow-hidden">
-                                    <div class="inline-block h-6 w-6 rounded-full bg-slate-200 ring-2 ring-white"></div>
-                                    <div class="inline-block h-6 w-6 rounded-full bg-slate-300 ring-2 ring-white"></div>
-                                    <div class="inline-block h-6 w-6 rounded-full bg-slate-400 ring-2 ring-white"></div>
+                                    <div
+                                        class="inline-block h-6 w-6 rounded-full bg-slate-200 ring-2 ring-white"
+                                    ></div>
+                                    <div
+                                        class="inline-block h-6 w-6 rounded-full bg-slate-300 ring-2 ring-white"
+                                    ></div>
+                                    <div
+                                        class="inline-block h-6 w-6 rounded-full bg-slate-400 ring-2 ring-white"
+                                    ></div>
                                 </div>
-                                
-                                <Link 
-                                    :href="route('guru.classes.show', cls.id)" 
+
+                                <Link
+                                    :href="route('guru.classes.show', cls.id)"
                                     class="flex items-center text-[12px] font-semibold text-indigo-600 group-hover:text-indigo-700"
                                 >
                                     Masuk Kelas
-                                    <i class="pi pi-arrow-right ml-1.5 text-[10px]"></i>
+                                    <i
+                                        class="pi pi-arrow-right ml-1.5 text-[10px]"
+                                    ></i>
                                 </Link>
                             </div>
                         </CardContent>
@@ -316,11 +331,19 @@ const recentActivities = [
                         :href="route('guru.classes.index')"
                         class="group flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50/50 transition-all hover:bg-slate-50"
                     >
-                        <div class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 transition-colors group-hover:bg-indigo-200">
-                            <span class="font-bold text-indigo-700">+{{ remainingClassesCount }}</span>
+                        <div
+                            class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 transition-colors group-hover:bg-indigo-200"
+                        >
+                            <span class="font-bold text-indigo-700"
+                                >+{{ remainingClassesCount }}</span
+                            >
                         </div>
-                        <h4 class="text-[14px] font-bold text-slate-700">Kelas Lainnya</h4>
-                        <p class="mt-1 text-[12px] font-medium text-slate-500 transition-colors group-hover:text-indigo-600">
+                        <h4 class="text-[14px] font-bold text-slate-700">
+                            Kelas Lainnya
+                        </h4>
+                        <p
+                            class="mt-1 text-[12px] font-medium text-slate-500 transition-colors group-hover:text-indigo-600"
+                        >
                             Lihat di Manajemen Kelas
                         </p>
                     </Link>
@@ -330,13 +353,19 @@ const recentActivities = [
                     v-else
                     class="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white py-20 text-slate-400"
                 >
-                    <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-50">
-                        <i class="pi pi-folder-open text-3xl text-slate-300"></i>
+                    <div
+                        class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-50"
+                    >
+                        <i
+                            class="pi pi-folder-open text-3xl text-slate-300"
+                        ></i>
                     </div>
                     <h4 class="mb-1 text-[16px] font-bold text-slate-700">
                         Belum Ada Kelas
                     </h4>
-                    <p class="max-w-[250px] text-center text-[13px] font-medium text-slate-500">
+                    <p
+                        class="max-w-[250px] text-center text-[13px] font-medium text-slate-500"
+                    >
                         Anda belum membuat kelas. Silakan buat kelas pertama
                         Anda melalui panel di samping.
                     </p>
@@ -352,15 +381,20 @@ const recentActivities = [
                             <i class="pi pi-plus-circle text-indigo-600"></i>
                             Buat Kelas Baru
                         </CardTitle>
-                        <CardDescription class="mt-1 text-[12px] text-slate-500">
+                        <CardDescription
+                            class="mt-1 text-[12px] text-slate-500"
+                        >
                             Sistem otomatis men-generate kode unik 6 digit.
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="pt-5">
                         <form @submit.prevent="submitClass" class="space-y-4">
                             <div>
-                                <label class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 uppercase">
-                                    Nama Kelas <span class="text-rose-500">*</span>
+                                <label
+                                    class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 uppercase"
+                                >
+                                    Nama Kelas
+                                    <span class="text-rose-500">*</span>
                                 </label>
                                 <Input
                                     v-model="form.class_name"
@@ -378,7 +412,9 @@ const recentActivities = [
                             </div>
 
                             <div>
-                                <label class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 uppercase">
+                                <label
+                                    class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 uppercase"
+                                >
                                     Deskripsi Singkat
                                 </label>
                                 <textarea
@@ -394,15 +430,23 @@ const recentActivities = [
                                 :disabled="form.processing"
                                 class="mt-2 h-10 w-full rounded-lg bg-indigo-600 font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
                             >
-                                <i v-if="!form.processing" class="pi pi-check mr-2 text-[12px]"></i>
-                                <i v-else class="pi pi-spinner pi-spin mr-2 text-[12px]"></i>
+                                <i
+                                    v-if="!form.processing"
+                                    class="pi pi-check mr-2 text-[12px]"
+                                ></i>
+                                <i
+                                    v-else
+                                    class="pi pi-spinner pi-spin mr-2 text-[12px]"
+                                ></i>
                                 Generate Kelas
                             </Button>
                         </form>
                     </CardContent>
                 </Card>
 
-                <Card class="flex-1 rounded-xl border-slate-200 bg-white shadow-sm">
+                <Card
+                    class="flex-1 rounded-xl border-slate-200 bg-white shadow-sm"
+                >
                     <CardHeader class="border-b border-slate-50 pb-4">
                         <CardTitle class="text-[15px] font-bold text-slate-800">
                             Aktivitas Siswa
@@ -416,16 +460,30 @@ const recentActivities = [
                                 class="p-4 transition-colors hover:bg-slate-50/80"
                             >
                                 <div class="flex gap-3">
-                                    <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50">
-                                        <i class="pi pi-bolt text-[12px] text-indigo-500"></i>
+                                    <div
+                                        class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50"
+                                    >
+                                        <i
+                                            class="pi pi-bolt text-[12px] text-indigo-500"
+                                        ></i>
                                     </div>
                                     <div>
-                                        <p class="text-[13px] leading-snug text-slate-700">
-                                            <span class="font-bold text-slate-900">{{ act.student }}</span>
+                                        <p
+                                            class="text-[13px] leading-snug text-slate-700"
+                                        >
+                                            <span
+                                                class="font-bold text-slate-900"
+                                                >{{ act.student }}</span
+                                            >
                                             {{ act.action }} di
-                                            <span class="font-semibold">{{ act.class }}</span>.
+                                            <span class="font-semibold">{{
+                                                act.class
+                                            }}</span
+                                            >.
                                         </p>
-                                        <p class="mt-1 text-[11px] font-medium text-slate-400">
+                                        <p
+                                            class="mt-1 text-[11px] font-medium text-slate-400"
+                                        >
                                             {{ act.time }}
                                         </p>
                                     </div>
@@ -443,7 +501,6 @@ const recentActivities = [
                     </CardContent>
                 </Card>
             </div>
-            
         </div>
     </div>
 </template>

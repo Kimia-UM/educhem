@@ -10,6 +10,7 @@ use App\Http\Controllers\Siswa\ClassroomController as SiswaClassroomController;
 use App\Http\Controllers\Siswa\DashboardController as SiswaDashboardController;
 use App\Http\Controllers\Siswa\WorksheetController as SiswaWorksheetController;
 use App\Http\Controllers\Siswa\ChatbotController;
+use App\Http\Controllers\Siswa\DiscussionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -56,6 +57,8 @@ Route::middleware(['auth', 'role:GURU'])->prefix('guru')->name('guru.')->group(f
     
     Route::resource('classes', GuruDashboardController::class)->only(['index', 'store', 'update', 'destroy', 'show']);
 
+    Route::get('classes/{classroom}/ai-chat-logs', [\App\Http\Controllers\Guru\AiChatLogController::class, 'index'])->name('classes.ai-chat-logs.index');
+
     // Rute Toggle Publish (Wajib di atas resource topics)
     Route::post('classes/{classroom}/topics/{topic}/toggle-publish', [TopicController::class, 'togglePublish'])
         ->name('classes.topics.toggle-publish');
@@ -75,6 +78,20 @@ Route::middleware(['auth', 'role:GURU'])->prefix('guru')->name('guru.')->group(f
     Route::post('phases/{phase}/contents', [PhaseController::class, 'storeContent'])->name('contents.store');
     Route::put('contents/{content}', [PhaseController::class, 'updateContent'])->name('contents.update');
     Route::delete('contents/{content}', [PhaseController::class, 'destroyContent'])->name('contents.destroy');
+
+    // Rekap Jawaban Siswa
+    Route::get('classes/{classroom}/topics/{topic}/phases/{phase}/answers', [\App\Http\Controllers\Guru\StudentAnswerController::class, 'index'])
+        ->name('student-answers.index');
+
+    // Detail dan Evaluasi Jawaban Siswa
+    Route::get('classes/{classroom}/students/{student}', [\App\Http\Controllers\Guru\StudentAnswerController::class, 'showStudentAnswers'])
+        ->name('classes.students.show');
+    Route::post('answers/{answer}/evaluate', [\App\Http\Controllers\Guru\StudentAnswerController::class, 'evaluateAnswer'])
+        ->name('answers.evaluate');
+    Route::post('classes/{classroom}/students/{student}/send-evaluation', [\App\Http\Controllers\Guru\StudentAnswerController::class, 'sendEvaluation'])
+        ->name('classes.students.send-evaluation');
+    Route::post('classes/{classroom}/students/{student}/scores', [\App\Http\Controllers\Guru\StudentAnswerController::class, 'updateScores'])
+        ->name('classes.students.scores.update');
 });
 
 // =================================================================
@@ -88,6 +105,7 @@ Route::middleware(['auth', 'role:SISWA'])->prefix('siswa')->name('siswa.')->grou
     Route::get('/classes', [SiswaClassroomController::class, 'index'])->name('classes.index');
     Route::post('/classes/join', [SiswaClassroomController::class, 'join'])->name('classes.join');
     Route::get('/classes/{classroom}', [SiswaClassroomController::class, 'show'])->name('classes.show');
+    Route::get('/classes/{classroom}/evaluation-result', [SiswaClassroomController::class, 'evaluationResult'])->name('classes.evaluation-result');
 
     // Worksheet (Materi Siswa)
     Route::get('classes/{classroom}/topics/{topic}/phases/{phase}', [SiswaWorksheetController::class, 'show'])
@@ -99,6 +117,10 @@ Route::middleware(['auth', 'role:SISWA'])->prefix('siswa')->name('siswa.')->grou
     // PERBAIKAN DI SINI: Disesuaikan dengan struktur Group Route
     Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot.index');
     Route::post('/chatbot', [ChatbotController::class, 'store'])->name('chatbot.store');
+
+    // Forum Diskusi
+    Route::get('phases/{phase}/discussions', [DiscussionController::class, 'index'])->name('discussions.index');
+    Route::post('phases/{phase}/discussions', [DiscussionController::class, 'store'])->name('discussions.store');
 });
 
 require __DIR__.'/settings.php';

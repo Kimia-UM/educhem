@@ -1,11 +1,9 @@
 "use client"
 
-import { forwardRef, useCallback, useEffect, useState } from "react"
 import type { Editor } from "@tiptap/react"
+import { forwardRef, useCallback, useEffect, useState } from "react"
 
 // --- Hooks ---
-import { useIsBreakpoint } from "@/hooks/use-is-breakpoint"
-import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
 
 // --- Icons ---
 import { CornerDownLeftIcon } from "@/components/tiptap-icons/corner-down-left-icon"
@@ -20,19 +18,21 @@ import { useLinkPopover } from "@/components/tiptap-ui/link-popover"
 // --- UI Primitives ---
 import type { ButtonProps } from "@/components/tiptap-ui-primitive/button"
 import { Button } from "@/components/tiptap-ui-primitive/button"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/tiptap-ui-primitive/popover"
-import { Separator } from "@/components/tiptap-ui-primitive/separator"
+import { ButtonGroup } from "@/components/tiptap-ui-primitive/button-group"
 import {
   Card,
   CardBody,
   CardItemGroup,
 } from "@/components/tiptap-ui-primitive/card"
 import { Input } from "@/components/tiptap-ui-primitive/input"
-import { ButtonGroup } from "@/components/tiptap-ui-primitive/button-group"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/tiptap-ui-primitive/popover"
+import { Separator } from "@/components/tiptap-ui-primitive/separator"
+import { useIsBreakpoint } from "@/hooks/use-is-breakpoint"
+import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
 
 import "./link-popover.scss"
 
@@ -259,7 +259,11 @@ export const LinkPopover = forwardRef<HTMLButtonElement, LinkPopoverProps>(
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
         onClick?.(event)
-        if (event.defaultPrevented) return
+
+        if (event.defaultPrevented) {
+return
+}
+
         setIsOpen(!isOpen)
       },
       [onClick, isOpen]

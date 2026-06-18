@@ -2,9 +2,9 @@
 import { router } from '@inertiajs/vue3';
 import { KeyRound } from 'lucide-vue-next';
 import { destroy } from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyRegistrationController';
-import Heading from '@/components/Heading.vue';
 import PasskeyItem from '@/components/PasskeyItem.vue';
 import PasskeyRegister from '@/components/PasskeyRegister.vue';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Passkey } from '@/types/auth';
 
 export type Props = {
@@ -30,36 +30,39 @@ const handleRegisterSuccess = () => {
 </script>
 
 <template>
-    <div v-if="canManagePasskeys" class="space-y-6">
-        <Heading
-            variant="small"
-            title="Passkeys"
-            description="Manage your passkeys for passwordless sign-in"
-        />
+    <Card v-if="canManagePasskeys">
+        <CardHeader>
+            <CardTitle>Passkeys</CardTitle>
+            <CardDescription>
+                Manage your passkeys for passwordless, secure sign-in.
+            </CardDescription>
+        </CardHeader>
 
-        <div class="overflow-hidden rounded-lg border border-border">
-            <template v-if="passkeys.length">
-                <PasskeyItem
-                    v-for="passkey in passkeys"
-                    :key="passkey.id"
-                    :passkey="passkey"
-                    @remove="handleDelete"
-                />
-            </template>
+        <CardContent class="space-y-6">
+            <div class="overflow-hidden rounded-lg border border-border">
+                <template v-if="passkeys.length">
+                    <PasskeyItem
+                        v-for="passkey in passkeys"
+                        :key="passkey.id"
+                        :passkey="passkey"
+                        @remove="handleDelete"
+                    />
+                </template>
 
-            <div v-else class="p-8 text-center">
-                <div
-                    class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted"
-                >
-                    <KeyRound class="h-7 w-7 text-muted-foreground" />
+                <div v-else class="p-8 text-center">
+                    <div
+                        class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted"
+                    >
+                        <KeyRound class="h-7 w-7 text-muted-foreground" />
+                    </div>
+                    <p class="font-medium">No passkeys yet</p>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                        Add a passkey to sign in without a password
+                    </p>
                 </div>
-                <p class="font-medium">No passkeys yet</p>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Add a passkey to sign in without a password
-                </p>
             </div>
-        </div>
 
-        <PasskeyRegister @success="handleRegisterSuccess" />
-    </div>
+            <PasskeyRegister @success="handleRegisterSuccess" />
+        </CardContent>
+    </Card>
 </template>

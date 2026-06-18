@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick, onUnmounted } from 'vue';
 // Import ikon SVG premium dari Lucide
-import { Sparkles, X, Bot, Send, BotIcon } from 'lucide-vue-next';
 import axios from 'axios';
-import { marked } from 'marked';
 import katex from 'katex';
+import { Sparkles, X, Bot, Send, BotIcon } from 'lucide-vue-next';
+import { marked } from 'marked';
+import { ref, onMounted, nextTick, onUnmounted } from 'vue';
 import 'katex/dist/katex.min.css';
 
-// Menerima judul materi untuk konteks AI
+// Menerima judul materi untuk konteks AI dan id fase
 const props = defineProps<{
     topicTitle?: string;
+    phaseId?: number;
 }>();
 
 // State untuk mengatur jendela chat terbuka/tertutup
@@ -31,7 +32,9 @@ let pollingInterval: any = null;
  * Menggunakan metode Split-Join untuk menjamin akurasi penggantian string secara global.
  */
 const renderMarkdown = (text: string) => {
-    if (!text) return '';
+    if (!text) {
+return '';
+}
 
     const mathBlocks: string[] = [];
     
@@ -40,6 +43,7 @@ const renderMarkdown = (text: string) => {
         try {
             const rendered = katex.renderToString(math, { displayMode: true });
             mathBlocks.push(`<div class="my-3 overflow-x-auto">${rendered}</div>`);
+
             return `%%MATH_BLOCK_TOKEN_${mathBlocks.length - 1}%%`;
         } catch (e) {
             return match;
@@ -51,6 +55,7 @@ const renderMarkdown = (text: string) => {
         try {
             const rendered = katex.renderToString(math, { displayMode: false });
             mathBlocks.push(rendered);
+
             return `%%MATH_BLOCK_TOKEN_${mathBlocks.length - 1}%%`;
         } catch (e) {
             return match;
@@ -74,7 +79,7 @@ const fetchChats = async () => {
         const response = await axios.get(route('siswa.chatbot.index'));
         const logs = response.data;
         
-        let newMessages: Array<any> = [
+        const newMessages: Array<any> = [
             { id: 'welcome', sender: 'ai', text: 'Halo! 👋 Aku adalah AI Tutor pendamping belajarmu. Ada yang bikin kamu bingung?' }
         ];
 
@@ -88,7 +93,26 @@ const fetchChats = async () => {
             if (log.response) {
                 newMessages.push({ id: `ai_${log.id}`, sender: 'ai', text: log.response });
             } else {
-                isWaiting = true; // Menandakan ada pesan yang masih antre di antrean server
+                // Cek apakah chat log sudah terlalu lama (misal > 45 detik) tapi belum ada respon.
+                // Jika iya, berarti job AI di backend telah gagal/limit.
+                const createdTimeStr = log.created_at;
+                const utcTimeStr = (createdTimeStr.endsWith('Z') || createdTimeStr.includes('+')) 
+                    ? createdTimeStr 
+                    : createdTimeStr.replace(' ', 'T') + 'Z';
+                
+                const createdTime = new Date(utcTimeStr).getTime();
+                const nowTime = new Date().getTime();
+                const diffSeconds = (nowTime - createdTime) / 1000;
+
+                if (diffSeconds > 45) {
+                    newMessages.push({ 
+                        id: `ai_failed_${log.id}`, 
+                        sender: 'ai', 
+                        text: 'Maaf, sepertinya terjadi gangguan koneksi atau batas kuota API terlampaui di server AI. Silakan kirim pesan baru atau coba sesaat lagi.' 
+                    });
+                } else {
+                    isWaiting = true; // Menandakan ada pesan yang masih antre di antrean server
+                }
             }
         });
 
@@ -108,7 +132,10 @@ const fetchChats = async () => {
 };
 
 const startPolling = () => {
-    if (pollingInterval) return;
+    if (pollingInterval) {
+return;
+}
+
     pollingInterval = setInterval(async () => {
         await fetchChats();
         scrollToBottom();
@@ -124,6 +151,7 @@ const stopPolling = () => {
 
 const toggleChat = async () => {
     isOpen.value = !isOpen.value;
+
     if (isOpen.value) {
         await fetchChats(); 
         scrollToBottom();
@@ -132,6 +160,7 @@ const toggleChat = async () => {
 
 const scrollToBottom = async () => {
     await nextTick();
+
     if (messagesContainer.value) {
         messagesContainer.value.scrollTo({
             top: messagesContainer.value.scrollHeight,
@@ -141,7 +170,9 @@ const scrollToBottom = async () => {
 };
 
 const sendMessage = async () => {
-    if (!newMessage.value.trim() || isTyping.value) return;
+    if (!newMessage.value.trim() || isTyping.value) {
+return;
+}
 
     const userText = newMessage.value;
     newMessage.value = '';
@@ -155,7 +186,8 @@ const sendMessage = async () => {
         // Kirim post request menuju backend controller rute siswa
         await axios.post(route('siswa.chatbot.store'), {
             prompt: userText,
-            topic_context: props.topicTitle || 'Materi Umum'
+            topic_context: props.topicTitle || 'Materi Umum',
+            phase_id: props.phaseId
         });
 
         // Jalankan pemantauan latar belakang

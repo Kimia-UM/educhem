@@ -1,10 +1,10 @@
 "use client"
 
-import { useRef, useState } from "react"
 import type { NodeViewProps } from "@tiptap/react"
 import { NodeViewWrapper } from "@tiptap/react"
-import { Button } from "@/components/tiptap-ui-primitive/button"
+import { useRef, useState } from "react"
 import { CloseIcon } from "@/components/tiptap-icons/close-icon"
+import { Button } from "@/components/tiptap-ui-primitive/button"
 import "@/components/tiptap-node/image-upload-node/image-upload-node.scss"
 import { focusNextNode, isValidPosition } from "@/lib/tiptap-utils"
 
@@ -91,6 +91,7 @@ function useFileUpload(options: UploadOptions) {
         `File size exceeds maximum allowed (${options.maxSize / 1024 / 1024}MB)`
       )
       options.onError?.(error)
+
       return null
     }
 
@@ -124,7 +125,9 @@ function useFileUpload(options: UploadOptions) {
         abortController.signal
       )
 
-      if (!url) throw new Error("Upload failed: No URL returned")
+      if (!url) {
+throw new Error("Upload failed: No URL returned")
+}
 
       if (!abortController.signal.aborted) {
         setFileItems((prev) =>
@@ -135,6 +138,7 @@ function useFileUpload(options: UploadOptions) {
           )
         )
         options.onSuccess?.(url)
+
         return url
       }
 
@@ -152,6 +156,7 @@ function useFileUpload(options: UploadOptions) {
           error instanceof Error ? error : new Error("Upload failed")
         )
       }
+
       return null
     }
   }
@@ -159,6 +164,7 @@ function useFileUpload(options: UploadOptions) {
   const uploadFiles = async (files: File[]): Promise<string[]> => {
     if (!files || files.length === 0) {
       options.onError?.(new Error("No files to upload"))
+
       return []
     }
 
@@ -168,6 +174,7 @@ function useFileUpload(options: UploadOptions) {
           `Maximum ${options.limit} file${options.limit === 1 ? "" : "s"} allowed`
         )
       )
+
       return []
     }
 
@@ -182,12 +189,15 @@ function useFileUpload(options: UploadOptions) {
   const removeFileItem = (fileId: string) => {
     setFileItems((prev) => {
       const fileToRemove = prev.find((item) => item.id === fileId)
+
       if (fileToRemove?.abortController) {
         fileToRemove.abortController.abort()
       }
+
       if (fileToRemove?.url) {
         URL.revokeObjectURL(fileToRemove.url)
       }
+
       return prev.filter((item) => item.id !== fileId)
     })
   }
@@ -197,6 +207,7 @@ function useFileUpload(options: UploadOptions) {
       if (item.abortController) {
         item.abortController.abort()
       }
+
       if (item.url) {
         URL.revokeObjectURL(item.url)
       }
@@ -300,6 +311,7 @@ const ImageUploadDragArea: React.FC<ImageUploadDragAreaProps> = ({
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
+
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsDragActive(false)
       setIsDragOver(false)
@@ -319,6 +331,7 @@ const ImageUploadDragArea: React.FC<ImageUploadDragAreaProps> = ({
     setIsDragOver(false)
 
     const files = Array.from(e.dataTransfer.files)
+
     if (files.length > 0) {
       onFile(files)
     }
@@ -356,10 +369,14 @@ const ImageUploadPreview: React.FC<ImageUploadPreviewProps> = ({
   onRemove,
 }) => {
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes"
+    if (bytes === 0) {
+return "0 Bytes"
+}
+
     const k = 1024
     const sizes = ["Bytes", "KB", "MB", "GB"]
     const i = Math.floor(Math.log(bytes) / Math.log(k))
+
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`
   }
 
@@ -460,6 +477,7 @@ export const ImageUploadNode: React.FC<NodeViewProps> = (props) => {
         const imageNodes = urls.map((url, index) => {
           const filename =
             files[index]?.name.replace(/\.[^/.]+$/, "") || "unknown"
+
           return {
             type: extension.options.type,
             attrs: {
@@ -485,10 +503,13 @@ export const ImageUploadNode: React.FC<NodeViewProps> = (props) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
+
     if (!files || files.length === 0) {
       extension.options.onError?.(new Error("No file selected"))
+
       return
     }
+
     handleUpload(Array.from(files))
   }
 

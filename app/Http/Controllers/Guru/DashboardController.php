@@ -86,7 +86,8 @@ class DashboardController extends Controller
 
         // 2. Render halaman detail kelas (Anda bisa membuat halaman ini sesuai kebutuhan)
         return Inertia::render('Guru/Classes/Show', [
-            'classroom' => $classroom
+            'classroom' => $classroom,
+            'defaultTab' => $request->query('tab', 'topik'),
         ]);
     }
 }

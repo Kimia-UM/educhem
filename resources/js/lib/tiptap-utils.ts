@@ -8,10 +8,11 @@ import {
 } from "@tiptap/pm/state"
 import { cellAround, CellSelection } from "@tiptap/pm/tables"
 import {
-  findParentNodeClosestToPos,
-  type Editor,
-  type NodeWithPos,
+  findParentNodeClosestToPos
+  
+  
 } from "@tiptap/react"
+import type {Editor, NodeWithPos} from "@tiptap/react";
 
 export const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
@@ -74,6 +75,7 @@ export const formatShortcutKey = (
 ) => {
   if (isMac) {
     const lowerKey = key.toLowerCase()
+
     return MAC_SYMBOLS[lowerKey] || (capitalize ? key.toUpperCase() : key)
   }
 
@@ -94,7 +96,9 @@ export const parseShortcutKeys = (props: {
 }) => {
   const { shortcutKeys, delimiter = "+", capitalize = true } = props
 
-  if (!shortcutKeys) return []
+  if (!shortcutKeys) {
+return []
+}
 
   return shortcutKeys
     .split(delimiter)
@@ -112,7 +116,10 @@ export const isMarkInSchema = (
   markName: string,
   editor: Editor | null
 ): boolean => {
-  if (!editor?.schema) return false
+  if (!editor?.schema) {
+return false
+}
+
   return editor.schema.spec.marks.get(markName) !== undefined
 }
 
@@ -126,7 +133,10 @@ export const isNodeInSchema = (
   nodeName: string,
   editor: Editor | null
 ): boolean => {
-  if (!editor?.schema) return false
+  if (!editor?.schema) {
+return false
+}
+
   return editor.schema.spec.nodes.get(nodeName) !== undefined
 }
 
@@ -140,14 +150,18 @@ export function focusNextNode(editor: Editor) {
   const { doc, selection } = state
 
   const nextSel = Selection.findFrom(selection.$to, 1, true)
+
   if (nextSel) {
     view.dispatch(state.tr.setSelection(nextSel).scrollIntoView())
+
     return true
   }
 
   const paragraphType = state.schema.nodes.paragraph
+
   if (!paragraphType) {
     console.warn("No paragraph node type found in schema.")
+
     return false
   }
 
@@ -159,6 +173,7 @@ export function focusNextNode(editor: Editor) {
   const $inside = tr.doc.resolve(end + 1)
   tr = tr.setSelection(TextSelection.near($inside)).scrollIntoView()
   view.dispatch(tr)
+
   return true
 }
 
@@ -181,7 +196,9 @@ export function isExtensionAvailable(
   editor: Editor | null,
   extensionNames: string | string[]
 ): boolean {
-  if (!editor) return false
+  if (!editor) {
+return false
+}
 
   const names = Array.isArray(extensionNames)
     ? extensionNames
@@ -209,13 +226,17 @@ export function isExtensionAvailable(
 export function findNodeAtPosition(editor: Editor, position: number) {
   try {
     const node = editor.state.doc.nodeAt(position)
+
     if (!node) {
       console.warn(`No node found at position ${position}`)
+
       return null
     }
+
     return node
   } catch (error) {
     console.error(`Error getting node at position ${position}:`, error)
+
     return null
   }
 }
@@ -235,7 +256,9 @@ export function findNodePosition(props: {
 }): { pos: number; node: PMNode } | null {
   const { editor, node, nodePos } = props
 
-  if (!editor || !editor.state?.doc) return null
+  if (!editor || !editor.state?.doc) {
+return null
+}
 
   // Zero is valid position
   const hasValidNode = node !== undefined && node !== null
@@ -256,8 +279,10 @@ export function findNodePosition(props: {
       if (currentNode === node) {
         foundPos = pos
         foundNode = currentNode
+
         return false
       }
+
       return true
     })
 
@@ -269,6 +294,7 @@ export function findNodePosition(props: {
   // If we have a valid position, use findNodeAtPosition
   if (hasValidPos) {
     const nodeAtPos = findNodeAtPosition(editor, nodePos!)
+
     if (nodeAtPos) {
       return { pos: nodePos!, node: nodeAtPos }
     }
@@ -289,22 +315,30 @@ export function isNodeTypeSelected(
   nodeTypeNames: string[] = [],
   checkAncestorNodes: boolean = false
 ): boolean {
-  if (!editor || !editor.state.selection) return false
+  if (!editor || !editor.state.selection) {
+return false
+}
 
   const { selection } = editor.state
-  if (selection.empty) return false
+
+  if (selection.empty) {
+return false
+}
 
   // Direct node selection check
   if (selection instanceof NodeSelection) {
     const selectedNode = selection.node
+
     return selectedNode ? nodeTypeNames.includes(selectedNode.type.name) : false
   }
 
   // Depth-based ancestor node check
   if (checkAncestorNodes) {
     const { $from } = selection
+
     for (let depth = $from.depth; depth > 0; depth--) {
       const ancestorNode = $from.node(depth)
+
       if (nodeTypeNames.includes(ancestorNode.type.name)) {
         return true
       }
@@ -325,7 +359,9 @@ export function selectionWithinConvertibleTypes(
   editor: Editor,
   types: string[] = []
 ): boolean {
-  if (!editor || types.length === 0) return false
+  if (!editor || types.length === 0) {
+return false
+}
 
   const { state } = editor
   const { selection } = state
@@ -333,6 +369,7 @@ export function selectionWithinConvertibleTypes(
 
   if (selection instanceof NodeSelection) {
     const nodeType = selection.node?.type?.name
+
     return !!nodeType && allowed.has(nodeType)
   }
 
@@ -341,10 +378,13 @@ export function selectionWithinConvertibleTypes(
     state.doc.nodesBetween(selection.from, selection.to, (node) => {
       if (node.isTextblock && !allowed.has(node.type.name)) {
         valid = false
+
         return false // stop early
       }
+
       return valid
     })
+
     return valid
   }
 
@@ -380,6 +420,7 @@ export const handleImageUpload = async (
     if (abortSignal?.aborted) {
       throw new Error("Upload cancelled")
     }
+
     await new Promise((resolve) => setTimeout(resolve, 500))
     onProgress?.({ progress })
   }
@@ -407,7 +448,7 @@ type ProtocolOptions = {
 type ProtocolConfig = Array<ProtocolOptions | string>
 
 const ATTR_WHITESPACE =
-  // eslint-disable-next-line no-control-regex
+   
   /[\u0000-\u0020\u00A0\u1680\u180E\u2000-\u2029\u205F\u3000]/g
 
 export function isAllowedUri(
@@ -442,7 +483,7 @@ export function isAllowedUri(
     !uri ||
     uri.replace(ATTR_WHITESPACE, "").match(
       new RegExp(
-        // eslint-disable-next-line no-useless-escape
+         
         `^(?:(?:${allowedProtocols.join("|")}):|[^a-z]|[a-z0-9+.\-]+(?:[^a-z+.\-:]|$))`,
         "i"
       )
@@ -464,6 +505,7 @@ export function sanitizeUrl(
   } catch {
     // If URL creation fails, it's considered invalid
   }
+
   return "#"
 }
 
@@ -483,14 +525,19 @@ export function updateNodesAttr<A extends string = string, V = unknown>(
   attrName: A,
   next: V | ((prev: V | undefined) => V | undefined)
 ): boolean {
-  if (!targets.length) return false
+  if (!targets.length) {
+return false
+}
 
   let changed = false
 
   for (const { pos } of targets) {
     // Always re-read from the transaction's current doc
     const currentNode = tr.doc.nodeAt(pos)
-    if (!currentNode) continue
+
+    if (!currentNode) {
+continue
+}
 
     const prevValue = (currentNode.attrs as Record<string, unknown>)[
       attrName
@@ -500,9 +547,12 @@ export function updateNodesAttr<A extends string = string, V = unknown>(
         ? (next as (p: V | undefined) => V | undefined)(prevValue)
         : next
 
-    if (prevValue === resolvedNext) continue
+    if (prevValue === resolvedNext) {
+continue
+}
 
     const nextAttrs: Record<string, unknown> = { ...currentNode.attrs }
+
     if (resolvedNext === undefined) {
       // Remove the key entirely instead of setting null
       delete nextAttrs[attrName]
@@ -525,7 +575,9 @@ export function updateNodesAttr<A extends string = string, V = unknown>(
 export function selectCurrentBlockContent(editor: Editor) {
   const { selection, doc } = editor.state
 
-  if (!selection.empty) return
+  if (!selection.empty) {
+return
+}
 
   const $pos = selection.$from
   let blockNode = null
@@ -577,14 +629,17 @@ export function getSelectedNodesOfType(
         results.push({ node, pos })
       }
     })
+
     return results
   }
 
   if (selection instanceof NodeSelection) {
     const { node, from: pos } = selection
+
     if (node && allowed.has(node.type.name)) {
       results.push({ node, pos })
     }
+
     return results
   }
 
@@ -593,8 +648,10 @@ export function getSelectedNodesOfType(
 
   if (cell) {
     const cellNode = selection.$anchor.doc.nodeAt(cell.pos)
+
     if (cellNode && allowed.has(cellNode.type.name)) {
       results.push({ node: cellNode, pos: cell.pos })
+
       return results
     }
   }
@@ -626,7 +683,9 @@ export function getSelectedBlockNodes(editor: Editor): PMNode[] {
   const seen = new Set<number>()
 
   doc.nodesBetween(from, to, (node, pos) => {
-    if (!node.isBlock) return
+    if (!node.isBlock) {
+return
+}
 
     if (!seen.has(pos)) {
       seen.add(pos)

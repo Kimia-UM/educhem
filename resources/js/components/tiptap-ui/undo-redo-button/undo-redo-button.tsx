@@ -3,10 +3,8 @@
 import { forwardRef, useCallback } from "react"
 
 // --- Lib ---
-import { parseShortcutKeys } from "@/lib/tiptap-utils"
 
 // --- Hooks ---
-import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
 
 // --- Tiptap UI ---
 import type {
@@ -19,9 +17,11 @@ import {
 } from "@/components/tiptap-ui/undo-redo-button"
 
 // --- UI Primitives ---
+import { Badge } from "@/components/tiptap-ui-primitive/badge"
 import type { ButtonProps } from "@/components/tiptap-ui-primitive/button"
 import { Button } from "@/components/tiptap-ui-primitive/button"
-import { Badge } from "@/components/tiptap-ui-primitive/badge"
+import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
+import { parseShortcutKeys } from "@/lib/tiptap-utils"
 
 export interface UndoRedoButtonProps
   extends Omit<ButtonProps, "type">, UseUndoRedoConfig {
@@ -81,7 +81,11 @@ export const UndoRedoButton = forwardRef<
     const handleClick = useCallback(
       (event: React.MouseEvent<HTMLButtonElement>) => {
         onClick?.(event)
-        if (event.defaultPrevented) return
+
+        if (event.defaultPrevented) {
+return
+}
+
         handleAction()
       },
       [handleAction, onClick]

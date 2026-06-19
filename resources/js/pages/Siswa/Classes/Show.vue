@@ -207,7 +207,7 @@ const props = defineProps<{
                             >
                                 <i class="pi pi-info-circle mr-1"></i> Guru
                                 belum menambahkan fase pembelajaran
-                                (Predict/Observe/Explain) ke dalam topik ini.
+                                (Engage/Explore/Explain/Elaborate/Evaluate) ke dalam topik ini.
                             </div>
                         </div>
                     </Card>

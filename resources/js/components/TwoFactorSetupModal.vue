@@ -111,39 +111,17 @@ watch(
 
 <template>
     <Dialog :open="isOpen" @update:open="isOpen = $event">
-        <DialogContent class="sm:max-w-md">
+        <DialogContent class="sm:max-w-md bg-white dark:bg-slate-950 border border-slate-100/80 dark:border-slate-800/50 shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-3xl">
             <DialogHeader class="flex items-center justify-center">
                 <div
-                    class="mb-3 w-auto rounded-full border border-border bg-card p-0.5 shadow-sm"
+                    class="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/30 text-amber-600 dark:text-amber-400 shadow-sm animate-pulse"
                 >
-                    <div
-                        class="relative overflow-hidden rounded-full border border-border bg-muted p-2.5"
-                    >
-                        <div
-                            class="absolute inset-0 grid grid-cols-5 opacity-50"
-                        >
-                            <div
-                                v-for="i in 5"
-                                :key="`col-${i}`"
-                                class="border-r border-border last:border-r-0"
-                            />
-                        </div>
-                        <div
-                            class="absolute inset-0 grid grid-rows-5 opacity-50"
-                        >
-                            <div
-                                v-for="i in 5"
-                                :key="`row-${i}`"
-                                class="border-b border-border last:border-b-0"
-                            />
-                        </div>
-                        <ScanLine
-                            class="relative z-20 size-6 text-foreground"
-                        />
-                    </div>
+                    <ScanLine
+                        class="size-6"
+                    />
                 </div>
-                <DialogTitle>{{ modalConfig.title }}</DialogTitle>
-                <DialogDescription class="text-center">
+                <DialogTitle class="text-slate-900 dark:text-slate-100 text-lg font-bold">{{ modalConfig.title }}</DialogTitle>
+                <DialogDescription class="text-center text-slate-500 dark:text-slate-400 text-[13px] mt-1 leading-relaxed">
                     {{ modalConfig.description }}
                 </DialogDescription>
             </DialogHeader>
@@ -158,17 +136,17 @@ watch(
                             class="relative mx-auto flex max-w-md items-center overflow-hidden"
                         >
                             <div
-                                class="relative mx-auto aspect-square w-64 overflow-hidden rounded-lg border border-border"
+                                class="relative mx-auto aspect-square w-64 overflow-hidden rounded-2xl border border-amber-100 dark:border-amber-900/30 p-2 bg-white"
                             >
                                 <div
                                     v-if="!qrCodeSvg"
                                     class="absolute inset-0 z-10 flex aspect-square h-auto w-full animate-pulse items-center justify-center bg-background"
                                 >
-                                    <Spinner class="size-6" />
+                                    <Spinner class="size-6 text-amber-500" />
                                 </div>
                                 <div
                                     v-else
-                                    class="relative z-10 overflow-hidden border p-5"
+                                    class="relative z-10 overflow-hidden flex items-center justify-center size-full"
                                 >
                                     <div
                                         v-html="qrCodeSvg"
@@ -177,7 +155,7 @@ watch(
                                             filter:
                                                 resolvedAppearance === 'dark'
                                                     ? 'invert(1) brightness(1.5)'
-                                                    : undefined,
+                                                     : undefined,
                                         }"
                                     />
                                 </div>
@@ -185,7 +163,7 @@ watch(
                         </div>
 
                         <div class="flex w-full items-center space-x-5">
-                            <Button class="w-full" @click="handleModalNextStep">
+                            <Button class="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 font-bold text-white shadow-md shadow-indigo-100 dark:shadow-none text-[13px]" @click="handleModalNextStep">
                                 {{ modalConfig.buttonText }}
                             </Button>
                         </div>
@@ -196,7 +174,7 @@ watch(
                             <div
                                 class="absolute inset-0 top-1/2 h-px w-full bg-border"
                             />
-                            <span class="relative bg-card px-2 py-1"
+                            <span class="relative bg-white dark:bg-slate-950 px-2 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider"
                                 >or, enter the code manually</span
                             >
                         </div>
@@ -205,7 +183,7 @@ watch(
                             class="flex w-full items-center justify-center space-x-2"
                         >
                             <div
-                                class="flex w-full items-stretch overflow-hidden rounded-xl border border-border"
+                                class="flex w-full items-stretch overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800"
                             >
                                 <div
                                     v-if="!manualSetupKey"
@@ -218,7 +196,7 @@ watch(
                                         type="text"
                                         readonly
                                         :value="manualSetupKey"
-                                        class="h-full w-full bg-background p-3 text-foreground"
+                                        class="h-full w-full bg-background p-3 text-foreground text-[13px] font-mono focus:outline-hidden"
                                     />
                                     <button
                                         @click="copy(manualSetupKey || '')"
@@ -228,7 +206,7 @@ watch(
                                             v-if="copied"
                                             class="w-4 text-green-500"
                                         />
-                                        <Copy v-else class="w-4" />
+                                        <Copy v-else class="w-4 text-slate-400 hover:text-slate-600" />
                                     </button>
                                 </template>
                             </div>
@@ -275,7 +253,7 @@ watch(
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    class="w-auto flex-1"
+                                    class="w-auto flex-1 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 font-bold text-[13px]"
                                     @click="showVerificationStep = false"
                                     :disabled="processing"
                                 >
@@ -283,7 +261,7 @@ watch(
                                 </Button>
                                 <Button
                                     type="submit"
-                                    class="w-auto flex-1"
+                                    class="w-auto flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 font-bold text-white shadow-md shadow-indigo-100 dark:shadow-none text-[13px]"
                                     :disabled="processing || code.length < 6"
                                 >
                                     Confirm

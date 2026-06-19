@@ -413,23 +413,23 @@ return;
     <Teleport to="body">
         <div
             v-if="isCreateModalOpen"
-            class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 px-4 backdrop-blur-sm"
+            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 dark:bg-black/60 px-4 backdrop-blur-[6px] transition-all"
         >
             <div
-                class="w-full max-w-[450px] animate-in overflow-hidden rounded-2xl bg-white shadow-2xl duration-200 zoom-in-95 fade-in"
+                class="w-full max-w-[450px] animate-in overflow-hidden rounded-3xl bg-white dark:bg-slate-950 border border-slate-100/80 dark:border-slate-800/50 shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] duration-200 zoom-in-95 fade-in"
             >
                 <div
-                    class="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4"
+                    class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-amber-50/50 via-rose-50/30 to-orange-50/40 dark:from-slate-900/50 dark:via-slate-900/30 dark:to-slate-900/40 px-6 py-4.5"
                 >
-                    <h3
-                        class="flex items-center gap-2 text-lg font-extrabold text-slate-800"
-                    >
-                        <i class="pi pi-plus-circle text-indigo-600"></i> Buat
-                        Kelas Baru
-                    </h3>
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/30 text-amber-600 dark:text-amber-400">
+                            <i class="pi pi-plus-circle text-[15px]"></i>
+                        </div>
+                        <span class="text-base font-extrabold text-slate-800 dark:text-slate-100">Buat Kelas Baru</span>
+                    </div>
                     <button
                         @click="closeCreateModal"
-                        class="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                        class="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900"
                     >
                         <i class="pi pi-times text-sm"></i>
                     </button>
@@ -438,7 +438,7 @@ return;
                 <form @submit.prevent="submitCreate" class="p-6">
                     <div class="space-y-5">
                         <div
-                            class="flex items-start gap-2 rounded-lg border border-indigo-100 bg-indigo-50/50 p-3 text-[12px] font-medium text-indigo-700"
+                            class="flex items-start gap-2 rounded-xl border border-amber-100 dark:border-amber-900/30 bg-amber-50/50 dark:bg-amber-950/20 p-3 text-[12px] font-medium text-amber-700 dark:text-amber-400"
                         >
                             <i class="pi pi-info-circle mt-0.5"></i>
                             Sistem akan otomatis men-generate 6 digit kode unik
@@ -447,7 +447,7 @@ return;
 
                         <div>
                             <label
-                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 uppercase"
+                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 dark:text-slate-300 uppercase"
                             >
                                 Nama Kelas <span class="text-rose-500">*</span>
                             </label>
@@ -456,7 +456,7 @@ return;
                                 type="text"
                                 required
                                 placeholder="Contoh: Kimia X IPA 1"
-                                class="h-11 rounded-lg border-slate-200 text-[14px] shadow-sm focus-visible:ring-indigo-500"
+                                class="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[14px] shadow-sm focus-visible:ring-amber-500/20 focus-visible:border-amber-500 focus:border-amber-500 focus:ring-amber-500/20"
                             />
                             <span
                                 v-if="createForm.errors.class_name"
@@ -468,7 +468,7 @@ return;
 
                         <div>
                             <label
-                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 uppercase"
+                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 dark:text-slate-300 uppercase"
                             >
                                 Deskripsi Singkat
                             </label>
@@ -476,7 +476,7 @@ return;
                                 v-model="createForm.description"
                                 rows="3"
                                 placeholder="Opsional: Tuliskan tujuan atau materi kelas..."
-                                class="w-full resize-none rounded-lg border border-slate-200 p-3 text-[14px] shadow-sm transition-all outline-none placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                                class="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-[14px] shadow-sm transition-all outline-none placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus-visible:ring-amber-500/20 focus:outline-hidden"
                             ></textarea>
                         </div>
                     </div>
@@ -486,14 +486,14 @@ return;
                             type="button"
                             variant="outline"
                             @click="closeCreateModal"
-                            class="h-10 border-slate-200 px-5 font-semibold text-slate-600"
+                            class="h-10 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 px-5 font-bold text-[13px] text-slate-600 dark:text-slate-300"
                         >
                             Batal
                         </Button>
                         <Button
                             type="submit"
                             :disabled="createForm.processing"
-                            class="h-10 bg-indigo-600 px-6 font-semibold text-white shadow-md transition-colors hover:bg-indigo-700"
+                            class="h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 px-6 font-bold text-white shadow-md shadow-indigo-100 dark:shadow-none text-[13px]"
                         >
                             <i
                                 v-if="createForm.processing"
@@ -510,23 +510,23 @@ return;
     <Teleport to="body">
         <div
             v-if="isEditModalOpen"
-            class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 px-4 backdrop-blur-sm"
+            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 dark:bg-black/60 px-4 backdrop-blur-[6px] transition-all"
         >
             <div
-                class="w-full max-w-[450px] animate-in overflow-hidden rounded-2xl bg-white shadow-2xl duration-200 zoom-in-95 fade-in"
+                class="w-full max-w-[450px] animate-in overflow-hidden rounded-3xl bg-white dark:bg-slate-950 border border-slate-100/80 dark:border-slate-800/50 shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] duration-200 zoom-in-95 fade-in"
             >
                 <div
-                    class="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4"
+                    class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-amber-50/50 via-rose-50/30 to-orange-50/40 dark:from-slate-900/50 dark:via-slate-900/30 dark:to-slate-900/40 px-6 py-4.5"
                 >
-                    <h3
-                        class="flex items-center gap-2 text-lg font-extrabold text-slate-800"
-                    >
-                        <i class="pi pi-pencil text-indigo-600"></i> Edit
-                        Informasi Kelas
-                    </h3>
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/30 text-amber-600 dark:text-amber-400">
+                            <i class="pi pi-pencil text-[15px]"></i>
+                        </div>
+                        <span class="text-base font-extrabold text-slate-800 dark:text-slate-100">Edit Informasi Kelas</span>
+                    </div>
                     <button
                         @click="closeEditModal"
-                        class="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                        class="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900"
                     >
                         <i class="pi pi-times text-sm"></i>
                     </button>
@@ -536,7 +536,7 @@ return;
                     <div class="space-y-5">
                         <div>
                             <label
-                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 uppercase"
+                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 dark:text-slate-300 uppercase"
                             >
                                 Nama Kelas <span class="text-rose-500">*</span>
                             </label>
@@ -544,7 +544,7 @@ return;
                                 v-model="editForm.class_name"
                                 type="text"
                                 required
-                                class="h-11 rounded-lg border-slate-200 text-[14px] shadow-sm focus-visible:ring-indigo-500"
+                                class="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[14px] shadow-sm focus-visible:ring-amber-500/20 focus-visible:border-amber-500 focus:border-amber-500 focus:ring-amber-500/20"
                             />
                             <span
                                 v-if="editForm.errors.class_name"
@@ -556,14 +556,14 @@ return;
 
                         <div>
                             <label
-                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 uppercase"
+                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 dark:text-slate-300 uppercase"
                             >
                                 Deskripsi Singkat
                             </label>
                             <textarea
                                 v-model="editForm.description"
                                 rows="3"
-                                class="w-full resize-none rounded-lg border border-slate-200 p-3 text-[14px] shadow-sm transition-all outline-none placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                                class="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-[14px] shadow-sm transition-all outline-none placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus-visible:ring-amber-500/20 focus:outline-hidden"
                             ></textarea>
                         </div>
                     </div>
@@ -573,14 +573,14 @@ return;
                             type="button"
                             variant="outline"
                             @click="closeEditModal"
-                            class="h-10 border-slate-200 px-5 font-semibold text-slate-600"
+                            class="h-10 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 px-5 font-bold text-[13px] text-slate-600 dark:text-slate-300"
                         >
                             Batal
                         </Button>
                         <Button
                             type="submit"
                             :disabled="editForm.processing"
-                            class="h-10 bg-indigo-600 px-6 font-semibold text-white shadow-md transition-colors hover:bg-indigo-700"
+                            class="h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 px-6 font-bold text-white shadow-md shadow-indigo-100 dark:shadow-none text-[13px]"
                         >
                             <i
                                 v-if="editForm.processing"
@@ -598,29 +598,29 @@ return;
     <Teleport to="body">
         <div
             v-if="isDeleteModalOpen"
-            class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 px-4 backdrop-blur-sm"
+            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 dark:bg-black/60 px-4 backdrop-blur-[6px] transition-all"
         >
             <div
-                class="w-full max-w-[400px] animate-in overflow-hidden rounded-2xl bg-white p-6 text-center shadow-2xl duration-200 zoom-in-95 fade-in"
+                class="w-full max-w-[400px] animate-in overflow-hidden rounded-3xl bg-white dark:bg-slate-950 border border-slate-100/80 dark:border-slate-800/50 shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-6 text-center duration-200 zoom-in-95 fade-in"
             >
                 <div
-                    class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-rose-50"
+                    class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400 shadow-inner"
                 >
                     <i
-                        class="pi pi-exclamation-triangle text-3xl text-rose-500"
+                        class="pi pi-exclamation-triangle text-2xl"
                     ></i>
                 </div>
 
                 <h3
-                    class="text-xl font-extrabold tracking-tight text-slate-900"
+                    class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100"
                 >
                     Hapus Kelas?
                 </h3>
                 <p
-                    class="mt-2 text-[14px] leading-relaxed font-medium text-slate-500"
+                    class="mt-2 text-[14px] leading-relaxed font-medium text-slate-500 dark:text-slate-400"
                 >
                     Anda yakin ingin menghapus kelas
-                    <strong class="text-slate-800"
+                    <strong class="text-slate-800 dark:text-slate-200"
                         >"{{ classToDelete?.name }}"</strong
                     >
                     secara permanen? Seluruh data worksheet siswa di dalamnya
@@ -635,7 +635,7 @@ return;
                         variant="outline"
                         @click="closeDeleteModal"
                         :disabled="isDeleting"
-                        class="h-11 w-full border-slate-200 px-6 font-semibold text-slate-600 sm:w-auto"
+                        class="h-11 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 px-6 font-bold text-slate-600 dark:text-slate-300 text-[13px] w-full sm:w-auto"
                     >
                         Batalkan
                     </Button>
@@ -643,7 +643,7 @@ return;
                         type="button"
                         @click="executeDelete"
                         :disabled="isDeleting"
-                        class="h-11 w-full bg-rose-600 px-6 font-semibold text-white shadow-md transition-colors hover:bg-rose-700 sm:w-auto"
+                        class="h-11 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 px-6 font-bold text-white shadow-md shadow-rose-100 dark:shadow-none text-[13px] w-full sm:w-auto"
                     >
                         <i
                             v-if="isDeleting"

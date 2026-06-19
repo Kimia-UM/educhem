@@ -78,6 +78,7 @@ class StudentAnswerController extends Controller
         // Ambil status pengiriman evaluasi dari pivot
         $pivot = $classroom->students()->where('user_id', $student->id)->first()?->pivot;
         $isEvaluationSent = $pivot ? $pivot->is_evaluation_sent : false;
+        $isEvaluationFinished = $pivot ? $pivot->is_evaluation_finished : false;
 
         return Inertia::render('Guru/StudentAnswers/StudentShow', [
             'classroom' => $classroom,
@@ -85,6 +86,7 @@ class StudentAnswerController extends Controller
             'topics' => $topics,
             'answers' => $answers,
             'isEvaluationSent' => $isEvaluationSent,
+            'isEvaluationFinished' => $isEvaluationFinished,
         ]);
     }
 
@@ -100,8 +102,15 @@ class StudentAnswerController extends Controller
         // Validasi keamanan: Pastikan guru yang menilai adalah pengajar di kelas jawaban ini
         $phase = \App\Models\TopicPhase::find($answer->phase_id);
         if ($phase && $phase->topic && $phase->topic->classroom) {
-            if ($phase->topic->classroom->teacher_id !== $request->user()->id) {
+            $classroom = $phase->topic->classroom;
+            if ($classroom->teacher_id !== $request->user()->id) {
                 abort(403, 'Akses ditolak. Anda bukan pengajar untuk kelas ini.');
+            }
+
+            // Pastikan status evaluation belum selesai
+            $pivot = $classroom->students()->where('user_id', $answer->user_id)->first()?->pivot;
+            if ($pivot && $pivot->is_evaluation_finished) {
+                abort(400, 'Evaluasi telah ditandai selesai. Buka kunci edit terlebih dahulu.');
             }
         }
 
@@ -111,6 +120,43 @@ class StudentAnswerController extends Controller
 
         return back()->with('success', 'Penilaian berhasil disimpan.');
     }
+
+    /**
+     * Menandai evaluasi siswa selesai (mengunci penilaian).
+     */
+    public function finishEvaluation(Request $request, Classroom $classroom, \App\Models\User $student)
+    {
+        // Pastikan guru yang login adalah pemilik kelas
+        if ($classroom->teacher_id !== $request->user()->id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        $classroom->students()->updateExistingPivot($student->id, [
+            'is_evaluation_finished' => true,
+        ]);
+
+        return back()->with('success', 'Evaluasi berhasil ditandai selesai dan dikunci.');
+    }
+
+    /**
+     * Membuka kembali kunci evaluasi siswa untuk diedit.
+     */
+    public function editEvaluation(Request $request, Classroom $classroom, \App\Models\User $student)
+    {
+        // Pastikan guru yang login adalah pemilik kelas
+        if ($classroom->teacher_id !== $request->user()->id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        // Buka kunci evaluasi dan sembunyikan sementara hasil dari siswa agar tidak membaca hasil setengah-jadi
+        $classroom->students()->updateExistingPivot($student->id, [
+            'is_evaluation_finished' => false,
+            'is_evaluation_sent' => false,
+        ]);
+
+        return back()->with('success', 'Kunci evaluasi dibuka. Anda dapat mengedit kembali penilaian.');
+    }
+
     /**
      * Mengirimkan hasil evaluasi ke siswa (update pivot class_members).
      */

@@ -88,6 +88,10 @@ Route::middleware(['auth', 'role:GURU'])->prefix('guru')->name('guru.')->group(f
         ->name('classes.students.show');
     Route::post('answers/{answer}/evaluate', [\App\Http\Controllers\Guru\StudentAnswerController::class, 'evaluateAnswer'])
         ->name('answers.evaluate');
+    Route::post('classes/{classroom}/students/{student}/finish-evaluation', [\App\Http\Controllers\Guru\StudentAnswerController::class, 'finishEvaluation'])
+        ->name('classes.students.finish-evaluation');
+    Route::post('classes/{classroom}/students/{student}/edit-evaluation', [\App\Http\Controllers\Guru\StudentAnswerController::class, 'editEvaluation'])
+        ->name('classes.students.edit-evaluation');
     Route::post('classes/{classroom}/students/{student}/send-evaluation', [\App\Http\Controllers\Guru\StudentAnswerController::class, 'sendEvaluation'])
         ->name('classes.students.send-evaluation');
     Route::post('classes/{classroom}/students/{student}/scores', [\App\Http\Controllers\Guru\StudentAnswerController::class, 'updateScores'])

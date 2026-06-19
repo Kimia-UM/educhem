@@ -94,6 +94,7 @@ const passwordInput = useTemplateRef('passwordInput');
                                             reset();
                                         }
                                     "
+                                    class="rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 font-bold text-[13px]"
                                 >
                                     Cancel
                                 </Button>
@@ -104,6 +105,7 @@ const passwordInput = useTemplateRef('passwordInput');
                                 variant="destructive"
                                 :disabled="processing"
                                 data-test="confirm-delete-user-button"
+                                class="rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 font-bold text-white shadow-md shadow-rose-100 dark:shadow-none text-[13px]"
                             >
                                 Delete account
                             </Button>

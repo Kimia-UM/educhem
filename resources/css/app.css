@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 @import '../js/styles/_variables.scss';
 @import '../js/styles/_keyframe-animations.scss';
 
@@ -163,6 +164,46 @@
     --sidebar-border: hsl(0 0% 15.9%);
     --sidebar-ring: hsl(217.2 91.2% 59.8%);
     --sidebar: hsl(240 5.9% 10%);
+}
+
+/* ==========================================================================
+   THEME CUSTOM VARIABLES (Elegan, GenZ, Classic)
+   ========================================================================== */
+
+/* DEFAULT / ELEGAN THEME */
+:root, [data-theme="elegan"] {
+    --theme-primary: #4f46e5;
+    --theme-primary-rgb: 79, 70, 229;
+    --theme-primary-hover: #4338ca;
+    --theme-accent: #f59e0b;
+    --theme-bg-gradient: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    --theme-card-bg: #ffffff;
+    --theme-border: #e2e8f0;
+    --theme-text-display: 'Instrument Sans', sans-serif;
+}
+
+/* GENZ THEME (Neon, Pink-Violet, Vibrant Glow) */
+[data-theme="genz"] {
+    --theme-primary: #d946ef;
+    --theme-primary-rgb: 217, 70, 239;
+    --theme-primary-hover: #c084fc;
+    --theme-accent: #06b6d4;
+    --theme-bg-gradient: linear-gradient(135deg, #fdf4ff, #fae8ff, #f0fdfa);
+    --theme-card-bg: rgba(255, 255, 255, 0.8);
+    --theme-border: #f5d0fe;
+    --theme-text-display: 'Outfit', 'Instrument Sans', sans-serif;
+}
+
+/* CLASSIC THEME (Forest Green, Bookish Warm Cream) */
+[data-theme="classic"] {
+    --theme-primary: #15803d;
+    --theme-primary-rgb: 21, 128, 61;
+    --theme-primary-hover: #166534;
+    --theme-accent: #b45309;
+    --theme-bg-gradient: linear-gradient(135deg, #fffdf5, #faf7ec);
+    --theme-card-bg: #fffefc;
+    --theme-border: #e6dfc9;
+    --theme-text-display: 'Georgia', serif;
 }
 
 @layer base {

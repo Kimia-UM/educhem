@@ -14,8 +14,10 @@ class DashboardController extends Controller
 
     public function index(Request $request)
     {
+        $teacherId = $request->user()->id;
+
         // Mengambil daftar kelas milik guru yang sedang login
-        $classes = $this->classroomService->getTeacherClasses($request->user()->id);
+        $classes = $this->classroomService->getTeacherClasses($teacherId);
 
         // LOGIKA PENENTU HALAMAN
         if ($request->routeIs('guru.classes.index')) {
@@ -24,8 +26,35 @@ class DashboardController extends Controller
             ]);
         }
 
+        // Ambil ID semua kelas guru untuk menghitung statistik
+        $classIds = $classes->pluck('id');
+
+        // 1. Total unik siswa aktif di seluruh kelas milik guru
+        $totalStudents = \DB::table('class_members')
+            ->whereIn('class_id', $classIds)
+            ->distinct('user_id')
+            ->count('user_id');
+
+        // 2. Jumlah siswa yang perlu dievaluasi (is_evaluation_finished = false dan memiliki minimal 1 jawaban di kelas tersebut)
+        $pendingReviews = \DB::table('class_members')
+            ->whereIn('class_members.class_id', $classIds)
+            ->where('class_members.is_evaluation_finished', false)
+            ->whereExists(function ($query) {
+                $query->select(\DB::raw(1))
+                    ->from('student_answers')
+                    ->join('topic_phases', 'student_answers.phase_id', '=', 'topic_phases.id')
+                    ->join('class_topic_accesses', 'topic_phases.topic_id', '=', 'class_topic_accesses.topic_id')
+                    ->whereColumn('student_answers.user_id', 'class_members.user_id')
+                    ->whereColumn('class_topic_accesses.class_id', 'class_members.class_id');
+            })
+            ->count();
+
         return Inertia::render('Guru/Dashboard', [
-            'classes' => $classes
+            'classes' => $classes,
+            'stats' => [
+                'total_students' => $totalStudents,
+                'pending_reviews' => $pendingReviews,
+            ],
         ]);
     }
 

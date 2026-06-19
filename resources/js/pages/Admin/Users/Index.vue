@@ -203,20 +203,23 @@ badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
         </div>
 
         <AlertDialog :open="isDeleteDialogOpen" @update:open="isDeleteDialogOpen = $event">
-            <AlertDialogContent class="bg-white border-slate-200 rounded-2xl shadow-lg sm:max-w-[425px]">
-                <AlertDialogHeader>
-                    <AlertDialogTitle class="text-slate-900 text-xl font-bold flex items-center gap-2">
-                        <i class="pi pi-exclamation-triangle text-rose-500"></i> Hapus Akun?
+            <AlertDialogContent class="sm:max-w-[425px]">
+                <AlertDialogHeader class="flex flex-col items-center">
+                    <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400 shadow-inner">
+                        <i class="pi pi-exclamation-triangle text-2xl"></i>
+                    </div>
+                    <AlertDialogTitle class="text-slate-900 dark:text-slate-100 text-xl font-extrabold text-center">
+                        Hapus Akun?
                     </AlertDialogTitle>
-                    <AlertDialogDescription class="text-slate-500 mt-2 text-[14px] leading-relaxed">
+                    <AlertDialogDescription class="text-slate-500 dark:text-slate-400 mt-2 text-[14px] leading-relaxed text-center">
                         Tindakan ini tidak dapat dibatalkan. Ini akan menghapus data pengguna secara permanen dari server dan mencabut semua akses yang mereka miliki.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter class="mt-6">
-                    <AlertDialogCancel class="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg">Batal</AlertDialogCancel>
+                <AlertDialogFooter class="mt-8 flex flex-col-reverse justify-center gap-3 sm:flex-row w-full">
+                    <AlertDialogCancel class="rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 font-bold text-[13px] text-slate-700 dark:text-slate-300 w-full sm:w-auto">Batal</AlertDialogCancel>
                     <AlertDialogAction 
                         @click="executeDelete" 
-                        class="bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow-sm font-semibold transition-colors"
+                        class="rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 font-bold text-white shadow-md shadow-rose-100 dark:shadow-none text-[13px] w-full sm:w-auto"
                     >
                         Ya, Hapus Akun
                     </AlertDialogAction>

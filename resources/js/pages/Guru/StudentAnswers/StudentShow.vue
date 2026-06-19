@@ -11,6 +11,7 @@ const props = defineProps<{
     topics: any[];
     answers: any[];
     isEvaluationSent: boolean;
+    isEvaluationFinished: boolean;
 }>();
 
 const activeTopicId = ref<number | null>(
@@ -62,6 +63,44 @@ const evaluateAnswer = (answerId: number, evaluation: 'benar' | 'setengah_benar'
         onError: () => {
             toast.error('Gagal', {
                 description: 'Terjadi kesalahan saat menyimpan penilaian.'
+            });
+        }
+    });
+};
+
+const finishEvaluation = () => {
+    router.post(route('guru.classes.students.finish-evaluation', {
+        classroom: props.classroom.id,
+        student: props.student.id
+    }), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            toast.success('Berhasil', {
+                description: 'Evaluasi telah ditandai selesai.'
+            });
+        },
+        onError: () => {
+            toast.error('Gagal', {
+                description: 'Terjadi kesalahan saat menyelesaikan evaluasi.'
+            });
+        }
+    });
+};
+
+const editEvaluation = () => {
+    router.post(route('guru.classes.students.edit-evaluation', {
+        classroom: props.classroom.id,
+        student: props.student.id
+    }), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            toast.success('Berhasil', {
+                description: 'Kunci evaluasi dibuka. Anda dapat mengedit kembali.'
+            });
+        },
+        onError: () => {
+            toast.error('Gagal', {
+                description: 'Terjadi kesalahan saat membuka kunci evaluasi.'
             });
         }
     });
@@ -124,25 +163,72 @@ const isImage = (url: string | null) => {
                     <p class="text-[13px] text-slate-500 mt-1">{{ student.email }}</p>
                 </div>
                 
-                <div class="flex flex-col items-end gap-2">
-                    <Button 
-                        @click="sendEvaluation" 
-                        :disabled="progressPercent < 100 || isEvaluationSent"
-                        :class="[
-                            'px-5 py-2.5 rounded-xl font-bold shadow-sm transition-all',
-                            progressPercent < 100 
-                                ? 'bg-slate-100 text-slate-400 border border-slate-200 opacity-70 cursor-not-allowed'
-                                : isEvaluationSent 
-                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 cursor-not-allowed'
-                                    : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md'
-                        ]"
-                    >
-                        <i :class="['pi mr-2', isEvaluationSent ? 'pi-check-circle' : 'pi-send']"></i>
-                        {{ isEvaluationSent ? 'Hasil Telah Dikirim' : 'Kirim Hasil ke Siswa' }}
-                    </Button>
-                    <p v-if="progressPercent < 100 && !isEvaluationSent" class="text-[11px] text-slate-400 font-medium max-w-[200px] text-right">
-                        Selesaikan evaluasi seluruh soal untuk mengirim hasil.
-                    </p>
+                <div class="flex flex-col items-end gap-1.5">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Status Badge -->
+                        <div class="flex items-center gap-2 mr-1">
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Status:</span>
+                            <span v-if="!isEvaluationFinished" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 text-[12px] font-bold border border-amber-200">
+                                <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span> Sedang Dinilai
+                            </span>
+                            <span v-else-if="isEvaluationFinished && !isEvaluationSent" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-[12px] font-bold border border-blue-200">
+                                <span class="h-1.5 w-1.5 rounded-full bg-blue-500"></span> Belum Dikirim
+                            </span>
+                            <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 text-[12px] font-bold border border-emerald-200">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Telah Dikirim
+                            </span>
+                        </div>
+
+                        <!-- Tombol Selesai / Edit Evaluasi -->
+                        <Button 
+                            v-if="!isEvaluationFinished"
+                            @click="finishEvaluation"
+                            :disabled="progressPercent < 100"
+                            class="px-4 py-2.5 rounded-xl font-bold transition-all bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:border disabled:border-slate-200"
+                        >
+                            <i class="pi pi-lock mr-2 text-[12px]"></i> Selesai Evaluasi
+                        </Button>
+                        
+                        <Button 
+                            v-else
+                            @click="editEvaluation"
+                            class="px-4 py-2.5 rounded-xl font-bold transition-all bg-white text-rose-600 border border-rose-200 hover:bg-rose-50"
+                        >
+                            <i class="pi pi-unlock mr-2 text-[12px]"></i> Edit Evaluasi
+                        </Button>
+
+                        <!-- Tombol Kirim / Kirim Ulang Hasil -->
+                        <Button 
+                            @click="sendEvaluation" 
+                            :disabled="!isEvaluationFinished"
+                            :class="[
+                                'px-4 py-2.5 rounded-xl font-bold shadow-sm transition-all',
+                                !isEvaluationFinished
+                                    ? 'bg-slate-100 text-slate-400 border border-slate-200 opacity-70 cursor-not-allowed'
+                                    : isEvaluationSent 
+                                        ? 'bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-md'
+                                        : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md'
+                            ]"
+                        >
+                            <i :class="['pi mr-2', isEvaluationSent ? 'pi-sync' : 'pi-send']"></i>
+                            {{ isEvaluationSent ? 'Perbarui & Kirim Ulang' : 'Kirim Hasil ke Siswa' }}
+                        </Button>
+                    </div>
+                    
+                    <div class="text-[11px] text-slate-400 font-medium max-w-[350px] text-right">
+                        <p v-if="progressPercent < 100 && !isEvaluationFinished">
+                            Selesaikan evaluasi seluruh soal ({{ progressPercent }}%) terlebih dahulu.
+                        </p>
+                        <p v-else-if="!isEvaluationFinished">
+                            Semua soal telah dinilai. Klik "Selesai Evaluasi" untuk mengunci & mengirim hasil.
+                        </p>
+                        <p v-else-if="isEvaluationFinished && !isEvaluationSent">
+                            Hasil evaluasi telah dikunci. Anda sekarang dapat mengirimkannya ke siswa.
+                        </p>
+                        <p v-else>
+                            Hasil telah terkirim. Klik "Edit" untuk mengubah kembali, atau "Kirim Ulang" untuk memperbarui.
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -254,8 +340,10 @@ const isImage = (url: string | null) => {
                                     <span class="text-[12px] font-bold text-slate-500 mr-2">Evaluasi:</span>
                                     <button 
                                         @click="evaluateAnswer(answer.id, 'benar')"
+                                        :disabled="isEvaluationFinished"
                                         :class="[
                                             'px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border',
+                                            isEvaluationFinished ? 'opacity-50 cursor-not-allowed' : '',
                                             answer.evaluation === 'benar' ? 'bg-emerald-500 text-white border-emerald-600 shadow-sm' : 'bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50'
                                         ]"
                                     >
@@ -263,8 +351,10 @@ const isImage = (url: string | null) => {
                                     </button>
                                     <button 
                                         @click="evaluateAnswer(answer.id, 'setengah_benar')"
+                                        :disabled="isEvaluationFinished"
                                         :class="[
                                             'px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border',
+                                            isEvaluationFinished ? 'opacity-50 cursor-not-allowed' : '',
                                             answer.evaluation === 'setengah_benar' ? 'bg-amber-500 text-white border-amber-600 shadow-sm' : 'bg-white text-amber-600 border-amber-200 hover:bg-amber-50'
                                         ]"
                                     >
@@ -272,8 +362,10 @@ const isImage = (url: string | null) => {
                                     </button>
                                     <button 
                                         @click="evaluateAnswer(answer.id, 'salah')"
+                                        :disabled="isEvaluationFinished"
                                         :class="[
                                             'px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border',
+                                            isEvaluationFinished ? 'opacity-50 cursor-not-allowed' : '',
                                             answer.evaluation === 'salah' ? 'bg-rose-500 text-white border-rose-600 shadow-sm' : 'bg-white text-rose-600 border-rose-200 hover:bg-rose-50'
                                         ]"
                                     >

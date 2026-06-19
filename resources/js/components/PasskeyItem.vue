@@ -79,12 +79,13 @@ const handleDelete = () => {
                 </DialogDescription>
                 <DialogFooter class="gap-2">
                     <DialogClose as-child>
-                        <Button variant="secondary">Cancel</Button>
+                        <Button variant="secondary" class="rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 font-bold text-[13px]">Cancel</Button>
                     </DialogClose>
                     <Button
                         variant="destructive"
                         :disabled="isDeleting"
                         @click="handleDelete"
+                        class="rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 font-bold text-white shadow-md shadow-rose-100 dark:shadow-none text-[13px]"
                     >
                         {{ isDeleting ? 'Removing...' : 'Remove passkey' }}
                     </Button>

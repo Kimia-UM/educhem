@@ -121,7 +121,7 @@ const menuItems = computed(() => {
                     <Collapsible v-else-if="item.label === 'Manajemen Kelas' && userRole === 'GURU'" as-child default-open class="group/collapsible mb-1">
                         <SidebarMenuItem>
                             <CollapsibleTrigger as-child>
-                                <SidebarMenuButton as-child :is-active="route().current('guru.classes.*') || route().current('guru.phases.*')">
+                                <SidebarMenuButton as-child :is-active="route().current('guru.classes.index')">
                                     <Link :href="route('guru.classes.index')">
                                         <i :class="item.icon" class="mr-2 text-[18px]"></i>
                                         <span class="text-[14px] font-medium">{{ item.label }}</span>
@@ -148,7 +148,7 @@ const menuItems = computed(() => {
                                                 <SidebarMenuSub class="border-l border-white/10 ml-3 pl-2 mt-1">
                                                     <!-- Topik Pembelajaran -->
                                                     <SidebarMenuSubItem class="mb-1">
-                                                        <SidebarMenuSubButton as-child class="text-[12.5px] opacity-90 hover:opacity-100" :is-active="(route().current('guru.classes.show') && route().params.class == classroom.id && $page.props.defaultTab !== 'siswa') || ((route().current('guru.classes.topics.*') || route().current('guru.phases.*')) && route().params.classroom == classroom.id)">
+                                                        <SidebarMenuSubButton as-child class="text-[12.5px] opacity-90 hover:opacity-100" :is-active="(route().current('guru.classes.show') && route().params.class == classroom.id && $page.props.defaultTab !== 'siswa' && $page.props.defaultTab !== 'rekapNilai') || ((route().current('guru.classes.topics.*') || route().current('guru.phases.*')) && route().params.classroom == classroom.id)">
                                                             <Link :href="route('guru.classes.show', classroom.id)">
                                                                 <i class="pi pi-book mr-1 text-[11px]"></i>
                                                                 <span>Topik Pembelajaran</span>
@@ -176,6 +176,16 @@ const menuItems = computed(() => {
                                                             </Link>
                                                         </SidebarMenuSubButton>
                                                     </SidebarMenuSubItem>
+
+                                                    <!-- Rekap Nilai -->
+                                                    <SidebarMenuSubItem class="mb-1">
+                                                        <SidebarMenuSubButton as-child class="text-[12.5px] opacity-90 hover:opacity-100" :is-active="route().current('guru.classes.show') && route().params.class == classroom.id && $page.props.defaultTab === 'rekapNilai'">
+                                                            <Link :href="route('guru.classes.show', { class: classroom.id, tab: 'rekapNilai' })">
+                                                                <i class="pi pi-percentage mr-1 text-[11px]"></i>
+                                                                <span>Rekap Nilai</span>
+                                                            </Link>
+                                                        </SidebarMenuSubButton>
+                                                    </SidebarMenuSubItem>
                                                 </SidebarMenuSub>
                                             </CollapsibleContent>
                                         </SidebarMenuSubItem>
@@ -189,7 +199,7 @@ const menuItems = computed(() => {
                     <Collapsible v-else as-child default-open class="group/collapsible mb-1">
                         <SidebarMenuItem>
                             <CollapsibleTrigger as-child>
-                                <SidebarMenuButton as-child :is-active="route().current('siswa.classes.*') || route().current('siswa.worksheet.*')">
+                                <SidebarMenuButton as-child :is-active="route().current('siswa.classes.index')">
                                     <Link :href="route('siswa.classes.index')">
                                         <i :class="item.icon" class="mr-2 text-[18px]"></i>
                                         <span class="text-[14px] font-medium">{{ item.label }}</span>
@@ -274,9 +284,22 @@ const menuItems = computed(() => {
 :deep(.text-sidebar-foreground) {
     color: #e2e8f0 !important;
 }
-/* Style untuk indikator Menu yang aktif (Biru Terang) */
-:deep([data-active='true']) {
-    background-color: #2563eb !important; /* Biru terang */
+/* 1. Hanya tombol Menu Utama yang mendapatkan efek Glow Solid & Border Kiri Putih */
+:deep([data-slot="sidebar-menu-button"][data-active='true']) {
+    background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-hover) 100%) !important;
     color: white !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 14px 0 rgba(var(--theme-primary-rgb), 0.4) !important;
+    border-left: 3.5px solid #ffffff !important;
+    transition: all 0.3s ease !important;
+}
+
+/* 2. Tombol Sub-Menu (Level 2 ke bawah seperti Kelas, Topik, Fase) mendapatkan warna soft transparan tanpa glow tebal */
+:deep([data-slot="sidebar-menu-sub-button"][data-active='true']) {
+    background: rgba(var(--theme-primary-rgb), 0.15) !important;
+    color: var(--theme-primary) !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+    border-left: 2.5px solid var(--theme-primary) !important;
 }
 </style>

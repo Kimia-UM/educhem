@@ -12,6 +12,9 @@ import {
     CardDescription,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useTheme } from '@/composables/useTheme';
+
+const { theme } = useTheme();
 
 const props = defineProps<{
     classes: Array<{
@@ -21,6 +24,10 @@ const props = defineProps<{
         description: string | null;
         created_at: string;
     }>;
+    stats: {
+        total_students: number;
+        pending_reviews: number;
+    };
 }>();
 
 // --- LOGIKA PEMOTONGAN DATA KELAS ---
@@ -69,49 +76,21 @@ const submitClass = () => {
     });
 };
 
-// --- DATA DUMMY ---
-const stats = {
-    total_students: 142, // Nanti bisa dihubungkan ke backend service Anda
-    pending_reviews: 18,
-};
-
-const recentActivities = [
-    {
-        id: 1,
-        student: 'Budi Santoso',
-        action: 'menyelesaikan tahap Observe',
-        class: 'Kimia Dasar X',
-        time: '10 menit yang lalu',
-    },
-    {
-        id: 2,
-        student: 'Siti Aminah',
-        action: 'mengirimkan hipotesis (Predict)',
-        class: 'Ikatan Kimia XI',
-        time: '1 jam yang lalu',
-    },
-    {
-        id: 3,
-        student: 'Andi Wijaya',
-        action: 'bergabung ke kelas menggunakan kode',
-        class: 'Kimia Dasar X',
-        time: '2 jam yang lalu',
-    },
-];
+const stats = computed(() => props.stats || { total_students: 0, pending_reviews: 0 });
 </script>
 
 <template>
     <Head title="Workspace Guru" />
 
-    <div class="min-h-screen bg-[#F8FAFC] px-6 py-8 font-sans lg:px-10">
+    <div :class="[theme === 'classic' ? 'font-serif' : 'font-sans']" class="min-h-screen px-6 py-8 lg:px-10">
         <div
             class="mx-auto mb-8 flex max-w-7xl flex-col items-start justify-between gap-4 md:flex-row md:items-center"
         >
             <div>
-                <h1 class="text-[26px] font-bold tracking-tight text-slate-900">
+                <h1 class="text-[26px] font-bold tracking-tight text-slate-900 dark:text-slate-100">
                     Workspace Guru
                 </h1>
-                <p class="mt-1 text-[14px] font-medium text-slate-500">
+                <p class="mt-1 text-[14px] font-medium text-slate-500 dark:text-slate-400">
                     Kelola kelas, pantau progress metode LC5E, dan evaluasi
                     siswa Anda.
                 </p>
@@ -121,13 +100,13 @@ const recentActivities = [
                 <Button
                     variant="outline"
                     size="icon"
-                    class="h-9 w-9 rounded-lg border-slate-200 bg-white shadow-sm transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                    class="h-9 w-9 rounded-lg border-slate-200 bg-white dark:bg-slate-900 shadow-sm transition-colors hover:bg-[var(--theme-primary)]/10 hover:text-[var(--theme-primary)]"
                 >
                     <i class="pi pi-bell text-[14px]"></i>
                 </Button>
 
                 <div
-                    class="flex cursor-pointer items-center gap-3 rounded-full border border-slate-200 bg-white py-1.5 pr-4 pl-1.5 shadow-sm transition-colors hover:bg-slate-50"
+                    class="flex cursor-pointer items-center gap-3 rounded-full border border-slate-200 bg-white dark:bg-slate-900 py-1.5 pr-4 pl-1.5 shadow-sm transition-colors hover:bg-slate-50"
                 >
                     <div
                         class="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[11px] font-bold text-white shadow-inner"
@@ -136,11 +115,11 @@ const recentActivities = [
                     </div>
                     <div class="flex flex-col">
                         <span
-                            class="text-[13px] leading-none font-bold text-slate-800"
+                            class="text-[13px] leading-none font-bold text-slate-800 dark:text-slate-200"
                             >Panel Guru</span
                         >
                         <span
-                            class="mt-0.5 text-[9px] font-bold tracking-wider text-emerald-600"
+                            class="mt-0.5 text-[9px] font-bold tracking-wider text-emerald-600 dark:text-emerald-450"
                             >ROLE: GURU</span
                         >
                     </div>
@@ -151,21 +130,21 @@ const recentActivities = [
         <div
             class="mx-auto mb-8 grid max-w-7xl grid-cols-1 gap-5 md:grid-cols-3"
         >
-            <Card class="rounded-xl border-slate-200 bg-white shadow-sm">
+            <Card class="rounded-xl border-slate-200 bg-white dark:bg-slate-900 shadow-sm">
                 <CardContent class="p-6">
                     <div class="flex items-start justify-between">
                         <div>
                             <p
-                                class="mb-2 text-[11px] font-bold tracking-wider text-slate-500 uppercase"
+                                class="mb-2 text-[11px] font-bold tracking-wider text-slate-500 dark:text-slate-450 uppercase"
                             >
                                 Total Kelas Anda
                             </p>
-                            <h2 class="text-3xl font-extrabold text-slate-900">
+                            <h2 class="text-3xl font-extrabold text-slate-900 dark:text-slate-100">
                                 {{ classes.length }}
                             </h2>
                         </div>
                         <div
-                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600"
+                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] animate-pulse"
                         >
                             <i class="pi pi-book text-lg"></i>
                         </div>
@@ -173,21 +152,21 @@ const recentActivities = [
                 </CardContent>
             </Card>
 
-            <Card class="rounded-xl border-slate-200 bg-white shadow-sm">
+            <Card class="rounded-xl border-slate-200 bg-white dark:bg-slate-900 shadow-sm">
                 <CardContent class="p-6">
                     <div class="flex items-start justify-between">
                         <div>
                             <p
-                                class="mb-2 text-[11px] font-bold tracking-wider text-slate-500 uppercase"
+                                class="mb-2 text-[11px] font-bold tracking-wider text-slate-500 dark:text-slate-455 uppercase"
                             >
                                 Total Siswa Aktif
                             </p>
-                            <h2 class="text-3xl font-extrabold text-slate-900">
+                            <h2 class="text-3xl font-extrabold text-slate-900 dark:text-slate-100">
                                 {{ stats.total_students }}
                             </h2>
                         </div>
                         <div
-                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600"
+                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400"
                         >
                             <i class="pi pi-users text-lg"></i>
                         </div>
@@ -238,11 +217,10 @@ const recentActivities = [
                     <h3 class="text-[17px] font-bold text-slate-800">
                         Kelas Terbaru
                     </h3>
-
                     <Link
                         v-if="classes.length > 0"
                         :href="route('guru.classes.index')"
-                        class="flex items-center gap-1.5 text-[13px] font-bold text-indigo-600 transition-colors hover:text-indigo-700 hover:underline"
+                        class="flex items-center gap-1.5 text-[13px] font-bold text-[var(--theme-primary)] transition-colors hover:text-[var(--theme-primary-hover)] hover:underline"
                     >
                         Lihat Semua Kelas
                         <i class="pi pi-arrow-right text-[10px]"></i>
@@ -256,13 +234,13 @@ const recentActivities = [
                     <Card
                         v-for="cls in recentClasses"
                         :key="cls.id"
-                        class="group flex flex-col rounded-xl border-slate-200 bg-white shadow-sm transition-all hover:border-indigo-200 hover:shadow-md"
+                        class="group flex flex-col rounded-xl border-slate-200 bg-white dark:bg-slate-900 shadow-sm transition-all hover:border-[var(--theme-primary)]/35 hover:shadow-md"
                     >
                         <CardContent class="flex flex-1 flex-col p-5">
                             <div class="mb-4 flex items-start justify-between">
                                 <div class="pr-2">
                                     <h4
-                                        class="line-clamp-1 text-[16px] font-bold text-slate-900 transition-colors group-hover:text-indigo-600"
+                                        class="line-clamp-1 text-[16px] font-bold text-slate-900 dark:text-slate-105 transition-colors group-hover:text-[var(--theme-primary)]"
                                         :title="cls.class_name"
                                     >
                                         {{ cls.class_name }}
@@ -282,7 +260,7 @@ const recentActivities = [
                                     </p>
                                 </div>
                                 <div
-                                    class="shrink-0 rounded-md border border-indigo-100 bg-indigo-50 px-2.5 py-1 font-mono text-[12px] font-bold tracking-widest text-indigo-700"
+                                    class="shrink-0 rounded-md border border-[var(--theme-primary)]/20 bg-[var(--theme-primary)]/5 px-2.5 py-1 font-mono text-[12px] font-bold tracking-widest text-[var(--theme-primary)]"
                                     title="Bagikan kode ini ke siswa"
                                 >
                                     {{ cls.class_code }}
@@ -290,7 +268,7 @@ const recentActivities = [
                             </div>
 
                             <p
-                                class="mb-5 line-clamp-2 flex-1 text-[13px] text-slate-600"
+                                class="mb-5 line-clamp-2 flex-1 text-[13px] text-slate-650"
                             >
                                 {{
                                     cls.description ||
@@ -299,23 +277,23 @@ const recentActivities = [
                             </p>
 
                             <div
-                                class="mt-auto flex items-center justify-between border-t border-slate-100 pt-4"
+                                class="mt-auto flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4"
                             >
                                 <div class="flex -space-x-2 overflow-hidden">
                                     <div
-                                        class="inline-block h-6 w-6 rounded-full bg-slate-200 ring-2 ring-white"
+                                        class="inline-block h-6 w-6 rounded-full bg-slate-250 ring-2 ring-white dark:ring-slate-900"
                                     ></div>
                                     <div
-                                        class="inline-block h-6 w-6 rounded-full bg-slate-300 ring-2 ring-white"
+                                        class="inline-block h-6 w-6 rounded-full bg-slate-350 ring-2 ring-white dark:ring-slate-900"
                                     ></div>
                                     <div
-                                        class="inline-block h-6 w-6 rounded-full bg-slate-400 ring-2 ring-white"
+                                        class="inline-block h-6 w-6 rounded-full bg-slate-450 ring-2 ring-white dark:ring-slate-900"
                                     ></div>
                                 </div>
 
                                 <Link
                                     :href="route('guru.classes.show', cls.id)"
-                                    class="flex items-center text-[12px] font-semibold text-indigo-600 group-hover:text-indigo-700"
+                                    class="flex items-center text-[12px] font-semibold text-[var(--theme-primary)] group-hover:text-[var(--theme-primary-hover)]"
                                 >
                                     Masuk Kelas
                                     <i
@@ -329,20 +307,20 @@ const recentActivities = [
                     <Link
                         v-if="remainingClassesCount > 0"
                         :href="route('guru.classes.index')"
-                        class="group flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50/50 transition-all hover:bg-slate-50"
+                        class="group flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white/40 dark:bg-slate-900/40 transition-all hover:bg-white/60"
                     >
                         <div
-                            class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 transition-colors group-hover:bg-indigo-200"
+                            class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--theme-primary)]/20 transition-colors group-hover:bg-[var(--theme-primary)]/30"
                         >
-                            <span class="font-bold text-indigo-700"
+                            <span class="font-bold text-[var(--theme-primary)]"
                                 >+{{ remainingClassesCount }}</span
                             >
                         </div>
-                        <h4 class="text-[14px] font-bold text-slate-700">
+                        <h4 class="text-[14px] font-bold text-slate-700 dark:text-slate-300">
                             Kelas Lainnya
                         </h4>
                         <p
-                            class="mt-1 text-[12px] font-medium text-slate-500 transition-colors group-hover:text-indigo-600"
+                            class="mt-1 text-[12px] font-medium text-slate-500 transition-colors group-hover:text-[var(--theme-primary)]"
                         >
                             Lihat di Manajemen Kelas
                         </p>
@@ -373,12 +351,12 @@ const recentActivities = [
             </div>
 
             <div class="flex flex-col gap-6 lg:col-span-1">
-                <Card class="rounded-xl border-slate-200 bg-white shadow-sm">
-                    <CardHeader class="border-b border-slate-50 pb-4">
+                <Card class="rounded-xl border-slate-200 bg-white dark:bg-slate-900 shadow-sm">
+                    <CardHeader class="border-b border-slate-50 dark:border-slate-800 pb-4">
                         <CardTitle
-                            class="flex items-center gap-2 text-[16px] font-bold text-slate-800"
+                            class="flex items-center gap-2 text-[16px] font-bold text-slate-800 dark:text-slate-200"
                         >
-                            <i class="pi pi-plus-circle text-indigo-600"></i>
+                            <i class="pi pi-plus-circle text-[var(--theme-primary)]"></i>
                             Buat Kelas Baru
                         </CardTitle>
                         <CardDescription
@@ -391,7 +369,7 @@ const recentActivities = [
                         <form @submit.prevent="submitClass" class="space-y-4">
                             <div>
                                 <label
-                                    class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 uppercase"
+                                    class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 dark:text-slate-300 uppercase"
                                 >
                                     Nama Kelas
                                     <span class="text-rose-500">*</span>
@@ -401,7 +379,7 @@ const recentActivities = [
                                     type="text"
                                     required
                                     placeholder="Contoh: Kimia X IPA 1"
-                                    class="h-10 rounded-lg border-slate-200 text-[13px] focus-visible:ring-indigo-500"
+                                    class="h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[13px] focus-visible:ring-amber-500/20 focus-visible:border-amber-500 focus:border-amber-500 focus:ring-amber-500/20"
                                 />
                                 <span
                                     v-if="form.errors.class_name"
@@ -413,7 +391,7 @@ const recentActivities = [
 
                             <div>
                                 <label
-                                    class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 uppercase"
+                                    class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 dark:text-slate-300 uppercase"
                                 >
                                     Deskripsi Singkat
                                 </label>
@@ -421,14 +399,14 @@ const recentActivities = [
                                     v-model="form.description"
                                     rows="3"
                                     placeholder="Opsional: Tujuan pembelajaran..."
-                                    class="w-full resize-none rounded-lg border border-slate-200 p-3 text-[13px] transition-all outline-none placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                                    class="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 p-3 text-[13px] bg-white dark:bg-slate-900 transition-all outline-none placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus-visible:ring-amber-500/20 focus:outline-hidden"
                                 ></textarea>
                             </div>
 
                             <Button
                                 type="submit"
                                 :disabled="form.processing"
-                                class="mt-2 h-10 w-full rounded-lg bg-indigo-600 font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
+                                class="mt-2 h-10 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 font-bold text-white shadow-md shadow-indigo-100 dark:shadow-none text-[13px] bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-hover)]"
                             >
                                 <i
                                     v-if="!form.processing"
@@ -441,63 +419,6 @@ const recentActivities = [
                                 Generate Kelas
                             </Button>
                         </form>
-                    </CardContent>
-                </Card>
-
-                <Card
-                    class="flex-1 rounded-xl border-slate-200 bg-white shadow-sm"
-                >
-                    <CardHeader class="border-b border-slate-50 pb-4">
-                        <CardTitle class="text-[15px] font-bold text-slate-800">
-                            Aktivitas Siswa
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent class="p-0 pt-4">
-                        <div class="divide-y divide-slate-100">
-                            <div
-                                v-for="act in recentActivities"
-                                :key="act.id"
-                                class="p-4 transition-colors hover:bg-slate-50/80"
-                            >
-                                <div class="flex gap-3">
-                                    <div
-                                        class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50"
-                                    >
-                                        <i
-                                            class="pi pi-bolt text-[12px] text-indigo-500"
-                                        ></i>
-                                    </div>
-                                    <div>
-                                        <p
-                                            class="text-[13px] leading-snug text-slate-700"
-                                        >
-                                            <span
-                                                class="font-bold text-slate-900"
-                                                >{{ act.student }}</span
-                                            >
-                                            {{ act.action }} di
-                                            <span class="font-semibold">{{
-                                                act.class
-                                            }}</span
-                                            >.
-                                        </p>
-                                        <p
-                                            class="mt-1 text-[11px] font-medium text-slate-400"
-                                        >
-                                            {{ act.time }}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="border-t border-slate-100 p-4">
-                            <Button
-                                variant="link"
-                                class="h-auto w-full p-0 text-[12px] font-bold text-indigo-600"
-                            >
-                                Lihat Semua Log
-                            </Button>
-                        </div>
                     </CardContent>
                 </Card>
             </div>

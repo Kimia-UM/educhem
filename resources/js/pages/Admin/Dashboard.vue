@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { onMounted, onUnmounted } from 'vue';
 
 // --- IMPORT KOMPONEN SHADCN-VUE ---
 import { Badge } from '@/components/ui/badge';
@@ -22,60 +23,57 @@ import {
     TableRow,
 } from '@/components/ui/table';
 
+// --- TypeScript Interfaces ---
+interface RecentUser {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    status: string;
+    created_at: string;
+}
+
+interface ActiveClass {
+    id: number;
+    name: string;
+    code: string;
+    teacher: string;
+    students: number;
+    topics: number;
+}
+
+interface SystemHealth {
+    db: string;
+    queue: string;
+}
+
 defineProps<{
     stats: {
         total_users: number;
         total_guru: number;
         total_siswa: number;
+        total_kelas: number;
+        total_topik: number;
+        total_ai_requests: number;
+        ai_success_rate: number;
+        recent_users: RecentUser[];
+        active_classes: ActiveClass[];
+        system_health: SystemHealth;
     };
 }>();
 
-// --- DATA DUMMY ---
-const recentUsers = [
-    {
-        id: 1,
-        name: 'Dr. Hendra (Kimia)',
-        role: 'GURU',
-        status: 'Active',
-        class: 'Kelas XI-IPA 1',
-        last_login: '2 min ago',
-    },
-    {
-        id: 2,
-        name: 'Budi Santoso',
-        role: 'SISWA',
-        status: 'Active',
-        class: 'Kelas X-IPA 3',
-        last_login: '15 min ago',
-    },
-    {
-        id: 3,
-        name: 'Siti Aminah',
-        role: 'SISWA',
-        status: 'Inactive',
-        class: '-',
-        last_login: '2 days ago',
-    },
-];
+// --- Polling otomatis: refresh data setiap 30 detik ---
+let pollInterval: ReturnType<typeof setInterval>;
 
-const activeClasses = [
-    {
-        name: 'Kimia Dasar X',
-        teacher: 'Dr. Hendra',
-        students: 32,
-        progress: 75,
-        status: 'Active',
-    },
-    {
-        name: 'Ikatan Kimia XI',
-        teacher: 'Ibu Ratna',
-        students: 28,
-        progress: 45,
-        status: 'Active',
-    },
-];
+onMounted(() => {
+    pollInterval = setInterval(() => {
+        router.reload({ only: ['stats'] });
+    }, 30000);
+});
 
-const aiAnalytics = { total: 1245, success: 98, error: 2 };
+onUnmounted(() => {
+    if (pollInterval) clearInterval(pollInterval);
+});
 </script>
 
 <template>
@@ -137,7 +135,7 @@ const aiAnalytics = { total: 1245, success: 98, error: 2 };
         </div>
 
         <div
-            class="mx-auto mb-6 grid max-w-7xl grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4"
+            class="mx-auto mb-6 grid max-w-7xl grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3"
         >
             <Card class="rounded-xl border-slate-200 bg-white shadow-sm">
                 <CardContent class="p-6">
@@ -160,13 +158,15 @@ const aiAnalytics = { total: 1245, success: 98, error: 2 };
                     </div>
                     <div class="mt-4 flex items-center gap-2 text-[13px]">
                         <span
-                            class="flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 font-semibold text-emerald-600"
+                            class="flex items-center gap-1 rounded bg-indigo-50 px-1.5 py-0.5 font-semibold text-indigo-600"
                         >
-                            <i class="pi pi-arrow-up text-[9px]"></i> 12%
+                            <i class="pi pi-user text-[9px]"></i> {{ stats.total_guru }} Guru
                         </span>
-                        <span class="font-medium text-slate-500"
-                            >dari bulan lalu</span
+                        <span
+                            class="flex items-center gap-1 rounded bg-sky-50 px-1.5 py-0.5 font-semibold text-sky-600"
                         >
+                            <i class="pi pi-id-card text-[9px]"></i> {{ stats.total_siswa }} Siswa
+                        </span>
                     </div>
                 </CardContent>
             </Card>
@@ -178,39 +178,24 @@ const aiAnalytics = { total: 1245, success: 98, error: 2 };
                             <p
                                 class="mb-2 text-[11px] font-bold tracking-wider text-slate-500 uppercase"
                             >
-                                Total Guru
+                                Total Kelas
                             </p>
                             <h2 class="text-3xl font-extrabold text-slate-900">
-                                {{ stats.total_guru }}
+                                {{ stats.total_kelas }}
                             </h2>
                         </div>
                         <div
-                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600"
+                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"
                         >
-                            <i class="pi pi-briefcase text-lg"></i>
+                            <i class="pi pi-objects-column text-lg"></i>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
-
-            <Card class="rounded-xl border-slate-200 bg-white shadow-sm">
-                <CardContent class="p-6">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <p
-                                class="mb-2 text-[11px] font-bold tracking-wider text-slate-500 uppercase"
-                            >
-                                Total Siswa
-                            </p>
-                            <h2 class="text-3xl font-extrabold text-slate-900">
-                                {{ stats.total_siswa }}
-                            </h2>
-                        </div>
-                        <div
-                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600"
+                    <div class="mt-4 flex items-center gap-2 text-[13px]">
+                        <span
+                            class="flex items-center gap-1 rounded bg-amber-50 px-1.5 py-0.5 font-semibold text-amber-600"
                         >
-                            <i class="pi pi-id-card text-lg"></i>
-                        </div>
+                            <i class="pi pi-book text-[9px]"></i> {{ stats.total_topik }} Topik
+                        </span>
                     </div>
                 </CardContent>
             </Card>
@@ -230,7 +215,7 @@ const aiAnalytics = { total: 1245, success: 98, error: 2 };
                                 AI LC5E Requests
                             </p>
                             <h2 class="text-3xl font-extrabold text-white">
-                                1,245
+                                {{ stats.total_ai_requests.toLocaleString('id-ID') }}
                             </h2>
                         </div>
                         <div
@@ -248,7 +233,7 @@ const aiAnalytics = { total: 1245, success: 98, error: 2 };
                             <span
                                 class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400"
                             ></span>
-                            Flash API Active
+                            {{ stats.ai_success_rate }}% Success Rate
                         </span>
                     </div>
                 </CardContent>
@@ -287,11 +272,11 @@ const aiAnalytics = { total: 1245, success: 98, error: 2 };
                                 >
                                 <TableHead
                                     class="h-11 align-middle text-[11px] font-bold tracking-wider text-slate-500 uppercase"
-                                    >Role</TableHead
+                                    >Email</TableHead
                                 >
                                 <TableHead
                                     class="h-11 align-middle text-[11px] font-bold tracking-wider text-slate-500 uppercase"
-                                    >Kelas</TableHead
+                                    >Role</TableHead
                                 >
                                 <TableHead
                                     class="h-11 align-middle text-[11px] font-bold tracking-wider text-slate-500 uppercase"
@@ -299,13 +284,13 @@ const aiAnalytics = { total: 1245, success: 98, error: 2 };
                                 >
                                 <TableHead
                                     class="h-11 pr-6 text-right align-middle text-[11px] font-bold tracking-wider text-slate-500 uppercase"
-                                    >Last Login</TableHead
+                                    >Bergabung</TableHead
                                 >
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             <TableRow
-                                v-for="user in recentUsers"
+                                v-for="user in stats.recent_users"
                                 :key="user.id"
                                 class="border-b border-slate-100 transition-colors hover:bg-slate-50/60"
                             >
@@ -313,23 +298,25 @@ const aiAnalytics = { total: 1245, success: 98, error: 2 };
                                     class="px-6 py-4 text-[14px] font-semibold text-slate-900"
                                     >{{ user.name }}</TableCell
                                 >
+                                <TableCell
+                                    class="text-[13px] font-medium text-slate-600"
+                                    >{{ user.email }}</TableCell
+                                >
                                 <TableCell>
                                     <Badge
                                         variant="outline"
                                         :class="
                                             user.role === 'GURU'
                                                 ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
-                                                : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                                : user.role === 'ADMIN'
+                                                    ? 'border-rose-200 bg-rose-50 text-rose-700'
+                                                    : 'border-emerald-200 bg-emerald-50 text-emerald-700'
                                         "
                                         class="px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase"
                                     >
                                         {{ user.role }}
                                     </Badge>
                                 </TableCell>
-                                <TableCell
-                                    class="text-[13px] font-medium text-slate-600"
-                                    >{{ user.class }}</TableCell
-                                >
                                 <TableCell>
                                     <span
                                         class="flex items-center gap-1.5 text-[13px] font-medium text-slate-600"
@@ -347,8 +334,13 @@ const aiAnalytics = { total: 1245, success: 98, error: 2 };
                                 </TableCell>
                                 <TableCell
                                     class="pr-6 text-right text-[13px] font-medium text-slate-500"
-                                    >{{ user.last_login }}</TableCell
+                                    >{{ user.created_at }}</TableCell
                                 >
+                            </TableRow>
+                            <TableRow v-if="!stats.recent_users || stats.recent_users.length === 0">
+                                <TableCell colspan="5" class="py-8 text-center text-sm text-slate-400">
+                                    Belum ada pengguna terdaftar.
+                                </TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
@@ -366,7 +358,8 @@ const aiAnalytics = { total: 1245, success: 98, error: 2 };
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
                                 <div
-                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600"
+                                    class="flex h-8 w-8 items-center justify-center rounded-lg"
+                                    :class="stats.system_health.db === 'online' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'"
                                 >
                                     <i class="pi pi-database text-[14px]"></i>
                                 </div>
@@ -377,32 +370,39 @@ const aiAnalytics = { total: 1245, success: 98, error: 2 };
                             </div>
                             <Badge
                                 variant="outline"
-                                class="border-emerald-200 bg-emerald-50 text-[9px] font-bold tracking-wider text-emerald-700 uppercase"
-                                >Online</Badge
-                            >
+                                :class="stats.system_health.db === 'online'
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                    : 'border-rose-200 bg-rose-50 text-rose-700'"
+                                class="text-[9px] font-bold tracking-wider uppercase"
+                            >{{ stats.system_health.db === 'online' ? 'Online' : 'Offline' }}</Badge>
                         </div>
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
                                 <div
-                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600"
+                                    class="flex h-8 w-8 items-center justify-center rounded-lg"
+                                    :class="stats.system_health.queue === 'online' ? 'bg-emerald-50 text-emerald-600' : stats.system_health.queue === 'warning' ? 'bg-orange-50 text-orange-600' : 'bg-rose-50 text-rose-600'"
                                 >
                                     <i class="pi pi-bolt text-[14px]"></i>
                                 </div>
                                 <span
                                     class="text-[13px] font-semibold text-slate-700"
-                                    >Redis Queue</span
+                                    >Job Queue</span
                                 >
                             </div>
                             <Badge
                                 variant="outline"
-                                class="border-emerald-200 bg-emerald-50 text-[9px] font-bold tracking-wider text-emerald-700 uppercase"
-                                >Online</Badge
-                            >
+                                :class="stats.system_health.queue === 'online'
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                    : stats.system_health.queue === 'warning'
+                                        ? 'border-orange-200 bg-orange-50 text-orange-700'
+                                        : 'border-rose-200 bg-rose-50 text-rose-700'"
+                                class="text-[9px] font-bold tracking-wider uppercase"
+                            >{{ stats.system_health.queue === 'online' ? 'Online' : stats.system_health.queue === 'warning' ? 'Warning' : 'Offline' }}</Badge>
                         </div>
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
                                 <div
-                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600"
+                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600"
                                 >
                                     <i
                                         class="pi pi-microchip-ai text-[14px]"
@@ -415,9 +415,11 @@ const aiAnalytics = { total: 1245, success: 98, error: 2 };
                             </div>
                             <Badge
                                 variant="outline"
-                                class="border-orange-200 bg-orange-50 text-[9px] font-bold tracking-wider text-orange-700 uppercase"
-                                >High Load</Badge
-                            >
+                                :class="stats.total_ai_requests > 0
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                    : 'border-slate-200 bg-slate-50 text-slate-500'"
+                                class="text-[9px] font-bold tracking-wider uppercase"
+                            >{{ stats.total_ai_requests > 0 ? 'Connected' : 'No Data' }}</Badge>
                         </div>
                     </CardContent>
                 </Card>
@@ -434,20 +436,20 @@ const aiAnalytics = { total: 1245, success: 98, error: 2 };
                         <div class="mb-3 flex items-baseline gap-2">
                             <span
                                 class="text-4xl font-extrabold tracking-tight"
-                                >{{ aiAnalytics.success }}</span
+                                >{{ stats.ai_success_rate }}</span
                             >
                             <span class="text-lg font-bold text-emerald-400"
                                 >%</span
                             >
                         </div>
                         <Progress
-                            :model-value="aiAnalytics.success"
+                            :model-value="stats.ai_success_rate"
                             class="h-2 bg-slate-800"
                             indicator-class="bg-indigo-500"
                         />
                         <p class="mt-4 text-[12px] font-medium text-slate-400">
-                            {{ aiAnalytics.error }}% failed requests (Rate Limit
-                            Issue)
+                            {{ (100 - stats.ai_success_rate).toFixed(1) }}% failed dari
+                            {{ stats.total_ai_requests.toLocaleString('id-ID') }} total requests
                         </p>
                     </CardContent>
                 </Card>
@@ -464,8 +466,8 @@ const aiAnalytics = { total: 1245, success: 98, error: 2 };
                 <CardContent class="pt-2">
                     <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                         <div
-                            v-for="cls in activeClasses"
-                            :key="cls.name"
+                            v-for="cls in stats.active_classes"
+                            :key="cls.id"
                             class="rounded-xl border border-slate-100 bg-slate-50/50 p-5 transition-colors hover:bg-slate-50"
                         >
                             <div class="mb-4 flex items-start justify-between">
@@ -481,29 +483,33 @@ const aiAnalytics = { total: 1245, success: 98, error: 2 };
                                         <i
                                             class="pi pi-user mr-1.5 text-[11px]"
                                         ></i>
-                                        {{ cls.teacher }} •
-                                        {{ cls.students }} Siswa
+                                        {{ cls.teacher }}
                                     </p>
                                 </div>
                                 <Badge
                                     variant="outline"
-                                    class="border-emerald-200 bg-emerald-50 text-[9px] font-bold tracking-wider text-emerald-700 uppercase"
-                                    >ACTIVE</Badge
-                                >
+                                    class="border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-bold tracking-wider text-indigo-700 uppercase"
+                                >{{ cls.code }}</Badge>
                             </div>
                             <div
-                                class="mb-2 flex justify-between text-[11px] font-bold tracking-wider text-slate-500 uppercase"
+                                class="flex gap-4 text-[12px] font-medium text-slate-600"
                             >
-                                <span>Worksheet Progress</span>
-                                <span class="text-indigo-600"
-                                    >{{ cls.progress }}%</span
-                                >
+                                <span class="flex items-center gap-1.5">
+                                    <i class="pi pi-users text-[10px] text-emerald-500"></i>
+                                    {{ cls.students }} Siswa
+                                </span>
+                                <span class="flex items-center gap-1.5">
+                                    <i class="pi pi-book text-[10px] text-amber-500"></i>
+                                    {{ cls.topics }} Topik
+                                </span>
                             </div>
-                            <Progress
-                                :model-value="cls.progress"
-                                class="h-1.5 bg-slate-200"
-                                indicator-class="bg-indigo-600"
-                            />
+                        </div>
+                        <div
+                            v-if="!stats.active_classes || stats.active_classes.length === 0"
+                            class="col-span-2 flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 p-8 text-center"
+                        >
+                            <i class="pi pi-inbox mb-3 text-3xl text-slate-300"></i>
+                            <p class="text-sm font-medium text-slate-400">Belum ada kelas yang dibuat.</p>
                         </div>
                     </div>
                 </CardContent>

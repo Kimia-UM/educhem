@@ -339,8 +339,7 @@ const deletePhase = (id: number) => {
                         Daftar Fase Pembelajaran (LC5E)
                     </h2>
                     <p class="text-[13px] text-slate-500">
-                        Buat alur tahapan pembelajaran: Predict, Observe, dan
-                        Explain.
+                        Buat alur tahapan pembelajaran Learning Cycle 5E: Engage, Explore, Explain, Elaborate, dan Evaluate.
                     </p>
                 </div>
                 <Button
@@ -372,7 +371,7 @@ const deletePhase = (id: number) => {
                                     @blur="updatePhase(phase)"
                                     @keyup.enter="$event.target.blur()"
                                     class="w-full border-none bg-transparent p-0 text-[16px] font-extrabold text-slate-900 placeholder:text-slate-400 focus:ring-0 focus:outline-none"
-                                    placeholder="Ketik Nama Fase... (contoh: Tahap Observe)"
+                                    placeholder="Ketik Nama Fase... (contoh: Tahap Engage)"
                                 />
                                 <div
                                     class="mt-1 flex items-center gap-2 text-[11px] font-bold text-slate-500"
@@ -468,10 +467,10 @@ const deletePhase = (id: number) => {
                 >
                     Mulai bangun alur belajar siswa Anda. Tambahkan materi/fase
                     seperti
-                    <strong class="text-indigo-600">Predict</strong>,
-                    <strong class="text-indigo-600">Observe</strong>, atau
+                    <strong class="text-indigo-600">Engage</strong>,
+                    <strong class="text-indigo-600">Explore</strong>, atau
                     <strong class="text-indigo-600">Explain</strong> secara
-                    fleksibel.
+                    fleksibel sesuai model LC5E.
                 </p>
                 <Button
                     @click="openCreatePhaseModal"
@@ -486,23 +485,23 @@ const deletePhase = (id: number) => {
     <Teleport to="body">
         <div
             v-if="isCreatePhaseModalOpen"
-            class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 px-4 backdrop-blur-sm"
+            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 dark:bg-black/60 px-4 backdrop-blur-[6px] transition-all"
         >
             <div
-                class="w-full max-w-[450px] animate-in overflow-hidden rounded-2xl bg-white shadow-2xl duration-200 zoom-in-95 fade-in"
+                class="w-full max-w-[450px] animate-in overflow-hidden rounded-3xl bg-white dark:bg-slate-950 border border-slate-100/80 dark:border-slate-800/50 shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] duration-200 zoom-in-95 fade-in"
             >
                 <div
-                    class="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4"
+                    class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-amber-50/50 via-rose-50/30 to-orange-50/40 dark:from-slate-900/50 dark:via-slate-900/30 dark:to-slate-900/40 px-6 py-4.5"
                 >
-                    <h3
-                        class="flex items-center gap-2 text-lg font-extrabold text-slate-800"
-                    >
-                        <i class="pi pi-layer-group text-indigo-600"></i> Buat
-                        Fase Pembelajaran
-                    </h3>
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/30 text-amber-600 dark:text-amber-400">
+                            <i class="pi pi-layer-group text-[15px]"></i>
+                        </div>
+                        <span class="text-base font-extrabold text-slate-800 dark:text-slate-100">Buat Fase Pembelajaran</span>
+                    </div>
                     <button
                         @click="closeCreatePhaseModal"
-                        class="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                        class="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900"
                     >
                         <i class="pi pi-times text-sm"></i>
                     </button>
@@ -511,7 +510,7 @@ const deletePhase = (id: number) => {
                     <div class="space-y-5">
                         <div>
                             <label
-                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 uppercase"
+                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 dark:text-slate-300 uppercase"
                                 >Nama Fase (Siklus LC5E)
                                 <span class="text-rose-500">*</span></label
                             >
@@ -519,8 +518,8 @@ const deletePhase = (id: number) => {
                                 v-model="createPhaseForm.name"
                                 type="text"
                                 required
-                                placeholder="Contoh: Tahap Predict, Mengamati Video..."
-                                class="h-11 rounded-lg border-slate-200 text-[14px] shadow-sm focus-visible:ring-indigo-500"
+                                placeholder="Contoh: Tahap Engage, Eksplorasi Mandiri..."
+                                class="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[14px] shadow-sm focus-visible:ring-amber-500/20 focus-visible:border-amber-500 focus:border-amber-500 focus:ring-amber-500/20"
                             />
                         </div>
                     </div>
@@ -529,13 +528,13 @@ const deletePhase = (id: number) => {
                             type="button"
                             variant="outline"
                             @click="closeCreatePhaseModal"
-                            class="h-10 border-slate-200 px-5 font-semibold text-slate-600"
+                            class="h-10 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 px-5 font-bold text-[13px] text-slate-600 dark:text-slate-300"
                             >Batal</Button
                         >
                         <Button
                             type="submit"
                             :disabled="createPhaseForm.processing"
-                            class="h-10 bg-indigo-600 px-6 font-semibold text-white shadow-md hover:bg-indigo-700"
+                            class="h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 px-6 font-bold text-white shadow-md shadow-indigo-100 dark:shadow-none text-[13px]"
                         >
                             <i
                                 v-if="createPhaseForm.processing"
@@ -552,22 +551,23 @@ const deletePhase = (id: number) => {
     <Teleport to="body">
         <div
             v-if="isEditModalOpen"
-            class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 px-4 backdrop-blur-sm"
+            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 dark:bg-black/60 px-4 backdrop-blur-[6px] transition-all"
         >
             <div
-                class="w-full max-w-[450px] animate-in overflow-hidden rounded-2xl bg-white shadow-2xl duration-200 zoom-in-95 fade-in"
+                class="w-full max-w-[450px] animate-in overflow-hidden rounded-3xl bg-white dark:bg-slate-950 border border-slate-100/80 dark:border-slate-800/50 shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] duration-200 zoom-in-95 fade-in"
             >
                 <div
-                    class="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4"
+                    class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-amber-50/50 via-rose-50/30 to-orange-50/40 dark:from-slate-900/50 dark:via-slate-900/30 dark:to-slate-900/40 px-6 py-4.5"
                 >
-                    <h3
-                        class="flex items-center gap-2 text-lg font-extrabold text-slate-800"
-                    >
-                        <i class="pi pi-pencil text-indigo-600"></i> Edit Topik
-                    </h3>
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/30 text-amber-600 dark:text-amber-400">
+                            <i class="pi pi-pencil text-[15px]"></i>
+                        </div>
+                        <span class="text-base font-extrabold text-slate-800 dark:text-slate-100">Edit Topik</span>
+                    </div>
                     <button
                         @click="closeEditModal"
-                        class="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                        class="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900"
                     >
                         <i class="pi pi-times text-sm"></i>
                     </button>
@@ -576,7 +576,7 @@ const deletePhase = (id: number) => {
                     <div class="space-y-5">
                         <div>
                             <label
-                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 uppercase"
+                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 dark:text-slate-300 uppercase"
                                 >Judul Topik
                                 <span class="text-rose-500">*</span></label
                             >
@@ -584,18 +584,18 @@ const deletePhase = (id: number) => {
                                 v-model="editForm.title"
                                 type="text"
                                 required
-                                class="h-11 rounded-lg border-slate-200 text-[14px] shadow-sm focus-visible:ring-indigo-500"
+                                class="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[14px] shadow-sm focus-visible:ring-amber-500/20 focus-visible:border-amber-500 focus:border-amber-500 focus:ring-amber-500/20"
                             />
                         </div>
                         <div>
                             <label
-                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 uppercase"
+                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 dark:text-slate-300 uppercase"
                                 >Deskripsi</label
                             >
                             <textarea
                                 v-model="editForm.description"
                                 rows="3"
-                                class="w-full resize-none rounded-lg border border-slate-200 p-3 text-[14px] shadow-sm transition-all outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                                class="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-[14px] shadow-sm transition-all outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus-visible:ring-amber-500/20 focus:outline-hidden"
                             ></textarea>
                         </div>
                     </div>
@@ -604,13 +604,13 @@ const deletePhase = (id: number) => {
                             type="button"
                             variant="outline"
                             @click="closeEditModal"
-                            class="h-10 border-slate-200 px-5 font-semibold text-slate-600"
+                            class="h-10 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 px-5 font-bold text-[13px] text-slate-600 dark:text-slate-300"
                             >Batal</Button
                         >
                         <Button
                             type="submit"
                             :disabled="editForm.processing"
-                            class="h-10 bg-indigo-600 px-6 font-semibold text-white shadow-md hover:bg-indigo-700"
+                            class="h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 px-6 font-bold text-white shadow-md shadow-indigo-100 dark:shadow-none text-[13px]"
                         >
                             <i
                                 v-if="editForm.processing"
@@ -627,25 +627,25 @@ const deletePhase = (id: number) => {
     <Teleport to="body">
         <div
             v-if="isDeleteModalOpen"
-            class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 px-4 backdrop-blur-sm"
+            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 dark:bg-black/60 px-4 backdrop-blur-[6px] transition-all"
         >
             <div
-                class="w-full max-w-[400px] animate-in overflow-hidden rounded-2xl bg-white p-6 text-center shadow-2xl duration-200 zoom-in-95 fade-in"
+                class="w-full max-w-[400px] animate-in overflow-hidden rounded-3xl bg-white dark:bg-slate-950 border border-slate-100/80 dark:border-slate-800/50 shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-6 text-center duration-200 zoom-in-95 fade-in"
             >
                 <div
-                    class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-rose-50"
+                    class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400 shadow-inner"
                 >
                     <i
-                        class="pi pi-exclamation-triangle text-3xl text-rose-500"
+                        class="pi pi-exclamation-triangle text-2xl"
                     ></i>
                 </div>
                 <h3
-                    class="text-xl font-extrabold tracking-tight text-slate-900"
+                    class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100"
                 >
                     Hapus Topik Ini?
                 </h3>
                 <p
-                    class="mt-2 text-[14px] leading-relaxed font-medium text-slate-500"
+                    class="mt-2 text-[14px] leading-relaxed font-medium text-slate-500 dark:text-slate-400"
                 >
                     Anda yakin ingin menghapus topik ini secara permanen?
                     Seluruh Fase & Konten di dalamnya akan ikut terhapus dan
@@ -659,7 +659,7 @@ const deletePhase = (id: number) => {
                         variant="outline"
                         @click="closeDeleteModal"
                         :disabled="isDeleting"
-                        class="h-11 w-full border-slate-200 px-6 font-semibold text-slate-600 sm:w-auto"
+                        class="h-11 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 px-6 font-bold text-slate-600 dark:text-slate-300 text-[13px] w-full sm:w-auto"
                     >
                         Batalkan
                     </Button>
@@ -667,7 +667,7 @@ const deletePhase = (id: number) => {
                         type="button"
                         @click="executeDelete"
                         :disabled="isDeleting"
-                        class="h-11 w-full bg-rose-600 px-6 font-semibold text-white shadow-md hover:bg-rose-700 sm:w-auto"
+                        class="h-11 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 px-6 font-bold text-white shadow-md shadow-rose-100 dark:shadow-none text-[13px] w-full sm:w-auto"
                     >
                         <i
                             v-if="isDeleting"

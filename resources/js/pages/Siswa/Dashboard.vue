@@ -12,6 +12,30 @@ import { ref, computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useTheme } from '@/composables/useTheme';
+
+const { theme } = useTheme();
+
+const chartColor = computed(() => {
+    if (theme.value === 'elegan') return '#4f46e5';
+    if (theme.value === 'genz') return '#d946ef';
+    if (theme.value === 'classic') return '#15803d';
+    return '#0D9488';
+});
+
+const chartAreaColor = computed(() => {
+    if (theme.value === 'elegan') return '#818cf8';
+    if (theme.value === 'genz') return '#f472b6';
+    if (theme.value === 'classic') return '#4ade80';
+    return '#2DD4BF';
+});
+
+const avatarBg = computed(() => {
+    if (theme.value === 'elegan') return '4f46e5';
+    if (theme.value === 'genz') return 'd946ef';
+    if (theme.value === 'classic') return '15803d';
+    return '0F5A53';
+});
 
 // Mengimpor mesin asli Shadcn Vue Chart secara langsung beserta komponen Tooltip
 
@@ -116,7 +140,7 @@ const tickFormat = (i: number) => chartData.value[i]?.name || '';
 const tooltipTemplate = (d: any) => `
     <div class="bg-white/95 backdrop-blur-sm border border-slate-200 shadow-lg rounded-xl px-3 py-2">
         <p class="text-[11px] font-medium text-slate-500 mb-0.5">${d.name}</p>
-        <p class="text-[13px] font-black text-[#0D9488]">${d['Jam Belajar']} Jam</p>
+        <p class="text-[13px] font-black text-[var(--theme-primary)]">${d['Jam Belajar']} Jam</p>
     </div>
 `;
 
@@ -138,7 +162,7 @@ const aiInsights = computed(() => {
     return props.aiInsights && props.aiInsights.length > 0 ? props.aiInsights : [
         "Belum ada masukan AI. Selesaikan latihan esai atau jawaban singkat di Worksheet untuk mendapatkan feedback AI!",
         "Gunakan AI Tutor di pojok kanan bawah untuk bertanya kapan pun kamu bingung tentang konsep Kimia.",
-        "Siklus belajar POE (Predict-Observe-Explain) membantumu memahami konsep secara mendalam."
+        "Siklus belajar LC5E (Engage, Explore, Explain, Elaborate, Evaluate) membantumu memahami konsep secara mendalam."
     ];
 });
 </script>
@@ -147,18 +171,15 @@ const aiInsights = computed(() => {
     <Head title="Overview Siswa - EduChem" />
 
     <main
-        class="relative flex min-h-screen w-full flex-1 flex-col bg-[#F5F8FA] font-sans"
+        :class="[theme === 'classic' ? 'font-serif' : 'font-sans']"
+        class="relative flex min-h-screen w-full flex-1 flex-col transition-colors duration-500"
     >
-        <div
-            class="pointer-events-none absolute top-0 right-0 -z-10 h-96 w-full bg-gradient-to-b from-teal-50/50 to-transparent"
-        ></div>
-
         <header
-            class="sticky top-0 z-20 flex h-[80px] items-center justify-between border-b border-slate-100 bg-white/50 px-8 backdrop-blur-md"
+            class="sticky top-0 z-20 flex h-[80px] items-center justify-between border-b border-[var(--theme-border)] bg-[var(--theme-card-bg)]/50 px-8 backdrop-blur-md transition-colors duration-500"
         >
             <div class="flex items-center">
                 <p class="text-lg md:text-xl font-bold text-slate-800">
-                    Selamat datang kembali, <span class="font-black text-[#0F5A53]">{{ $page.props.auth.user.name }}</span>! 👋
+                    Selamat datang kembali, <span class="font-black text-[var(--theme-primary)]">{{ $page.props.auth.user.name }}</span>! 👋
                 </p>
             </div>
             <div class="flex items-center gap-5">
@@ -177,7 +198,7 @@ const aiInsights = computed(() => {
                     <!-- Dropdown Notifikasi -->
                     <div
                         v-if="showNotifications"
-                        class="absolute right-0 mt-2 w-80 rounded-2xl border border-slate-100 bg-white p-4 shadow-xl z-30 transition-all duration-200"
+                        class="absolute right-0 mt-2 w-80 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-card-bg)] p-4 shadow-xl z-30 transition-all duration-200"
                     >
                         <div class="mb-3 flex items-center justify-between">
                             <h4 class="text-xs font-bold text-slate-800">Notifikasi</h4>
@@ -213,7 +234,7 @@ const aiInsights = computed(() => {
                         </p>
                     </div>
                     <img
-                        :src="`https://ui-avatars.com/api/?name=${encodeURIComponent($page.props.auth.user.name)}&background=0F5A53&color=fff`"
+                        :src="`https://ui-avatars.com/api/?name=${encodeURIComponent($page.props.auth.user.name)}&background=${avatarBg}&color=fff`"
                         class="h-10 w-10 rounded-full border-2 border-white shadow-sm"
                         alt="Profile"
                     />
@@ -236,7 +257,7 @@ const aiInsights = computed(() => {
                             class="mt-0.5 text-[13px] font-medium text-slate-500"
                         >
                             Sistem belajar kimia berbasis
-                            Predict-Observe-Explain (LC5E)
+                            Learning Cycle 5E (LC5E)
                         </p>
                     </div>
 
@@ -245,7 +266,7 @@ const aiInsights = computed(() => {
                         class="flex flex-col items-end gap-1"
                     >
                         <div
-                            class="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm"
+                            class="flex items-center gap-2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-card-bg)] p-1.5 shadow-sm transition-colors duration-500"
                         >
                             <div class="relative w-full md:w-48">
                                 <i
@@ -255,7 +276,7 @@ const aiInsights = computed(() => {
                                     v-model="form.class_code"
                                     placeholder="Kode Kelas (6 Digit)"
                                     maxlength="6"
-                                    class="h-9 w-full rounded-xl border-none bg-slate-50 pr-3 pl-8 text-[12px] font-bold tracking-widest uppercase focus-visible:ring-0"
+                                    class="h-9 w-full rounded-xl border-none bg-slate-50 dark:bg-slate-900 pr-3 pl-8 text-[12px] font-bold tracking-widest uppercase focus-visible:ring-0"
                                 />
                             </div>
                             <Button
@@ -264,7 +285,7 @@ const aiInsights = computed(() => {
                                     form.processing ||
                                     form.class_code.length !== 6
                                 "
-                                class="h-9 rounded-xl bg-[#0F5A53] px-5 text-[12px] font-bold text-white shadow-sm hover:bg-[#0d4f49] disabled:opacity-50"
+                                class="h-9 rounded-xl bg-[var(--theme-primary)] px-5 text-[12px] font-bold text-white shadow-sm hover:bg-[var(--theme-primary-hover)] disabled:opacity-50 transition-colors duration-300"
                             >
                                 <span v-if="form.processing"
                                     ><i class="pi pi-spin pi-spinner"></i
@@ -280,24 +301,24 @@ const aiInsights = computed(() => {
                         </span>
                     </form>
                 </div>
-
+ 
                 <div
                     class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
                 >
                     <Card
-                        class="rounded-2xl border-none bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                        class="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-card-bg)] p-5 shadow-xs transition-all hover:shadow-md hover:border-[var(--theme-primary)]/20 duration-300"
                     >
                         <div class="mb-4 flex items-center justify-between">
-                            <span class="text-[13px] font-bold text-slate-600"
+                            <span class="text-[13px] font-bold text-slate-600 dark:text-slate-400"
                                 >Kelas Aktif</span
                             >
                             <div
-                                class="rounded-lg bg-blue-50 p-2 text-blue-500"
+                                class="rounded-lg bg-[var(--theme-primary)]/10 p-2 text-[var(--theme-primary)]"
                             >
                                 <i class="pi pi-file-text"></i>
                             </div>
                         </div>
-                        <h3 class="text-3xl font-black text-slate-900">
+                        <h3 class="text-3xl font-black text-slate-900 dark:text-white">
                             {{ stats?.kelas_aktif ?? 0 }}
                         </h3>
                         <p class="mt-2 text-[11px] font-bold text-emerald-600">
@@ -305,19 +326,19 @@ const aiInsights = computed(() => {
                         </p>
                     </Card>
                     <Card
-                        class="rounded-2xl border-none bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                        class="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-card-bg)] p-5 shadow-xs transition-all hover:shadow-md hover:border-[var(--theme-primary)]/20 duration-300"
                     >
                         <div class="mb-4 flex items-center justify-between">
-                            <span class="text-[13px] font-bold text-slate-600"
+                            <span class="text-[13px] font-bold text-slate-600 dark:text-slate-400"
                                 >Nilai Awal</span
                             >
                             <div
-                                class="rounded-lg bg-violet-50 p-2 text-violet-500"
+                                class="rounded-lg bg-violet-50 dark:bg-violet-950/30 p-2 text-violet-500 dark:text-violet-400"
                             >
                                 <i class="pi pi-bookmark"></i>
                             </div>
                         </div>
-                        <h3 class="text-3xl font-black text-slate-900">
+                        <h3 class="text-3xl font-black text-slate-900 dark:text-white">
                             {{ stats?.nilai_awal ?? '-' }}
                         </h3>
                         <p class="mt-2 text-[11px] font-bold text-emerald-600">
@@ -325,19 +346,19 @@ const aiInsights = computed(() => {
                         </p>
                     </Card>
                     <Card
-                        class="rounded-2xl border-none bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                        class="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-card-bg)] p-5 shadow-xs transition-all hover:shadow-md hover:border-[var(--theme-primary)]/20 duration-300"
                     >
                         <div class="mb-4 flex items-center justify-between">
-                            <span class="text-[13px] font-bold text-slate-600"
+                            <span class="text-[13px] font-bold text-slate-600 dark:text-slate-400"
                                 >Nilai Akhir</span
                             >
                             <div
-                                class="rounded-lg bg-emerald-50 p-2 text-emerald-500"
+                                class="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 p-2 text-emerald-500 dark:text-emerald-400"
                             >
                                 <i class="pi pi-check-circle"></i>
                             </div>
                         </div>
-                        <h3 class="text-3xl font-black text-slate-900">
+                        <h3 class="text-3xl font-black text-slate-900 dark:text-white">
                             {{ stats?.nilai_akhir ?? '-' }}
                         </h3>
                         <p class="mt-2 text-[11px] font-bold text-emerald-600">
@@ -345,19 +366,19 @@ const aiInsights = computed(() => {
                         </p>
                     </Card>
                     <Card
-                        class="rounded-2xl border-none bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                        class="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-card-bg)] p-5 shadow-xs transition-all hover:shadow-md hover:border-[var(--theme-primary)]/20 duration-300"
                     >
                         <div class="mb-4 flex items-center justify-between">
-                            <span class="text-[13px] font-bold text-slate-600"
+                            <span class="text-[13px] font-bold text-slate-600 dark:text-slate-400"
                                 >Peningkatan</span
                             >
                             <div
-                                class="rounded-lg bg-rose-50 p-2 text-rose-500"
+                                class="rounded-lg bg-rose-50 dark:bg-rose-950/30 p-2 text-rose-500 dark:text-rose-455"
                             >
                                 <i class="pi pi-trending-up"></i>
                             </div>
                         </div>
-                        <h3 class="text-3xl font-black text-slate-900">
+                        <h3 class="text-3xl font-black text-slate-900 dark:text-white">
                             {{ stats?.peningkatan ?? '-' }}
                         </h3>
                         <p class="mt-2 text-[11px] font-bold text-emerald-600">
@@ -369,35 +390,35 @@ const aiInsights = computed(() => {
                 <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     <div class="space-y-6 lg:col-span-2">
                         <Card
-                            class="rounded-2xl border-none bg-white p-6 shadow-sm"
+                            class="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-card-bg)] p-6 shadow-sm transition-colors duration-500"
                         >
                             <div class="mb-6 flex items-center justify-between">
                                 <h3
-                                    class="text-[16px] font-extrabold text-slate-800"
+                                    class="text-[16px] font-extrabold text-slate-800 dark:text-slate-200"
                                 >
                                     Aktivitas Belajar Harian
                                 </h3>
                                 <select
                                     v-model="selectedPeriod"
-                                    class="rounded-lg border-slate-200 bg-slate-50 px-3 py-1.5 text-[12px] font-medium text-slate-500 focus:ring-0 cursor-pointer"
+                                    class="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-card-bg)] px-3 py-1.5 text-[12px] font-medium text-slate-500 focus:ring-0 cursor-pointer transition-colors duration-550"
                                 >
                                     <option value="Minggu Ini">Minggu Ini</option>
                                     <option value="Bulan Ini">Bulan Ini</option>
                                 </select>
                             </div>
-
+ 
                             <div class="mt-4 h-[250px] w-full">
                                 <VisXYContainer :data="chartData" :height="250">
                                     <VisArea
                                         :x="x"
                                         :y="y"
-                                        color="#2DD4BF"
+                                        :color="chartAreaColor"
                                         :opacity="0.2"
                                     />
                                     <VisLine
                                         :x="x"
                                         :y="y"
-                                        color="#0D9488"
+                                        :color="chartColor"
                                         :lineWidth="3"
                                     />
                                     <VisAxis
@@ -405,32 +426,32 @@ const aiInsights = computed(() => {
                                         :tickFormat="tickFormat"
                                         :gridLine="false"
                                     />
-
+ 
                                     <VisCrosshair
-                                        color="#0D9488"
+                                        :color="chartColor"
                                         :template="tooltipTemplate"
                                     />
                                     <VisTooltip />
                                 </VisXYContainer>
                             </div>
                         </Card>
-
+ 
                         <Card
-                            class="rounded-2xl border-none bg-white p-6 shadow-sm"
+                            class="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-card-bg)] p-6 shadow-sm transition-colors duration-500"
                         >
                             <div class="mb-6 flex items-center justify-between">
                                 <h3
-                                    class="text-[16px] font-extrabold text-slate-800"
+                                    class="text-[16px] font-extrabold text-slate-800 dark:text-slate-200"
                                   >
                                     Kelas Anda
                                 </h3>
                                 <Link
                                     :href="route('siswa.classes.index')"
-                                    class="text-[12px] font-bold text-[#0F5A53] hover:underline"
+                                    class="text-[12px] font-bold text-[var(--theme-primary)] hover:underline"
                                     >Lihat Semua</Link
                                 >
                             </div>
-
+ 
                             <div
                                 class="space-y-4"
                                 v-if="classrooms && classrooms.length > 0"
@@ -438,33 +459,33 @@ const aiInsights = computed(() => {
                                 <div
                                     v-for="kelas in classrooms"
                                     :key="kelas.id"
-                                    class="group flex items-center justify-between rounded-xl border border-slate-100 p-4 transition-colors hover:border-teal-200 hover:bg-teal-50/30"
+                                    class="group flex items-center justify-between rounded-xl border border-[var(--theme-border)]/60 p-4 transition-all hover:border-[var(--theme-primary)]/30 hover:bg-[var(--theme-primary)]/5 duration-350"
                                 >
                                     <div class="flex items-center gap-4">
                                         <div
-                                            class="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-teal-400 to-emerald-600 text-lg font-black text-white shadow-sm"
+                                            class="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--theme-primary)]/70 to-[var(--theme-primary)] text-lg font-black text-white shadow-sm transition-colors duration-500"
                                         >
                                             {{ kelas.class_name.charAt(0) }}
                                         </div>
                                         <div>
                                             <h4
-                                                class="text-[14px] font-bold text-slate-900 transition-colors group-hover:text-[#0F5A53]"
+                                                class="text-[14px] font-bold text-slate-900 dark:text-slate-100 transition-colors group-hover:text-[var(--theme-primary)]"
                                             >
                                                 {{ kelas.class_name }}
                                             </h4>
                                             <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
                                                 <p
-                                                    class="text-[11px] font-semibold text-teal-600 flex items-center gap-1"
+                                                    class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1"
                                                 >
                                                     <span>Nilai Awal:</span>
-                                                    <span class="font-black px-1.5 py-0.2 bg-teal-50 rounded text-[#0F5A53]">{{ kelas.pivot?.pre_test_score !== null && kelas.pivot?.pre_test_score !== undefined ? kelas.pivot.pre_test_score : '-' }}</span>
+                                                    <span class="font-black px-1.5 py-0.2 bg-slate-105 dark:bg-slate-800 rounded text-slate-700 dark:text-slate-350">{{ kelas.pivot?.pre_test_score !== null && kelas.pivot?.pre_test_score !== undefined ? kelas.pivot.pre_test_score : '-' }}</span>
                                                 </p>
-                                                <div class="hidden sm:block h-3 w-[1px] bg-slate-200"></div>
+                                                <div class="hidden sm:block h-3 w-[1px] bg-slate-200 dark:bg-slate-800"></div>
                                                 <p
-                                                    class="text-[11px] font-semibold text-emerald-600 flex items-center gap-1"
+                                                    class="text-[11px] font-semibold text-[var(--theme-primary)] flex items-center gap-1"
                                                 >
                                                     <span>Nilai Akhir:</span>
-                                                    <span class="font-black px-1.5 py-0.2 bg-emerald-50 rounded text-emerald-700">{{ kelas.pivot?.post_test_score !== null && kelas.pivot?.post_test_score !== undefined ? kelas.pivot.post_test_score : '-' }}</span>
+                                                    <span class="font-black px-1.5 py-0.2 bg-[var(--theme-primary)]/10 rounded text-[var(--theme-primary)]">{{ kelas.pivot?.post_test_score !== null && kelas.pivot?.post_test_score !== undefined ? kelas.pivot.post_test_score : '-' }}</span>
                                                 </p>
                                             </div>
                                         </div>
@@ -472,7 +493,7 @@ const aiInsights = computed(() => {
                                     <Link :href="route('siswa.classes.show', kelas.id)">
                                         <Button
                                             variant="outline"
-                                            class="h-9 rounded-xl border-slate-200 px-4 text-[12px] font-bold text-[#0F5A53] shadow-sm transition-all hover:bg-[#0F5A53] hover:text-white"
+                                            class="h-9 rounded-xl border-[var(--theme-border)] px-4 text-[12px] font-bold text-[var(--theme-primary)] shadow-sm transition-all hover:bg-[var(--theme-primary)] hover:text-white"
                                         >
                                             Lanjutkan
                                         </Button>
@@ -489,15 +510,15 @@ const aiInsights = computed(() => {
                             </div>
                         </Card>
                     </div>
-
+ 
                     <div class="space-y-6">
-
-
+ 
+ 
                         <Card
-                            class="rounded-2xl border-none bg-white p-6 shadow-sm"
+                            class="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-card-bg)] p-6 shadow-sm transition-colors duration-500"
                         >
                             <h3
-                                class="mb-5 text-[16px] font-extrabold text-slate-800"
+                                class="mb-5 text-[16px] font-extrabold text-slate-800 dark:text-slate-200"
                             >
                                 Riwayat Aktivitas
                             </h3>
@@ -509,7 +530,7 @@ const aiInsights = computed(() => {
                                 >
                                     <div class="mt-1">
                                         <div
-                                            :class="`flex h-8 w-8 items-center justify-center rounded-full border border-slate-100 bg-slate-50 shadow-sm ${activity.color}`"
+                                            :class="`flex h-8 w-8 items-center justify-center rounded-full border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 shadow-sm ${activity.color}`"
                                         >
                                             <i
                                                 :class="`pi ${activity.icon} text-[14px]`"
@@ -518,7 +539,7 @@ const aiInsights = computed(() => {
                                     </div>
                                     <div>
                                         <p
-                                            class="text-[13px] font-bold text-slate-800"
+                                            class="text-[13px] font-bold text-slate-850 dark:text-slate-200"
                                         >
                                             {{ activity.title }}
                                         </p>

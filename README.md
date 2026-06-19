@@ -62,8 +62,8 @@ Pastikan perangkat lunak berikut sudah terinstal di komputer Anda:
 Buka terminal dan jalankan perintah berikut:
 
 ```bash
-git clone https://github.com/Fadhelnaufal/pope.git
-cd pope
+git clone https://github.com/Kimia-UM/educhem.git
+cd educhem
 ```
 
 ### 2. Install Dependensi

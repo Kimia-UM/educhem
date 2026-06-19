@@ -175,10 +175,10 @@ const aiInsights = computed(() => {
         class="relative flex min-h-screen w-full flex-1 flex-col transition-colors duration-500"
     >
         <header
-            class="sticky top-0 z-20 flex h-[80px] items-center justify-between border-b border-[var(--theme-border)] bg-[var(--theme-card-bg)]/50 px-8 backdrop-blur-md transition-colors duration-500"
+            class="sticky top-0 z-20 flex h-[80px] items-center justify-between border-b border-[var(--theme-border)] bg-[var(--theme-card-bg)]/50 px-4 md:px-8 backdrop-blur-md transition-colors duration-500"
         >
             <div class="flex items-center">
-                <p class="text-lg md:text-xl font-bold text-slate-800">
+                <p class="text-sm md:text-xl font-bold text-slate-800">
                     Selamat datang kembali, <span class="font-black text-[var(--theme-primary)]">{{ $page.props.auth.user.name }}</span>! 👋
                 </p>
             </div>

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import RichTextEditor from '@/components/RichTextEditor.vue';
 
 const props = defineProps<{
     classroom: {
@@ -58,6 +59,7 @@ return;
         {},
         {
             preserveScroll: true,
+            preserveState: true,
             onSuccess: () => {
                 toast.success(
                     localIsPublished.value
@@ -228,7 +230,7 @@ const deletePhase = (id: number) => {
 <template>
     <Head :title="`Kelola Topik: ${topic.title}`" />
 
-    <div class="min-h-screen bg-[#F4F7F9] px-6 py-8 font-sans lg:px-10">
+    <div class="min-h-screen bg-[#F4F7F9] px-4 py-6 font-sans md:px-8 lg:px-10">
         <div class="mx-auto max-w-5xl">
             <div
                 class="mb-6 flex items-center gap-2 text-[12px] font-bold text-slate-500"
@@ -249,7 +251,7 @@ const deletePhase = (id: number) => {
             </div>
 
             <Card
-                class="mb-8 overflow-hidden border-slate-200 bg-white p-6 shadow-sm"
+                class="mb-8 overflow-hidden border-slate-200 bg-white p-4 md:p-6 shadow-sm"
             >
                 <div
                     class="flex flex-col gap-6 md:flex-row md:items-start md:justify-between"
@@ -280,13 +282,16 @@ const deletePhase = (id: number) => {
                                     PUBLISHED
                                 </span>
                             </div>
+                            <div
+                                v-if="topic.description"
+                                v-html="topic.description"
+                                class="max-w-2xl text-[14px] leading-relaxed text-slate-500 rich-text-content"
+                            ></div>
                             <p
+                                v-else
                                 class="max-w-2xl text-[14px] leading-relaxed text-slate-500"
                             >
-                                {{
-                                    topic.description ||
-                                    'Tidak ada deskripsi khusus untuk topik ini.'
-                                }}
+                                Tidak ada deskripsi khusus untuk topik ini.
                             </p>
                         </div>
                     </div>
@@ -357,7 +362,7 @@ const deletePhase = (id: number) => {
                     class="relative"
                 >
                     <Card
-                        class="flex flex-col justify-between gap-4 overflow-hidden rounded-2xl border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-indigo-300 hover:shadow-md md:flex-row md:items-center"
+                        class="flex flex-col justify-between gap-4 overflow-hidden rounded-2xl border-slate-200 bg-white p-4 md:p-5 shadow-sm transition-all hover:border-indigo-300 hover:shadow-md md:flex-row md:items-center"
                     >
                         <div class="flex flex-1 items-center gap-4">
                             <span
@@ -398,7 +403,7 @@ const deletePhase = (id: number) => {
                         </div>
 
                         <div
-                            class="flex w-full items-center justify-end gap-3 self-end border-t border-slate-100 pt-3 md:w-auto md:self-auto md:border-none md:pt-0"
+                            class="flex w-full flex-wrap items-center justify-end gap-2.5 self-end border-t border-slate-100 pt-3 md:w-auto md:self-auto md:border-none md:pt-0"
                         >
                             <Link
                                 :href="
@@ -592,11 +597,10 @@ const deletePhase = (id: number) => {
                                 class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 dark:text-slate-300 uppercase"
                                 >Deskripsi</label
                             >
-                            <textarea
+                            <RichTextEditor
                                 v-model="editForm.description"
-                                rows="3"
-                                class="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-[14px] shadow-sm transition-all outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus-visible:ring-amber-500/20 focus:outline-hidden"
-                            ></textarea>
+                                placeholder="Tujuan pembelajaran, deskripsi modul, dll..."
+                            />
                         </div>
                     </div>
                     <div class="mt-8 flex justify-end gap-3">

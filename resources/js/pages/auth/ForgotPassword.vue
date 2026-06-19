@@ -8,12 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { email } from '@/routes/password';
+import AuthLayout from '@/layouts/AuthLayout.vue';
 
 defineOptions({
-    layout: {
+    layout: (h, page) => h(AuthLayout, {
         title: 'Forgot password',
         description: 'Enter your email to receive a password reset link',
-    },
+    }, () => page),
 });
 
 defineProps<{

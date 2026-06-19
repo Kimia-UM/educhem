@@ -48,10 +48,13 @@ const togglePassword = () => {
             >
                 <div class="mb-7 text-center">
                     <h1
-                        class="mb-2 text-[28px] font-bold tracking-tight text-gray-900"
+                        class="mb-1 text-[28px] font-bold tracking-tight text-gray-900"
                     >
                         Login
                     </h1>
+                    <div class="mb-3 text-[11px] font-black tracking-[0.25em] uppercase bg-gradient-to-r from-[#4F46E5] via-purple-600 to-[#ec4899] bg-clip-text text-transparent select-none">
+                        EDUCHEM
+                    </div>
                     <p class="text-[15px] font-medium text-gray-500">
                         Sign in to your account
                     </p>

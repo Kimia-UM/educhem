@@ -167,7 +167,7 @@ return '-';
 <template>
     <Head :title="`Rekap Jawaban: ${phase.name}`" />
 
-    <div class="min-h-screen bg-[#F4F7F9] px-4 py-6 font-sans md:px-8">
+    <div class="min-h-screen bg-[#F4F7F9] px-3 py-4 font-sans sm:px-6 md:px-8">
         <div class="mx-auto max-w-6xl">
             <!-- Breadcrumb -->
             <div
@@ -204,7 +204,7 @@ return '-';
                 class="mb-8 overflow-hidden border-none bg-white shadow-sm"
             >
                 <div
-                    class="flex flex-col justify-between gap-4 bg-gradient-to-r from-slate-900 to-slate-800 px-8 py-6 text-white md:flex-row md:items-center"
+                    class="flex flex-col justify-between gap-4 bg-gradient-to-r from-slate-900 to-slate-800 px-4 py-6 md:px-8 text-white md:flex-row md:items-center"
                 >
                     <div>
                         <span
@@ -282,7 +282,7 @@ return '-';
                         <!-- Question Header (Clickable to expand) -->
                         <button
                             @click="toggleExpand(content.id)"
-                            class="flex w-full items-center justify-between px-6 py-4 text-left transition-colors hover:bg-slate-50/50"
+                            class="flex w-full items-center justify-between px-4 py-3 md:px-6 md:py-4 text-left transition-colors hover:bg-slate-50/50"
                         >
                             <div class="flex items-center gap-4">
                                 <span
@@ -403,7 +403,7 @@ return '-';
                                 <div
                                     v-for="(answer, aIdx) in getAnswersForContent(content.id)"
                                     :key="answer.id"
-                                    class="flex gap-4 px-6 py-4 transition-colors hover:bg-slate-50/50"
+                                    class="flex gap-4 px-4 py-3 md:px-6 md:py-4 transition-colors hover:bg-slate-50/50"
                                 >
                                     <!-- Student Avatar -->
                                     <div class="flex shrink-0 flex-col items-center gap-1 pt-0.5">

@@ -32,7 +32,7 @@ const props = defineProps<{
         class="relative flex min-h-screen w-full flex-1 flex-col bg-[#F8FAFC] font-sans"
     >
         <div
-            class="relative overflow-hidden bg-gradient-to-r from-[#0B1E36] to-indigo-900 px-8 py-12"
+            class="relative overflow-hidden bg-gradient-to-r from-[#0B1E36] to-indigo-900 px-4 py-8 md:px-8 md:py-12"
         >
             <div
                 class="absolute inset-0 opacity-10"
@@ -65,13 +65,16 @@ const props = defineProps<{
                     >
                         {{ classroom.class_name }}
                     </h1>
+                    <div
+                        v-if="classroom.description"
+                        v-html="classroom.description"
+                        class="max-w-2xl text-[14px] leading-relaxed text-blue-100/80 rich-text-content"
+                    ></div>
                     <p
+                        v-else
                         class="max-w-2xl text-[14px] leading-relaxed text-blue-100/80"
                     >
-                        {{
-                            classroom.description ||
-                            'Selamat datang di kelas ini. Mari belajar kimia dengan pendekatan LC5E!'
-                        }}
+                        Selamat datang di kelas ini. Mari belajar kimia dengan pendekatan LC5E!
                     </p>
                 </div>
                 <div
@@ -146,11 +149,16 @@ const props = defineProps<{
                                 <h3 class="text-lg font-bold text-slate-900">
                                     {{ topic.title }}
                                 </h3>
-                                <p class="mt-1 text-[13px] text-slate-500">
-                                    {{
-                                        topic.description ||
-                                        'Pilih fase di bawah ini untuk mulai belajar.'
-                                    }}
+                                <div
+                                    v-if="topic.description"
+                                    v-html="topic.description"
+                                    class="mt-1 text-[13px] text-slate-500 rich-text-content"
+                                ></div>
+                                <p
+                                    v-else
+                                    class="mt-1 text-[13px] text-slate-500"
+                                >
+                                    Pilih fase di bawah ini untuk mulai belajar.
                                 </p>
                             </div>
                         </div>

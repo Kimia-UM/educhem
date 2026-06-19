@@ -13,6 +13,12 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useTheme } from '@/composables/useTheme';
+import RichTextEditor from '@/components/RichTextEditor.vue';
+
+const stripHtml = (html: string | null | undefined): string => {
+    if (!html) return '';
+    return html.replace(/<\/?[^>]+(>|$)/g, ' ').replace(/\s+/g, ' ').trim();
+};
 
 const { theme } = useTheme();
 
@@ -82,7 +88,7 @@ const stats = computed(() => props.stats || { total_students: 0, pending_reviews
 <template>
     <Head title="Workspace Guru" />
 
-    <div :class="[theme === 'classic' ? 'font-serif' : 'font-sans']" class="min-h-screen px-6 py-8 lg:px-10">
+    <div :class="[theme === 'classic' ? 'font-serif' : 'font-sans']" class="min-h-screen px-4 py-6 md:px-8 lg:px-10">
         <div
             class="mx-auto mb-8 flex max-w-7xl flex-col items-start justify-between gap-4 md:flex-row md:items-center"
         >
@@ -271,7 +277,7 @@ const stats = computed(() => props.stats || { total_students: 0, pending_reviews
                                 class="mb-5 line-clamp-2 flex-1 text-[13px] text-slate-650"
                             >
                                 {{
-                                    cls.description ||
+                                    stripHtml(cls.description) ||
                                     'Belum ada deskripsi untuk kelas ini.'
                                 }}
                             </p>
@@ -395,12 +401,10 @@ const stats = computed(() => props.stats || { total_students: 0, pending_reviews
                                 >
                                     Deskripsi Singkat
                                 </label>
-                                <textarea
+                                <RichTextEditor
                                     v-model="form.description"
-                                    rows="3"
                                     placeholder="Opsional: Tujuan pembelajaran..."
-                                    class="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 p-3 text-[13px] bg-white dark:bg-slate-900 transition-all outline-none placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus-visible:ring-amber-500/20 focus:outline-hidden"
-                                ></textarea>
+                                />
                             </div>
 
                             <Button

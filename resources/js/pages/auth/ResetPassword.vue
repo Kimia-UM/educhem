@@ -8,12 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { update } from '@/routes/password';
+import AuthLayout from '@/layouts/AuthLayout.vue';
 
 defineOptions({
-    layout: {
+    layout: (h, page) => h(AuthLayout, {
         title: 'Reset password',
         description: 'Please enter your new password below',
-    },
+    }, () => page),
 });
 
 const props = defineProps<{

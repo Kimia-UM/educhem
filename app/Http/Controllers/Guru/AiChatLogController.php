@@ -55,4 +55,38 @@ class AiChatLogController extends Controller
             'defaultTab' => 'chatLogs', // Agar Vue memfokuskan tab chatbot log secara otomatis
         ]);
     }
+
+    /**
+     * Show print-friendly chatbot interaction logs of students in the class (PDF/Print).
+     */
+    public function printChatLogs(Request $request, Classroom $classroom)
+    {
+        // Pengecekan kepemilikan kelas
+        if ($classroom->teacher_id !== $request->user()->id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        // Ambil ID siswa yang terdaftar di kelas ini
+        $studentIds = $classroom->students()->pluck('users.id');
+
+        // Query SEMUA log chat dari siswa-siswa tersebut (tanpa paginasi untuk dicetak)
+        $query = AiChatLog::whereIn('user_id', $studentIds)
+            ->with('user:id,name')
+            ->latest();
+
+        // Cari berdasarkan nama siswa jika ada query pencarian
+        if ($request->filled('search')) {
+            $query->whereHas('user', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        $chatLogs = $query->get();
+
+        return view('print.chat-logs', [
+            'classroom' => $classroom,
+            'chatLogs' => $chatLogs,
+            'search' => $request->query('search'),
+        ]);
+    }
 }

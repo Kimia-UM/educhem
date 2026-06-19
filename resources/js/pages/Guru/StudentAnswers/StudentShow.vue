@@ -144,7 +144,7 @@ const isImage = (url: string | null) => {
 <template>
     <Head :title="`Evaluasi Siswa: ${student.name}`" />
 
-    <div class="min-h-screen bg-[#F8FAFC] px-6 py-8 font-sans lg:px-10">
+    <div class="min-h-screen bg-[#F8FAFC] px-4 py-6 font-sans md:px-8 lg:px-10">
         <div class="mx-auto max-w-5xl">
             <!-- Header -->
             <div class="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -163,8 +163,8 @@ const isImage = (url: string | null) => {
                     <p class="text-[13px] text-slate-500 mt-1">{{ student.email }}</p>
                 </div>
                 
-                <div class="flex flex-col items-end gap-1.5">
-                    <div class="flex flex-wrap items-center gap-3">
+                <div class="flex flex-col items-start md:items-end gap-3 md:gap-1.5">
+                    <div class="flex flex-wrap items-center gap-3 w-full justify-start md:justify-end">
                         <!-- Status Badge -->
                         <div class="flex items-center gap-2 mr-1">
                             <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Status:</span>
@@ -213,9 +213,18 @@ const isImage = (url: string | null) => {
                             <i :class="['pi mr-2', isEvaluationSent ? 'pi-sync' : 'pi-send']"></i>
                             {{ isEvaluationSent ? 'Perbarui & Kirim Ulang' : 'Kirim Hasil ke Siswa' }}
                         </Button>
+
+                        <!-- Tombol Cetak Evaluasi (PDF) -->
+                        <a
+                            :href="route('guru.classes.students.print', { classroom: classroom.id, student: student.id })"
+                            target="_blank"
+                            class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl font-bold transition-all bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm"
+                        >
+                            <i class="pi pi-print mr-2 text-[12px] text-slate-500"></i> Cetak Evaluasi (PDF)
+                        </a>
                     </div>
                     
-                    <div class="text-[11px] text-slate-400 font-medium max-w-[350px] text-right">
+                    <div class="text-[11px] text-slate-400 font-medium max-w-[350px] text-left md:text-right">
                         <p v-if="progressPercent < 100 && !isEvaluationFinished">
                             Selesaikan evaluasi seluruh soal ({{ progressPercent }}%) terlebih dahulu.
                         </p>
@@ -265,7 +274,7 @@ const isImage = (url: string | null) => {
 
             <!-- Konten Evaluasi (Berdasarkan Topik yang Dipilih) -->
             <div v-if="activeTopic" class="flex flex-col gap-10">
-                <div v-for="phase in activeTopic.phases" :key="phase.id" class="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 shadow-sm relative overflow-hidden">
+                <div v-for="phase in activeTopic.phases" :key="phase.id" class="bg-white rounded-2xl border border-slate-200 p-4 md:p-8 shadow-sm relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-full h-1 bg-indigo-500"></div>
                     
                     <!-- Judul Fase -->
@@ -279,7 +288,7 @@ const isImage = (url: string | null) => {
                         </div>
 
                         <div v-else class="flex flex-col gap-5">
-                            <Card v-for="(answer, index) in getPhaseAnswers(phase.id)" :key="answer.id" class="p-5 border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+                            <Card v-for="(answer, index) in getPhaseAnswers(phase.id)" :key="answer.id" class="p-4 md:p-5 border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow">
                                 <!-- Pertanyaan -->
                                 <div class="mb-4">
                                     <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 block">Pertanyaan {{ index + 1 }}</span>
@@ -336,7 +345,7 @@ const isImage = (url: string | null) => {
                                 </div>
 
                                 <!-- Form Evaluasi Manual (Hanya untuk uraian) -->
-                                <div v-if="!['eval_mcq', 'eval_cmcq'].includes(answer.content.type)" class="flex items-center gap-3 pt-2">
+                                <div v-if="!['eval_mcq', 'eval_cmcq'].includes(answer.content.type)" class="flex flex-wrap items-center gap-2.5 pt-2">
                                     <span class="text-[12px] font-bold text-slate-500 mr-2">Evaluasi:</span>
                                     <button 
                                         @click="evaluateAnswer(answer.id, 'benar')"

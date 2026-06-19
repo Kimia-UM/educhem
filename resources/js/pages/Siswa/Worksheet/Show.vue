@@ -4,6 +4,7 @@ import { marked } from 'marked';
 import { ref, onMounted, computed } from 'vue';
 import { toast } from 'vue-sonner';
 import FloatingChatbot from '@/components/FloatingChatbot.vue';
+import RichTextEditor from '@/components/RichTextEditor.vue';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
@@ -413,14 +414,31 @@ const refreshDiscussions = () => {
 
                 <div
                     v-if="content.type === 'h5p' && content.content_data.path"
-                    class="overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-sm"
+                    class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
                 >
+                    <div class="mb-3 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex h-2 w-2 rounded-full bg-indigo-500"></span>
+                            <span class="text-sm font-bold text-slate-700">Materi Interaktif</span>
+                        </div>
+                        <a
+                            :href="content.content_data.path"
+                            target="_blank"
+                            class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition-all hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200"
+                        >
+                            <i class="pi pi-external-link"></i>
+                            <span>Buka di Tab Baru</span>
+                        </a>
+                    </div>
                     <div
-                        class="aspect-video w-full overflow-hidden rounded-xl bg-slate-900"
+                        class="w-full rounded-xl bg-slate-900"
+                        style="max-height: 85vh; overflow-y: auto; -webkit-overflow-scrolling: touch;"
                     >
                         <iframe
                             :src="content.content_data.path"
-                            class="h-full w-full border-0"
+                            class="w-full border-0"
+                            style="height: 1000px; width: 125%; transform: scale(0.8); transform-origin: top left;overflow-y: hidden;"
+                            scrolling="no"
                             allowfullscreen="allowfullscreen"
                             allow="
                                 geolocation *;
@@ -429,6 +447,7 @@ const refreshDiscussions = () => {
                                 midi *;
                                 encrypted-media *;
                             "
+                            sandbox="allow-scripts allow-forms allow-same-origin allow-downloads"
                             title="Interactive Video LC5E"
                         ></iframe>
                     </div>
@@ -690,16 +709,13 @@ const refreshDiscussions = () => {
                         ></span>
                     </label>
 
-                    <!-- Textarea terkunci saat menunggu AI -->
-                    <textarea
+                    <!-- Editor Terkunci saat menunggu AI -->
+                    <RichTextEditor
                         v-model="answers[content.id]"
+                        variant="student"
                         placeholder="Ketik uraian jawaban Anda di sini..."
-                        class="min-h-[140px] w-full resize-y rounded-xl border border-indigo-200 bg-white p-4 text-[14px] text-slate-700 shadow-inner transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-70"
-                        :disabled="
-                            isSubmitting[content.id] ||
-                            isWaitingForAI[content.id]
-                        "
-                    ></textarea>
+                        :disabled="isSubmitting[content.id] || isWaitingForAI[content.id]"
+                    />
 
                     <div
                         class="mt-3 flex min-h-[32px] items-center justify-end gap-3"

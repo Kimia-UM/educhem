@@ -21,7 +21,7 @@ const { theme } = useTheme();
 <template>
     <AppShell variant="sidebar" :class="[theme === 'classic' ? 'font-serif' : '']">
         <AppSidebar />
-        <AppContent variant="sidebar" class="overflow-x-hidden relative min-h-screen">
+        <AppContent variant="sidebar" class="overflow-x-clip relative min-h-screen">
             <!-- BACKGROUND DECORATIONS -->
             
             <!-- 1. Elegan Background Grid + Minimal Chemistry Vectors -->

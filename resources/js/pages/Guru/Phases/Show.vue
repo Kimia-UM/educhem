@@ -121,6 +121,7 @@ return;
         },
         {
             preserveScroll: true,
+            preserveState: true,
             onSuccess: () =>
                 toast.success(
                     localAisEnabled.value
@@ -166,6 +167,7 @@ return;
         },
         {
             preserveScroll: true,
+            preserveState: true,
             onSuccess: () =>
                 toast.success(
                     localChatbotEnabled.value
@@ -365,7 +367,7 @@ const toggleCorrectAnswer = (content: any, index: number) => {
 <template>
     <Head :title="`Builder: ${phase.name}`" />
 
-    <div class="min-h-screen bg-[#F8FAFC] px-6 py-8 font-sans lg:px-10">
+    <div class="min-h-screen bg-[#F8FAFC] px-4 py-6 font-sans md:px-8 lg:px-10">
         <div class="mx-auto max-w-4xl">
             <div
                 class="mb-6 flex items-center gap-2 text-[12px] font-bold text-slate-500"
@@ -462,7 +464,7 @@ const toggleCorrectAnswer = (content: any, index: number) => {
 
                 <div
                     v-if="localAisEnabled"
-                    class="animate-in border-b border-indigo-50 bg-indigo-50/50 p-8 duration-300 fade-in"
+                    class="animate-in border-b border-indigo-50 bg-indigo-50/50 p-4 md:p-8 duration-300 fade-in"
                 >
                     <label
                         class="mb-2 flex items-center gap-2 text-[12px] font-black tracking-widest text-indigo-600 uppercase"
@@ -489,7 +491,7 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                 <!-- Prompt Instruksi Chatbot AI -->
                 <div
                     v-if="localChatbotEnabled"
-                    class="animate-in border-b border-indigo-50 bg-sky-50/20 p-8 duration-300 fade-in"
+                    class="animate-in border-b border-indigo-50 bg-sky-50/20 p-4 md:p-8 duration-300 fade-in"
                 >
                     <label
                         class="mb-2 flex items-center gap-2 text-[12px] font-black tracking-widest text-sky-600 uppercase"
@@ -589,7 +591,7 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                             </button>
                         </div>
 
-                        <div class="p-6">
+                        <div class="p-4 md:p-6">
                             <div v-if="content.type === 'text'">
                                 <RichTextEditor
                                     v-model="content.content_data.body"
@@ -905,7 +907,7 @@ const toggleCorrectAnswer = (content: any, index: number) => {
             </div>
 
             <div
-                class="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-6 text-center shadow-sm"
+                class="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 md:p-6 text-center shadow-sm"
             >
                 <h3 class="mb-4 text-[13px] font-bold text-indigo-900">
                     <i class="pi pi-plus-circle mr-1 text-indigo-500"></i>

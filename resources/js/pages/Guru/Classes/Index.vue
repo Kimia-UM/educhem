@@ -11,6 +11,12 @@ import {
     CardDescription,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import RichTextEditor from '@/components/RichTextEditor.vue';
+
+const stripHtml = (html: string | null | undefined): string => {
+    if (!html) return '';
+    return html.replace(/<\/?[^>]+(>|$)/g, ' ').replace(/\s+/g, ' ').trim();
+};
 
 const props = defineProps<{
     classes: Array<{
@@ -177,7 +183,7 @@ return;
 <template>
     <Head title="Manajemen Kelas" />
 
-    <div class="min-h-screen bg-[#F8FAFC] px-6 py-8 font-sans lg:px-10">
+    <div class="min-h-screen bg-[#F8FAFC] px-4 py-6 font-sans md:px-8 lg:px-10">
         <div class="mx-auto mb-8 max-w-7xl">
             <div
                 class="flex flex-col items-start justify-between gap-4 border-b border-slate-200 pb-6 md:flex-row md:items-end"
@@ -279,7 +285,7 @@ return;
                             class="mb-4 line-clamp-2 flex-1 text-[13px] text-slate-600"
                         >
                             {{
-                                cls.description ||
+                                stripHtml(cls.description) ||
                                 'Tidak ada deskripsi khusus untuk kelas ini.'
                             }}
                         </p>
@@ -472,12 +478,10 @@ return;
                             >
                                 Deskripsi Singkat
                             </label>
-                            <textarea
+                            <RichTextEditor
                                 v-model="createForm.description"
-                                rows="3"
                                 placeholder="Opsional: Tuliskan tujuan atau materi kelas..."
-                                class="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-[14px] shadow-sm transition-all outline-none placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus-visible:ring-amber-500/20 focus:outline-hidden"
-                            ></textarea>
+                            />
                         </div>
                     </div>
 
@@ -560,11 +564,10 @@ return;
                             >
                                 Deskripsi Singkat
                             </label>
-                            <textarea
+                            <RichTextEditor
                                 v-model="editForm.description"
-                                rows="3"
-                                class="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-[14px] shadow-sm transition-all outline-none placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus-visible:ring-amber-500/20 focus:outline-hidden"
-                            ></textarea>
+                                placeholder="Opsional: Tuliskan tujuan atau materi kelas..."
+                            />
                         </div>
                     </div>
 

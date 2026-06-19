@@ -4,6 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
+const stripHtml = (html: string | null | undefined): string => {
+    if (!html) return '';
+    return html.replace(/<\/?[^>]+(>|$)/g, ' ').replace(/\s+/g, ' ').trim();
+};
+
 const props = defineProps<{
     classrooms: Array<{
         id: number;
@@ -36,7 +41,7 @@ const submitJoinClass = () => {
     <main
         class="relative flex min-h-screen w-full flex-1 flex-col bg-[#F8FAFC] font-sans"
     >
-        <div class="border-b border-slate-200 bg-white px-8 py-8">
+        <div class="border-b border-slate-200 bg-white px-4 py-6 md:px-8 md:py-8">
             <div
                 class="mx-auto flex max-w-7xl flex-col justify-between gap-6 md:flex-row md:items-center"
             >
@@ -53,9 +58,9 @@ const submitJoinClass = () => {
 
                 <form
                     @submit.prevent="submitJoinClass"
-                    class="flex w-full items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 shadow-sm md:w-auto"
+                    class="flex w-full flex-col items-stretch gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2.5 shadow-sm sm:flex-row sm:items-center sm:p-1.5 md:w-auto"
                 >
-                    <div class="relative w-full md:w-56">
+                    <div class="relative w-full sm:w-56">
                         <i
                             class="pi pi-key absolute top-1/2 left-3 -translate-y-1/2 text-[13px] text-slate-400"
                         ></i>
@@ -71,7 +76,7 @@ const submitJoinClass = () => {
                         :disabled="
                             form.processing || form.class_code.length !== 6
                         "
-                        class="h-10 rounded-xl bg-indigo-600 px-6 text-[13px] font-bold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-50"
+                        class="h-10 w-full rounded-xl bg-indigo-600 px-6 text-[13px] font-bold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-50 sm:w-auto"
                     >
                         <span v-if="form.processing"
                             ><i class="pi pi-spin pi-spinner"></i
@@ -88,7 +93,7 @@ const submitJoinClass = () => {
             </p>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-8">
+        <div class="flex-1 overflow-y-auto p-4 md:p-8">
             <div class="mx-auto max-w-7xl">
                 <div
                     v-if="classrooms && classrooms.length > 0"
@@ -124,7 +129,7 @@ const submitJoinClass = () => {
                                 class="mb-4 line-clamp-2 flex-1 text-[13px] text-slate-500"
                             >
                                 {{
-                                    kelas.description ||
+                                    stripHtml(kelas.description) ||
                                     'Tidak ada deskripsi untuk kelas ini.'
                                 }}
                             </p>

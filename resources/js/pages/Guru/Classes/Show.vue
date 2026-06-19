@@ -8,6 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import 'katex/dist/katex.min.css';
+import RichTextEditor from '@/components/RichTextEditor.vue';
+
+const stripHtml = (html: string | null | undefined): string => {
+    if (!html) return '';
+    return html.replace(/<\/?[^>]+(>|$)/g, ' ').replace(/\s+/g, ' ').trim();
+};
 
 const props = defineProps<{
     classroom: {
@@ -290,7 +296,7 @@ const saveScores = (studentId: number) => {
 <template>
     <Head :title="`Kelas: ${classroom.class_name}`" />
 
-    <div class="min-h-screen bg-[#F8FAFC] px-6 py-8 font-sans lg:px-10">
+    <div class="min-h-screen bg-[#F8FAFC] px-4 py-6 font-sans md:px-8 lg:px-10">
         <div class="mx-auto max-w-7xl">
             <div
                 class="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between"
@@ -318,13 +324,16 @@ const saveScores = (studentId: number) => {
                     >
                         {{ classroom.class_name }}
                     </h1>
+                    <div
+                        v-if="classroom.description"
+                        v-html="classroom.description"
+                        class="mt-2 max-w-3xl text-[14px] leading-relaxed font-medium text-slate-600 rich-text-content"
+                    ></div>
                     <p
+                        v-else
                         class="mt-2 max-w-3xl text-[14px] leading-relaxed font-medium text-slate-600"
                     >
-                        {{
-                            classroom.description ||
-                            'Tidak ada deskripsi khusus untuk kelas ini.'
-                        }}
+                        Tidak ada deskripsi khusus untuk kelas ini.
                     </p>
                 </div>
 
@@ -351,11 +360,11 @@ const saveScores = (studentId: number) => {
                 </button>
             </div>
 
-            <div class="mb-6 flex items-center gap-6 border-b border-slate-200">
+            <div class="mb-6 flex items-center gap-6 border-b border-slate-200 overflow-x-auto scrollbar-none pb-0.5">
                 <button
                     @click="handleTabChange('topik')"
                     :class="[
-                        'relative pb-3 text-[14px] font-bold transition-all',
+                        'relative pb-3 text-[14px] font-bold transition-all shrink-0',
                         activeTab === 'topik'
                             ? 'text-indigo-600'
                             : 'text-slate-500 hover:text-slate-700',
@@ -371,7 +380,7 @@ const saveScores = (studentId: number) => {
                 <button
                     @click="handleTabChange('siswa')"
                     :class="[
-                        'relative pb-3 text-[14px] font-bold transition-all',
+                        'relative pb-3 text-[14px] font-bold transition-all shrink-0',
                         activeTab === 'siswa'
                             ? 'text-indigo-600'
                             : 'text-slate-500 hover:text-slate-700',
@@ -391,7 +400,7 @@ const saveScores = (studentId: number) => {
                 <button
                     @click="handleTabChange('chatLogs')"
                     :class="[
-                        'relative pb-3 text-[14px] font-bold transition-all',
+                        'relative pb-3 text-[14px] font-bold transition-all shrink-0',
                         activeTab === 'chatLogs'
                             ? 'text-indigo-600'
                             : 'text-slate-500 hover:text-slate-700',
@@ -406,7 +415,7 @@ const saveScores = (studentId: number) => {
                 <button
                     @click="handleTabChange('rekapNilai')"
                     :class="[
-                        'relative pb-3 text-[14px] font-bold transition-all',
+                        'relative pb-3 text-[14px] font-bold transition-all shrink-0',
                         activeTab === 'rekapNilai'
                             ? 'text-indigo-600'
                             : 'text-slate-500 hover:text-slate-700',
@@ -475,7 +484,7 @@ const saveScores = (studentId: number) => {
                                         class="mt-1 line-clamp-2 max-w-2xl text-[13px] text-slate-500"
                                     >
                                         {{
-                                            topic.description ||
+                                            stripHtml(topic.description) ||
                                             'Tidak ada deskripsi.'
                                         }}
                                     </p>
@@ -621,14 +630,24 @@ const saveScores = (studentId: number) => {
                             Pantau riwayat pertanyaan siswa ke AI Tutor beserta respon jawabannya di kelas ini.
                         </p>
                     </div>
-                    <div class="relative w-full max-w-[300px]">
-                        <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[13px]"></i>
-                        <Input
-                            v-model="searchQuery"
-                            type="text"
-                            placeholder="Cari nama siswa..."
-                            class="h-9 pl-9 pr-4 rounded-xl border-slate-200 text-[13px] bg-white shadow-sm focus-visible:ring-indigo-500"
-                        />
+                    <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                        <a
+                            :href="route('guru.classes.print.chat-logs', { classroom: classroom.id, search: searchQuery })"
+                            target="_blank"
+                            class="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[12.5px] font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm w-full sm:w-auto"
+                        >
+                            <i class="pi pi-print text-[13px] text-slate-500"></i>
+                            <span>Cetak Laporan (PDF)</span>
+                        </a>
+                        <div class="relative w-full sm:w-64">
+                            <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[13px]"></i>
+                            <Input
+                                v-model="searchQuery"
+                                type="text"
+                                placeholder="Cari nama siswa..."
+                                class="h-9 pl-9 pr-4 rounded-xl border-slate-200 text-[13px] bg-white shadow-sm focus-visible:ring-indigo-500"
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -755,15 +774,26 @@ const saveScores = (studentId: number) => {
                         </p>
                     </div>
                     
-                    <!-- Search Input -->
-                    <div class="relative w-full sm:w-64">
-                        <i class="pi pi-search absolute top-1/2 left-3 -translate-y-1/2 text-[12px] text-slate-400"></i>
-                        <input
-                            v-model="studentSearchQuery"
-                            type="text"
-                            placeholder="Cari nama siswa..."
-                            class="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pr-3 pl-8 text-[12px] font-medium text-slate-800 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                        />
+                    <!-- Controls (Ekspor & Cari) -->
+                    <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                        <a
+                            :href="route('guru.classes.export.grades', { classroom: classroom.id })"
+                            class="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[12.5px] font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm w-full sm:w-auto"
+                        >
+                            <i class="pi pi-file-excel text-[13px] text-emerald-600"></i>
+                            <span>Ekspor Excel (.csv)</span>
+                        </a>
+                        
+                        <!-- Search Input -->
+                        <div class="relative w-full sm:w-64">
+                            <i class="pi pi-search absolute top-1/2 left-3 -translate-y-1/2 text-[12px] text-slate-400"></i>
+                            <input
+                                v-model="studentSearchQuery"
+                                type="text"
+                                placeholder="Cari nama siswa..."
+                                class="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pr-3 pl-8 text-[12px] font-medium text-slate-800 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -898,11 +928,10 @@ const saveScores = (studentId: number) => {
                                 class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 dark:text-slate-300 uppercase"
                                 >Deskripsi (Opsional)</label
                             >
-                            <textarea
+                            <RichTextEditor
                                 v-model="topicForm.description"
-                                rows="3"
-                                class="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-[14px] shadow-sm transition-all outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus-visible:ring-amber-500/20 focus:outline-hidden"
-                            ></textarea>
+                                placeholder="Tujuan pembelajaran, deskripsi modul, dll..."
+                            />
                         </div>
                     </div>
                     <div class="mt-8 flex justify-end gap-3">

@@ -118,7 +118,7 @@ const isImage = (url: string | null) => {
         class="relative flex min-h-screen w-full flex-1 flex-col bg-[#F8FAFC] font-sans"
     >
         <div
-            class="relative overflow-hidden bg-gradient-to-r from-[#0B1E36] to-indigo-900 px-8 py-12"
+            class="relative overflow-hidden bg-gradient-to-r from-[#0B1E36] to-indigo-900 px-4 py-8 md:px-8 md:py-12"
         >
             <div
                 class="absolute inset-0 opacity-10"
@@ -151,13 +151,16 @@ const isImage = (url: string | null) => {
                     >
                         {{ classroom.class_name }}
                     </h1>
+                    <div
+                        v-if="classroom.description"
+                        v-html="classroom.description"
+                        class="max-w-2xl text-[14px] leading-relaxed text-blue-100/80 rich-text-content"
+                    ></div>
                     <p
+                        v-else
                         class="max-w-2xl text-[14px] leading-relaxed text-blue-100/80"
                     >
-                        {{
-                            classroom.description ||
-                            'Selamat datang di kelas ini. Mari belajar kimia dengan pendekatan LC5E!'
-                        }}
+                        Selamat datang di kelas ini. Mari belajar kimia dengan pendekatan LC5E!
                     </p>
                 </div>
                 <div
@@ -257,7 +260,7 @@ const isImage = (url: string | null) => {
                                         <div class="space-y-4">
                                             <div v-for="(answer, aIdx) in getPhaseAnswers(phase.id)" :key="answer.id" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm relative overflow-hidden">
                                                 <!-- Evaluasi Badge (Auto-grade / Manual) -->
-                                                <div class="absolute top-5 right-5 z-10">
+                                                <div class="mb-3 sm:mb-0 sm:absolute sm:top-5 sm:right-5 z-10">
                                                     <template v-if="['eval_mcq', 'eval_cmcq'].includes(answer.content.type)">
                                                         <span v-if="checkAutoGrade(answer)" class="px-3 py-1 rounded-full text-[11px] font-bold border bg-emerald-100 text-emerald-700 border-emerald-200 inline-flex items-center gap-1">
                                                             <i class="pi pi-check-circle"></i> Jawaban Benar
@@ -273,7 +276,7 @@ const isImage = (url: string | null) => {
                                                     </template>
                                                 </div>
 
-                                                <div class="pr-36">
+                                                <div class="pr-0 sm:pr-36">
                                                     <!-- Pertanyaan/Konten -->
                                                     <div class="mb-4">
                                                         <h5 class="text-[11px] font-bold text-indigo-600 mb-1 uppercase tracking-wider">Pertanyaan / Soal</h5>

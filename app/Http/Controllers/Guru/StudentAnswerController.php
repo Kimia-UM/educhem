@@ -194,4 +194,93 @@ class StudentAnswerController extends Controller
 
         return back()->with('success', 'Nilai berhasil disimpan.');
     }
+
+    /**
+     * Mengekspor nilai pre-test dan post-test siswa ke format Excel/CSV.
+     */
+    public function exportGrades(Classroom $classroom)
+    {
+        // Keamanan: Pastikan guru yang login adalah pemilik kelas ini
+        if ($classroom->teacher_id !== auth()->user()->id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        $headers = [
+            "Content-type"        => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename=Rekap_Nilai_" . str_replace(' ', '_', $classroom->class_name) . ".csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $callback = function() use ($classroom) {
+            $file = fopen('php://output', 'w');
+            
+            // Tambahkan UTF-8 BOM untuk kompatibilitas Excel
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Header kolom
+            fputcsv($file, ['No', 'Nama Siswa', 'Email', 'Nilai Awal (Pre-test)', 'Nilai Akhir (Post-test)']);
+
+            // Ambil semua siswa terdaftar
+            $students = $classroom->students()->orderBy('name', 'asc')->get();
+            
+            foreach ($students as $idx => $student) {
+                fputcsv($file, [
+                    $idx + 1,
+                    $student->name,
+                    $student->email,
+                    $student->pivot->pre_test_score ?? '-',
+                    $student->pivot->post_test_score ?? '-'
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Menampilkan halaman cetak hasil evaluasi dan jawaban siswa (PDF/Print).
+     */
+    public function printStudentAnswers(Classroom $classroom, \App\Models\User $student)
+    {
+        // Keamanan: Pastikan guru yang login adalah pemilik kelas
+        if ($classroom->teacher_id !== auth()->user()->id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        // Pastikan siswa terdaftar
+        if (!$classroom->students()->where('user_id', $student->id)->exists()) {
+            abort(404, 'Siswa tidak ditemukan di kelas ini.');
+        }
+
+        // Ambil semua topik dan fase di kelas ini beserta relasi fase
+        $topics = $classroom->topics()->with(['phases' => function ($query) {
+            $query->orderBy('order', 'asc');
+        }])->orderBy('topics.id', 'asc')->get();
+
+        $phaseIds = $topics->flatMap->phases->pluck('id');
+
+        // Ambil jawaban siswa beserta relasi konten (soal)
+        $answers = StudentAnswer::where('user_id', $student->id)
+            ->whereIn('phase_id', $phaseIds)
+            ->with(['content' => function ($query) {
+                $query->select('id', 'topic_phase_id', 'type', 'content_data', 'correct_answers');
+            }])
+            ->get()
+            ->keyBy('content_id');
+
+        // Ambil status evaluasi dari pivot
+        $pivot = $classroom->students()->where('user_id', $student->id)->first()?->pivot;
+
+        return view('print.student-answers', [
+            'classroom' => $classroom,
+            'student' => $student,
+            'topics' => $topics,
+            'answers' => $answers,
+            'pivot' => $pivot,
+        ]);
+    }
 }

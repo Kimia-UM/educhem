@@ -37,16 +37,16 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
     :position="side === 'left' ? 'left' : 'right'"
     :showCloseIcon="false"
     :pt="{
-        root: { class: 'bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 border-none' },
-        header: { class: 'hidden' }, // Menyembunyikan header bawaan PrimeVue agar sesuai desain awal
-        content: { class: 'p-0 h-full flex flex-col' }
+        root: { class: 'bg-[#0b1e36] text-white w-(--sidebar-width) p-0 border-none shadow-2xl' },
+        header: { class: 'hidden' },
+        content: { class: 'p-0 h-full flex flex-col bg-[#0b1e36]' }
     }"
     :style="{
       '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
     }"
     v-bind="$attrs"
   >
-    <div data-sidebar="sidebar" data-slot="sidebar" data-mobile="true" class="flex h-full w-full flex-col">
+    <div data-sidebar="sidebar" data-slot="sidebar" data-mobile="true" class="flex h-full w-full flex-col bg-[#0b1e36] text-white">
       <slot />
     </div>
   </Drawer>

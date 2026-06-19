@@ -59,6 +59,18 @@ Route::middleware(['auth', 'role:GURU'])->prefix('guru')->name('guru.')->group(f
 
     Route::get('classes/{classroom}/ai-chat-logs', [\App\Http\Controllers\Guru\AiChatLogController::class, 'index'])->name('classes.ai-chat-logs.index');
 
+    // Rute Ekspor Rekap Nilai (Excel/CSV)
+    Route::get('classes/{classroom}/export/grades', [\App\Http\Controllers\Guru\StudentAnswerController::class, 'exportGrades'])
+        ->name('classes.export.grades');
+
+    // Rute Print Log Chatbot AI (PDF)
+    Route::get('classes/{classroom}/print/chat-logs', [\App\Http\Controllers\Guru\AiChatLogController::class, 'printChatLogs'])
+        ->name('classes.print.chat-logs');
+
+    // Rute Print Hasil Jawaban Siswa (PDF)
+    Route::get('classes/{classroom}/students/{student}/print/answers', [\App\Http\Controllers\Guru\StudentAnswerController::class, 'printStudentAnswers'])
+        ->name('classes.students.print');
+
     // Rute Toggle Publish (Wajib di atas resource topics)
     Route::post('classes/{classroom}/topics/{topic}/toggle-publish', [TopicController::class, 'togglePublish'])
         ->name('classes.topics.toggle-publish');

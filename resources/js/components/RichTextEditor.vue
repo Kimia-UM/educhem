@@ -870,5 +870,18 @@ const closeCropModal = () => {
     background-color: #f8fafc;
     cursor: not-allowed;
 }
+
+/* PERBAIKAN: Sembunyikan placeholder saat editor dalam mode read-only/disabled.
+   Ini mencegah teks placeholder ("Ketik jawaban Anda di sini...") 
+   bertumpuk di atas jawaban siswa yang sudah dikirim. */
+.quill-custom-wrapper.quill-disabled .ql-editor.ql-blank::before {
+    display: none !important;
+    content: none !important;
+}
+
+/* Juga sembunyikan placeholder jika editor berisi konten apapun (termasuk list) */
+.quill-custom-wrapper .ql-editor:not(.ql-blank)::before {
+    display: none !important;
+}
 </style>
 

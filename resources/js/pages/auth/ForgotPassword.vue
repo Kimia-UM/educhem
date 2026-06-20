@@ -12,8 +12,8 @@ import AuthLayout from '@/layouts/AuthLayout.vue';
 
 defineOptions({
     layout: (h, page) => h(AuthLayout, {
-        title: 'Forgot password',
-        description: 'Enter your email to receive a password reset link',
+        title: 'Lupa Password',
+        description: 'Masukkan email Anda untuk mengajukan reset password ke Admin',
     }, () => page),
 });
 
@@ -23,11 +23,11 @@ defineProps<{
 </script>
 
 <template>
-    <Head title="Forgot password" />
+    <Head title="Lupa Password" />
 
     <div
         v-if="status"
-        class="mb-4 text-center text-sm font-medium text-green-600"
+        class="mb-4 text-center text-sm font-medium text-green-600 bg-green-50 border border-green-100 rounded-xl py-2 px-3"
     >
         {{ status }}
     </div>
@@ -35,33 +35,35 @@ defineProps<{
     <div class="space-y-6">
         <Form v-bind="email.form()" v-slot="{ errors, processing }">
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email">Alamat Email</Label>
                 <Input
                     id="email"
                     type="email"
                     name="email"
                     autocomplete="off"
                     autofocus
-                    placeholder="email@example.com"
+                    placeholder="email@contoh.com"
+                    class="rounded-xl"
                 />
                 <InputError :message="errors.email" />
             </div>
 
             <div class="my-6 flex items-center justify-start">
                 <Button
-                    class="w-full"
+                    class="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all"
                     :disabled="processing"
                     data-test="email-password-reset-link-button"
                 >
                     <Spinner v-if="processing" />
-                    Email password reset link
+                    Kirim Permintaan Reset
                 </Button>
             </div>
         </Form>
 
         <div class="space-x-1 text-center text-sm text-muted-foreground">
-            <span>Or, return to</span>
-            <TextLink :href="login()">log in</TextLink>
+            <span>Kembali ke halaman</span>
+            <TextLink :href="login()">Log In</TextLink>
         </div>
     </div>
 </template>
+

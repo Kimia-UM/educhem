@@ -487,17 +487,20 @@ return '-';
                                                 </a>
                                             </div>
                                             <!-- Text Answer -->
-                                            <p
+                                            <div
                                                 v-else
-                                                class="whitespace-pre-wrap text-[13px] leading-relaxed text-slate-700"
+                                                class="text-[13px] leading-relaxed text-slate-700"
                                             >
-                                                {{
-                                                    formatAnswer(
-                                                        answer.answer_data,
-                                                        content.type,
-                                                    )
-                                                }}
-                                            </p>
+                                                <div v-if="content.type === 'eval_essay' || content.type === 'input_text'" class="rich-text-content" v-html="answer.answer_data || ''"></div>
+                                                <p v-else class="whitespace-pre-wrap">
+                                                    {{
+                                                        formatAnswer(
+                                                            answer.answer_data,
+                                                            content.type,
+                                                        )
+                                                    }}
+                                                </p>
+                                            </div>
                                         </div>
 
                                         <!-- AI Feedback -->

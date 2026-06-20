@@ -53,6 +53,15 @@ class WorksheetController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
 
+        // Tentukan apakah fase terkunci untuk siswa ini
+        $classroomMember = $request->user()->joinedClasses()->where('class_id', $classroom->id)->first();
+        $isEvaluationFinished = $classroomMember?->pivot?->is_evaluation_finished ?? false;
+
+        $isLocked = $isEvaluationFinished || StudentAnswer::where('user_id', $request->user()->id)
+            ->where('phase_id', $phase->id)
+            ->where('is_locked', true)
+            ->exists();
+
         return Inertia::render('Siswa/Worksheet/Show', [
             'classroom' => $classroom,
             'topic' => $topic,
@@ -60,6 +69,7 @@ class WorksheetController extends Controller
             'studentAnswers' => (object) $studentAnswers,
             'aiFeedbacks' => (object) $aiFeedbacks,
             'discussions' => $discussions,
+            'isLocked' => $isLocked,
         ]);
     }
 
@@ -80,6 +90,20 @@ class WorksheetController extends Controller
         $topic = $phase->topic;
         if (!$topic) {
             abort(404, 'Topik tidak ditemukan.');
+        }
+
+        $classroom = $topic->classroom; // Asumsi relasi classroom ada (atau kita bisa ambil lewat classAccesses)
+        
+        // Cek penguncian fase untuk mencegah manipulasi
+        $classroomMember = $request->user()->joinedClasses()->where('class_id', $classroom ? $classroom->id : null)->first();
+        $isEvaluationFinished = $classroomMember?->pivot?->is_evaluation_finished ?? false;
+        $isLocked = $isEvaluationFinished || StudentAnswer::where('user_id', $userId)
+            ->where('phase_id', $phase->id)
+            ->where('is_locked', true)
+            ->exists();
+
+        if ($isLocked) {
+            abort(403, 'Fase ini sudah diselesaikan. Jawaban tidak dapat diubah.');
         }
 
         $hasAccess = DB::table('class_members')
@@ -120,5 +144,45 @@ class WorksheetController extends Controller
         }
 
         return back()->with('success', 'Jawaban berhasil disimpan!');
+    }
+
+    /**
+     * Mengunci seluruh jawaban siswa pada fase ini
+     */
+    public function completePhase(Request $request, Classroom $classroom, TopicPhase $phase)
+    {
+        $userId = $request->user()->id;
+
+        // Ambil semua konten bertipe evaluasi/input soal di fase ini
+        $contents = $phase->contents()
+            ->whereIn('type', ['eval_mcq', 'eval_cmcq', 'eval_short', 'eval_essay', 'eval_file', 'input_text'])
+            ->get();
+
+        foreach ($contents as $content) {
+            StudentAnswer::updateOrCreate(
+                ['user_id' => $userId, 'content_id' => $content->id],
+                [
+                    'phase_id' => $phase->id,
+                    'is_locked' => true,
+                ]
+            );
+        }
+
+        // Jika tidak ada soal sama sekali, lock dengan konten apa saja yang ada agar status isLocked terbaca true
+        if ($contents->isEmpty()) {
+            $anyContent = $phase->contents()->first();
+            if ($anyContent) {
+                StudentAnswer::updateOrCreate(
+                    ['user_id' => $userId, 'content_id' => $anyContent->id],
+                    [
+                        'phase_id' => $phase->id,
+                        'is_locked' => true,
+                    ]
+                );
+            }
+        }
+
+        return redirect()->route('siswa.classes.show', $classroom->id)
+            ->with('success', 'Fase berhasil diselesaikan!');
     }
 }

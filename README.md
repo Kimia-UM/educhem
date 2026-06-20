@@ -24,6 +24,7 @@ Fitur-fitur utama dirancang untuk mendukung pembelajaran interaktif dengan integ
 - 📊 **Progress Tracking**: Monitoring watch history video dan hasil evaluasi siswa secara detail
 - 🔐 **Role-Based Access Control (RBAC)**: Sistem izin berbasis peran untuk keamanan aplikasi
 - 💬 **Diskusi Fase**: Ruang diskusi interaktif per fase pembelajaran
+- 🔑 **Password Reset Management**: Sistem manajemen reset password dengan approval admin dan notifikasi email
 
 ---
 
@@ -107,7 +108,7 @@ QUEUE_CONNECTION=database
 # AI Configuration (Dapatkan API key dari Google AI Studio)
 AI_DEFAULT_PROVIDER=gemini
 GEMINI_API_KEY=your_gemini_api_key_here
-AI_GEMINI_MODEL=gemini-2.0-flash
+AI_GEMINI_MODEL=gemini-2.5-flash
 ```
 
 ### 4. Generate Application Key & Link Storage
@@ -204,6 +205,7 @@ pope/
 - `ExerciseAttempt` - Tracking attempt latihan
 - `AiChatLog` - Logging chat AI
 - `ClassMember` - Hubungan siswa dengan kelas
+- `PasswordResetRequest` - Request untuk reset password dengan approval system
 
 ---
 
@@ -273,7 +275,19 @@ Tipe commit yang umum:
 
 ---
 
-## 📄 Lisensi
+## � Recent Updates (v1.1.0)
+
+### Fitur Baru - Password Reset Management System
+
+- 🔑 Admin approval system untuk reset password
+- 📧 Notifikasi email untuk user yang meminta reset password
+- 🔒 Student answers sekarang dapat dikunci untuk mencegah editing
+- ✅ Admin dashboard untuk manage password reset requests
+- 📋 Status tracking untuk password reset requests (pending, approved, rejected)
+
+---
+
+## �📄 Lisensi
 
 Proyek ini adalah bagian dari penelitian Skripsi dan hanya boleh digunakan oleh tim resmi.
 

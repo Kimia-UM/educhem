@@ -213,15 +213,33 @@ const updatePhase = (phase: any) => {
     );
 };
 
+const isDeletePhaseModalOpen = ref(false);
+const phaseIdToDelete = ref<number | null>(null);
+
 const deletePhase = (id: number) => {
-    if (
-        confirm(
-            'Hapus fase ini? Seluruh isi materi dan pertanyaan di dalamnya akan ikut terhapus permanen.',
-        )
-    ) {
-        router.delete(route('guru.phases.destroy', { phase: id }), {
+    phaseIdToDelete.value = id;
+    isDeletePhaseModalOpen.value = true;
+};
+
+const closeDeletePhaseModal = () => {
+    isDeletePhaseModalOpen.value = false;
+    phaseIdToDelete.value = null;
+};
+
+const executeDeletePhase = () => {
+    if (phaseIdToDelete.value) {
+        router.delete(route('guru.phases.destroy', { phase: phaseIdToDelete.value }), {
             preserveScroll: true,
-            onSuccess: () => toast.success('Fase Dihapus'),
+            onSuccess: () => {
+                closeDeletePhaseModal();
+                toast.success('Fase Dihapus');
+            },
+            onError: () => {
+                closeDeletePhaseModal();
+                toast.error('Gagal Menghapus', {
+                    description: 'Terjadi kesalahan saat menghapus fase.',
+                });
+            }
         });
     }
 };
@@ -678,6 +696,54 @@ const deletePhase = (id: number) => {
                             class="pi pi-spinner pi-spin mr-2"
                         ></i>
                         <span v-else>Ya, Hapus Topik</span>
+                    </Button>
+                </div>
+            </div>
+        </div>
+    </Teleport>
+
+    <Teleport to="body">
+        <div
+            v-if="isDeletePhaseModalOpen"
+            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 dark:bg-black/60 px-4 backdrop-blur-[6px] transition-all"
+        >
+            <div
+                class="w-full max-w-[400px] animate-in overflow-hidden rounded-3xl bg-white dark:bg-slate-950 border border-slate-100/80 dark:border-slate-800/50 shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-6 text-center duration-200 zoom-in-95 fade-in"
+            >
+                <div
+                    class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400 shadow-inner"
+                >
+                    <i
+                        class="pi pi-exclamation-triangle text-2xl"
+                    ></i>
+                </div>
+                <h3
+                    class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100"
+                >
+                    Hapus Fase Ini?
+                </h3>
+                <p
+                    class="mt-2 text-[14px] leading-relaxed font-medium text-slate-500 dark:text-slate-400"
+                >
+                    Hapus fase ini? Seluruh isi materi dan pertanyaan di dalamnya akan ikut terhapus permanen.
+                </p>
+                <div
+                    class="mt-8 flex flex-col-reverse justify-center gap-3 sm:flex-row"
+                >
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="closeDeletePhaseModal"
+                        class="h-11 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 px-6 font-bold text-slate-600 dark:text-slate-300 text-[13px] w-full sm:w-auto"
+                    >
+                        Batalkan
+                    </Button>
+                    <Button
+                        type="button"
+                        @click="executeDeletePhase"
+                        class="h-11 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 px-6 font-bold text-white shadow-md shadow-rose-100 dark:shadow-none text-[13px] w-full sm:w-auto"
+                    >
+                        Ya, Hapus Fase
                     </Button>
                 </div>
             </div>

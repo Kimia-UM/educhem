@@ -3,6 +3,8 @@
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Auth\AdminApprovalPasswordResetController;
+use App\Http\Controllers\Admin\AdminPasswordResetManagementController;
 use App\Http\Controllers\Guru\DashboardController as GuruDashboardController;
 use App\Http\Controllers\Guru\TopicController;
 use App\Http\Controllers\Guru\PhaseController;
@@ -18,6 +20,23 @@ Route::inertia('/', 'Welcome')->name('home');
 
 Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
 Route::post('register', [RegisteredUserController::class, 'store']);
+
+// =================================================================
+// CUSTOM RESET PASSWORD DENGAN PERSETUJUAN ADMIN
+// =================================================================
+Route::middleware('guest')->group(function () {
+    Route::post('forgot-password', [AdminApprovalPasswordResetController::class, 'store'])
+        ->name('password.email'); // Override Fortify route name
+        
+    Route::get('forgot-password/waiting/{token}', [AdminApprovalPasswordResetController::class, 'waitingView'])
+        ->name('password-reset-request.waiting');
+        
+    Route::get('forgot-password/status/{token}', [AdminApprovalPasswordResetController::class, 'checkStatus'])
+        ->name('password-reset-request.status');
+        
+    Route::post('forgot-password/reset/{token}', [AdminApprovalPasswordResetController::class, 'resetPassword'])
+        ->name('password-reset-request.reset');
+});
 
 // =================================================================
 // PENGATUR LALU LINTAS DASHBOARD (MENGGUNAKAN SPATIE)
@@ -47,6 +66,11 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('admin')->name('admin.')->grou
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::resource('users', UserController::class);
     Route::post('/users/{user}/upgrade', [UserController::class, 'upgrade'])->name('users.upgrade');
+
+    // Kelola Reset Password Pengguna
+    Route::get('/password-resets', [AdminPasswordResetManagementController::class, 'index'])->name('password-resets.index');
+    Route::post('/password-resets/{id}/approve', [AdminPasswordResetManagementController::class, 'approve'])->name('password-resets.approve');
+    Route::post('/password-resets/{id}/reject', [AdminPasswordResetManagementController::class, 'reject'])->name('password-resets.reject');
 });
 
 // =================================================================
@@ -129,6 +153,9 @@ Route::middleware(['auth', 'role:SISWA'])->prefix('siswa')->name('siswa.')->grou
 
     Route::post('phases/{phase}/answers', [SiswaWorksheetController::class, 'storeAnswer'])
         ->name('answers.store');
+
+    Route::post('classes/{classroom}/phases/{phase}/complete', [SiswaWorksheetController::class, 'completePhase'])
+        ->name('phases.complete');
         
     // PERBAIKAN DI SINI: Disesuaikan dengan struktur Group Route
     Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot.index');

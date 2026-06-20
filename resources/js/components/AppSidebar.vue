@@ -31,6 +31,12 @@ const isActiveRoute = (routePattern: string) => {
     if (routePattern === 'admin.dashboard') {
         return page.url.startsWith('/admin/dashboard');
     }
+    if (routePattern === 'admin.users.index') {
+        return page.url.startsWith('/admin/users');
+    }
+    if (routePattern === 'admin.password-resets.index') {
+        return page.url.startsWith('/admin/password-resets');
+    }
     return route().current(routePattern) || (routePattern.endsWith('.index') && route().current(routePattern.replace('.index', '.*')));
 };
 
@@ -66,6 +72,11 @@ const menuItems = computed(() => {
                 label: 'Manajemen User',
                 icon: 'pi pi-users',
                 route: 'admin.users.index',
+            },
+            {
+                label: 'Reset Password',
+                icon: 'pi pi-key',
+                route: 'admin.password-resets.index',
             },
         ];
     }
@@ -134,9 +145,15 @@ const menuItems = computed(() => {
                                 as-child
                                 :is-active="item.route ? isActiveRoute(item.route) : false"
                             >
-                                <Link :href="route(item.route)" class="h-11 rounded-lg">
+                                <Link :href="route(item.route)" class="h-11 rounded-lg w-full flex items-center">
                                     <i :class="item.icon" class="mr-2 text-[18px]"></i>
                                     <span class="text-[14px] font-medium">{{ item.label }}</span>
+                                    <span 
+                                        v-if="item.label === 'Reset Password' && $page.props.pendingPasswordResetsCount > 0"
+                                        class="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-sm"
+                                    >
+                                        {{ $page.props.pendingPasswordResetsCount }}
+                                    </span>
                                 </Link>
                             </SidebarMenuButton>
                         </template>

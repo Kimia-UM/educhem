@@ -472,6 +472,7 @@ const stripHtml = (html: string | null | undefined): string => {
                                                     Lihat File
                                                 </a>
                                             </div>
+<<<<<<< HEAD
                                             <!-- Text Answer (Diperbaiki di sini) -->
                                             <div
                                                 v-else
@@ -483,6 +484,23 @@ const stripHtml = (html: string | null | undefined): string => {
                                                     )
                                                 "
                                             ></div>
+=======
+                                            <!-- Text Answer -->
+                                            <div
+                                                v-else
+                                                class="text-[13px] leading-relaxed text-slate-700"
+                                            >
+                                                <div v-if="content.type === 'eval_essay' || content.type === 'input_text'" class="rich-text-content" v-html="answer.answer_data || ''"></div>
+                                                <p v-else class="whitespace-pre-wrap">
+                                                    {{
+                                                        formatAnswer(
+                                                            answer.answer_data,
+                                                            content.type,
+                                                        )
+                                                    }}
+                                                </p>
+                                            </div>
+>>>>>>> 724056a850b4163e5f99fdb3c6e9268ac3fd917c
                                         </div>
 
                                         <!-- AI Feedback -->

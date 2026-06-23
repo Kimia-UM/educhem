@@ -314,7 +314,7 @@ const isImage = (url: string | null) => {
                                                                 </div>
                                                             </template>
                                                             <template v-else>
-                                                                <div class="whitespace-pre-wrap break-words">{{ answer.answer_data }}</div>
+                                                                <div class="rich-text-content break-words" v-html="answer.answer_data"></div>
                                                             </template>
                                                         </div>
                                                     </div>

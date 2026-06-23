@@ -105,7 +105,24 @@
         .answer-text {
             color: #334155;
             margin: 0;
-            white-space: pre-wrap;
+        }
+        .answer-text p {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+        .answer-text p:last-child {
+            margin-bottom: 0;
+        }
+        .answer-text ul, .answer-text ol {
+            margin-top: 5px;
+            margin-bottom: 8px;
+            padding-left: 20px;
+        }
+        .answer-text ul:last-child, .answer-text ol:last-child {
+            margin-bottom: 0;
+        }
+        .answer-text .ql-ui {
+            display: none;
         }
         .evaluation-row {
             display: flex;
@@ -295,7 +312,7 @@
                                         </p>
                                     @endif
                                 @else
-                                    <p class="answer-text">{{ $answer->answer_data }}</p>
+                                    <div class="answer-text">{!! $answer->answer_data !!}</div>
                                 @endif
                             </div>
 

@@ -341,7 +341,8 @@ const isImage = (url: string | null) => {
                                 <!-- Jawaban Uraian -->
                                 <div v-else class="bg-slate-50 rounded-lg p-4 border border-slate-100 mb-4">
                                     <div class="text-[12px] font-bold text-slate-500 mb-2">Jawaban Siswa:</div>
-                                    <div class="text-[14px] text-slate-800 break-words whitespace-pre-wrap">{{ answer.answer_data }}</div>
+                                    <div v-if="answer.content.type === 'eval_essay' || answer.content.type === 'input_text'" class="text-[14px] text-slate-800 break-words rich-text-content" v-html="answer.answer_data || ''"></div>
+                                    <div v-else class="text-[14px] text-slate-800 break-words whitespace-pre-wrap">{{ answer.answer_data }}</div>
                                 </div>
 
                                 <!-- Form Evaluasi Manual (Hanya untuk uraian) -->

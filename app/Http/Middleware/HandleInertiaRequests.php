@@ -30,6 +30,7 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
         $sidebarClasses = [];
+        $pendingPasswordResetsCount = 0;
 
         if ($user) {
             // Eager load class beserta topic dan phase-nya
@@ -41,6 +42,8 @@ class HandleInertiaRequests extends Middleware
                 $sidebarClasses = $user->taughtClasses()
                                        ->with('topics.phases')
                                        ->get();
+            } elseif ($user->hasRole('ADMIN')) {
+                $pendingPasswordResetsCount = \App\Models\PasswordResetRequest::where('status', 'pending')->count();
             }
         }
 
@@ -53,6 +56,7 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
             'sidebarClasses' => $sidebarClasses,
+            'pendingPasswordResetsCount' => $pendingPasswordResetsCount,
         ];
     }
 }

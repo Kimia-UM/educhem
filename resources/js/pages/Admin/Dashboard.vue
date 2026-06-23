@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
-import { onMounted, onUnmounted } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { onMounted, onUnmounted, computed } from 'vue';
 
 // --- IMPORT KOMPONEN SHADCN-VUE ---
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,6 @@ import {
     CardTitle,
     CardDescription,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import {
     Table,
@@ -22,6 +21,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+
+const page = usePage();
+const authUser = computed(() => page.props.auth?.user);
 
 // --- TypeScript Interfaces ---
 interface RecentUser {
@@ -79,7 +81,8 @@ onUnmounted(() => {
 <template>
     <Head title="Dashboard Admin" />
 
-    <div class="min-h-screen bg-[#F8FAFC] px-6 py-8 font-sans lg:px-10">
+    <div class="min-h-screen px-4 py-6 font-sans md:px-8 lg:px-10">
+        <!-- ===== PAGE HEADER — IDENTIK DENGAN GURU/SISWA ===== -->
         <div
             class="mx-auto mb-8 flex max-w-7xl flex-col items-start justify-between gap-4 md:flex-row md:items-center"
         >
@@ -88,22 +91,11 @@ onUnmounted(() => {
                     EduChem LC5E System
                 </h1>
                 <p class="mt-1 text-[14px] font-medium text-slate-500">
-                    Dashboard Administrasi & Monitoring Sistem Periodik
+                    Dashboard Administrasi &amp; Monitoring Sistem
                 </p>
             </div>
 
             <div class="flex items-center gap-3">
-                <div class="relative hidden w-[250px] md:block">
-                    <i
-                        class="pi pi-search absolute top-1/2 left-3 -translate-y-1/2 text-sm text-slate-400"
-                    ></i>
-                    <Input
-                        type="text"
-                        placeholder="Cari data..."
-                        class="h-9 w-full rounded-lg border-slate-200 bg-white pl-9 text-[13px] shadow-sm placeholder:text-slate-400 focus-visible:ring-indigo-500"
-                    />
-                </div>
-
                 <Button
                     variant="outline"
                     size="icon"
@@ -118,12 +110,11 @@ onUnmounted(() => {
                     <div
                         class="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white shadow-inner"
                     >
-                        SA
+                        <i class="pi pi-shield text-[10px]"></i>
                     </div>
                     <div class="flex flex-col">
-                        <span
-                            class="text-[13px] leading-none font-bold text-slate-800"
-                            >Super Admin</span
+                        <span class="text-[13px] leading-none font-bold text-slate-800"
+                            >{{ authUser?.name || 'Admin' }}</span
                         >
                         <span
                             class="mt-0.5 text-[9px] font-bold tracking-wider text-indigo-500"

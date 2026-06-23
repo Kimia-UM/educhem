@@ -40,6 +40,7 @@ const props = defineProps<{
             created_at: string;
         }>;
     }>;
+    isLocked: boolean;
 }>();
 
 const answers = ref<Record<number, any>>({});
@@ -49,6 +50,21 @@ const isSubmitting = ref<Record<number, boolean>>({});
 const isWaitingForAI = ref<Record<number, boolean>>({});
 const pollIntervals: Record<number, any> = {};
 const pollAttempts: Record<number, number> = {};
+
+// STATE UNTUK BUKA TUTUP FEEDBACK AI
+const expandedAIFeedbacks = ref<Record<number, boolean>>({});
+
+const isAIFeedbackExpanded = (contentId: number) => {
+    return expandedAIFeedbacks.value[contentId] !== false;
+};
+
+const toggleAIFeedback = (contentId: number) => {
+    if (expandedAIFeedbacks.value[contentId] === undefined) {
+        expandedAIFeedbacks.value[contentId] = false;
+    } else {
+        expandedAIFeedbacks.value[contentId] = !expandedAIFeedbacks.value[contentId];
+    }
+};
 
 // FUNGSI AUTO-POLLING (Cek server setiap 3 detik di latar belakang)
 const startPollingAI = (contentId: number) => {
@@ -72,6 +88,7 @@ clearInterval(pollIntervals[contentId]);
                 if (props.aiFeedbacks && props.aiFeedbacks[contentId]) {
                     clearInterval(pollIntervals[contentId]);
                     isWaitingForAI.value[contentId] = false;
+                    expandedAIFeedbacks.value[contentId] = true; // Auto-expand when AI finishes
                     toast.success('Evaluasi AI Selesai!', { icon: '✨' });
                 }
                 // Jika sudah 15 kali percobaan (45 detik) tapi AI belum jawab (Timeout/Error API)
@@ -87,30 +104,7 @@ clearInterval(pollIntervals[contentId]);
     }, 3000); // interval 3000 ms = 3 detik
 };
 
-// Fungsi Manual (Fallback) jika polling gagal/timeout
-const isRefreshingAI = ref<Record<number, boolean>>({});
-const cekEvaluasiAI = (contentId: number) => {
-    isRefreshingAI.value[contentId] = true;
-    router.reload({
-        only: ['aiFeedbacks'],
-        preserveScroll: true,
-        onSuccess: () => {
-            // Berikan feedback ke user apakah data sudah selesai diproses atau belum
-            if (props.aiFeedbacks && props.aiFeedbacks[contentId]) {
-                toast.success('Hasil AI berhasil ditarik!');
-                isWaitingForAI.value[contentId] = false;
-            } else {
-                toast.info(
-                    'Sistem masih memproses. Coba lagi dalam beberapa detik ya.',
-                    { icon: '⏳' },
-                );
-            }
-        },
-        onFinish: () => {
-            isRefreshingAI.value[contentId] = false;
-        },
-    });
-};
+
 
 onMounted(() => {
     if (props.studentAnswers) {
@@ -166,7 +160,7 @@ return;
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
-                toast.success('Jawaban terkirim! Menunggu AI...', {
+                toast.success('Jawaban terkirim!', {
                     icon: '🚀',
                 });
 
@@ -231,6 +225,25 @@ return '';
 }
 
     return marked.parse(text);
+};
+
+const isConfirmFinishModalOpen = ref(false);
+
+const handleFinish = () => {
+    if (props.isLocked) {
+        router.visit(route('siswa.classes.show', props.classroom.id));
+    } else {
+        isConfirmFinishModalOpen.value = true;
+    }
+};
+
+const executeFinish = () => {
+    isConfirmFinishModalOpen.value = false;
+    router.post(route('siswa.phases.complete', { classroom: props.classroom.id, phase: props.phase.id }), {}, {
+        onSuccess: () => {
+            toast.success('Fase pembelajaran selesai!', { icon: '✅' });
+        }
+    });
 };
 
 // ==========================================
@@ -485,6 +498,7 @@ const refreshDiscussions = () => {
                                 :value="option"
                                 v-model="answers[content.id]"
                                 @change="saveAnswer(content.id)"
+                                :disabled="props.isLocked"
                                 class="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
                             />
                             <span
@@ -538,6 +552,7 @@ const refreshDiscussions = () => {
                                 :value="option"
                                 v-model="answers[content.id]"
                                 @change="saveAnswer(content.id)"
+                                :disabled="props.isLocked"
                                 class="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500"
                             />
                             <span
@@ -571,7 +586,7 @@ const refreshDiscussions = () => {
                         <span class="rich-text-content" v-html="content.content_data.question || content.content_data.label || ''"></span>
                     </label>
 
-                    <!-- Kotak Input terkunci saat menunggu AI -->
+                    <!-- Kotak Input terkunci saat menunggu AI atau terkunci -->
                     <input
                         type="text"
                         v-model="answers[content.id]"
@@ -579,16 +594,17 @@ const refreshDiscussions = () => {
                         class="w-full rounded-xl border border-indigo-200 bg-white p-3.5 text-[14px] text-slate-700 shadow-inner transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-70"
                         :disabled="
                             isSubmitting[content.id] ||
-                            isWaitingForAI[content.id]
+                            isWaitingForAI[content.id] ||
+                            props.isLocked
                         "
                     />
 
                     <div
                         class="mt-3 flex min-h-[32px] items-center justify-end gap-3"
                     >
-                        <!-- Tombol disembunyikan saat sedang proses -->
+                        <!-- Tombol disembunyikan saat sedang proses atau terkunci -->
                         <Button
-                            v-if="!isWaitingForAI[content.id]"
+                            v-if="!isWaitingForAI[content.id] && !props.isLocked"
                             @click="saveAnswer(content.id)"
                             size="sm"
                             class="h-9 rounded-xl bg-indigo-600 px-5 text-xs font-bold text-white shadow-sm transition-all hover:scale-105 hover:bg-indigo-700 active:scale-95"
@@ -635,7 +651,8 @@ const refreshDiscussions = () => {
                         <!-- 2. State Tampil Hasil AI -->
                         <div
                             v-else-if="aiFeedbacks && aiFeedbacks[content.id]"
-                            class="relative animate-in rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50 p-6 shadow-sm duration-300 zoom-in-95"
+                            class="relative animate-in rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-sm duration-300 zoom-in-95 transition-all"
+                            :class="isAIFeedbackExpanded(content.id) ? 'p-6' : 'py-3.5 px-6'"
                         >
                             <div
                                 class="absolute -top-3 left-6 flex items-center gap-1.5 rounded-full border border-indigo-200 bg-white px-3 py-1 shadow-sm"
@@ -648,38 +665,22 @@ const refreshDiscussions = () => {
                                     >Feedback Guru AI</span
                                 >
                             </div>
-                            <div
-                                class="prose prose-sm prose-slate mt-3 max-w-none leading-relaxed rich-text-content"
-                                v-html="renderMarkdown(aiFeedbacks[content.id])"
-                            ></div>
-                        </div>
-
-                        <!-- 3. State Fallback (Tombol Manual jika ada jawaban lama belum dinilai) -->
-                        <div
-                            v-else-if="
-                                answers[content.id] && !isSubmitting[content.id]
-                            "
-                            class="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-5 py-3 sm:flex-row sm:items-center"
-                        >
-                            <span class="text-[12px] font-medium text-slate-500"
-                                >Klik tombol untuk memuat ulang hasil AI jika
-                                belum muncul.</span
-                            >
-                            <Button
-                                @click="cekEvaluasiAI(content.id)"
-                                variant="outline"
-                                size="sm"
-                                class="h-8 border-slate-300 bg-white text-xs text-slate-600"
-                                :disabled="isRefreshingAI[content.id]"
+                            <button
+                                type="button"
+                                @click="toggleAIFeedback(content.id)"
+                                class="absolute -top-3 right-6 flex items-center gap-1 rounded-full border border-indigo-200 bg-white px-3 py-1 text-[10px] font-bold text-indigo-600 shadow-sm hover:bg-indigo-50 active:scale-95 transition-all"
                             >
                                 <i
-                                    class="pi pi-refresh mr-1"
-                                    :class="{
-                                        'pi-spin': isRefreshingAI[content.id],
-                                    }"
+                                    class="pi text-[8px]"
+                                    :class="isAIFeedbackExpanded(content.id) ? 'pi-chevron-up' : 'pi-chevron-down'"
                                 ></i>
-                                Cek Hasil AI
-                            </Button>
+                                <span>{{ isAIFeedbackExpanded(content.id) ? 'Sembunyikan' : 'Lihat' }}</span>
+                            </button>
+                            <div
+                                v-show="isAIFeedbackExpanded(content.id)"
+                                class="prose prose-sm prose-slate mt-3 max-w-none leading-relaxed rich-text-content animate-in fade-in duration-200"
+                                v-html="renderMarkdown(aiFeedbacks[content.id])"
+                            ></div>
                         </div>
                     </div>
                 </div>
@@ -709,8 +710,25 @@ const refreshDiscussions = () => {
                         ></span>
                     </label>
 
-                    <!-- Editor Terkunci saat menunggu AI -->
+                    <!-- Tampilan Read-Only saat phase terkunci (jawaban sudah dikirim) -->
+                    <div
+                        v-if="props.isLocked && answers[content.id]"
+                        class="rich-text-content ql-editor-readonly min-h-[80px] rounded-xl border border-slate-200 bg-slate-50 px-[18px] py-[14px] text-[14px] leading-relaxed text-slate-800"
+                        v-html="answers[content.id]"
+                    ></div>
+
+                    <!-- Pesan kosong jika terkunci tapi belum ada jawaban -->
+                    <div
+                        v-else-if="props.isLocked && !answers[content.id]"
+                        class="flex min-h-[80px] items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 text-[13px] text-slate-400"
+                    >
+                        <i class="pi pi-minus-circle mr-2 text-slate-300"></i>
+                        Tidak ada jawaban yang dikirimkan.
+                    </div>
+
+                    <!-- Editor aktif saat masih bisa mengisi jawaban -->
                     <RichTextEditor
+                        v-else
                         v-model="answers[content.id]"
                         variant="student"
                         placeholder="Ketik uraian jawaban Anda di sini..."
@@ -720,9 +738,9 @@ const refreshDiscussions = () => {
                     <div
                         class="mt-3 flex min-h-[32px] items-center justify-end gap-3"
                     >
-                        <!-- Tombol disembunyikan saat sedang proses -->
+                        <!-- Tombol disembunyikan saat sedang proses atau terkunci -->
                         <Button
-                            v-if="!isWaitingForAI[content.id]"
+                            v-if="!isWaitingForAI[content.id] && !props.isLocked"
                             @click="saveAnswer(content.id)"
                             size="sm"
                             class="h-9 rounded-xl bg-indigo-600 px-5 text-xs font-bold text-white shadow-sm transition-all hover:scale-105 hover:bg-indigo-700 active:scale-95"
@@ -769,7 +787,8 @@ const refreshDiscussions = () => {
                         <!-- 2. State Tampil Hasil AI -->
                         <div
                             v-else-if="aiFeedbacks && aiFeedbacks[content.id]"
-                            class="relative animate-in rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50 p-6 shadow-sm duration-300 zoom-in-95"
+                            class="relative animate-in rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-sm duration-300 zoom-in-95 transition-all"
+                            :class="isAIFeedbackExpanded(content.id) ? 'p-6' : 'py-3.5 px-6'"
                         >
                             <div
                                 class="absolute -top-3 left-6 flex items-center gap-1.5 rounded-full border border-indigo-200 bg-white px-3 py-1 shadow-sm"
@@ -782,38 +801,22 @@ const refreshDiscussions = () => {
                                     >Feedback Guru AI</span
                                 >
                             </div>
-                            <div
-                                class="prose prose-sm prose-slate mt-3 max-w-none leading-relaxed rich-text-content"
-                                v-html="renderMarkdown(aiFeedbacks[content.id])"
-                            ></div>
-                        </div>
-
-                        <!-- 3. State Fallback (Tombol Manual jika ada jawaban lama belum dinilai) -->
-                        <div
-                            v-else-if="
-                                answers[content.id] && !isSubmitting[content.id]
-                            "
-                            class="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-5 py-3 sm:flex-row sm:items-center"
-                        >
-                            <span class="text-[12px] font-medium text-slate-500"
-                                >Klik tombol untuk memuat ulang hasil AI jika
-                                belum muncul.</span
-                            >
-                            <Button
-                                @click="cekEvaluasiAI(content.id)"
-                                variant="outline"
-                                size="sm"
-                                class="h-8 border-slate-300 bg-white text-xs text-slate-600"
-                                :disabled="isRefreshingAI[content.id]"
+                            <button
+                                type="button"
+                                @click="toggleAIFeedback(content.id)"
+                                class="absolute -top-3 right-6 flex items-center gap-1 rounded-full border border-indigo-200 bg-white px-3 py-1 text-[10px] font-bold text-indigo-600 shadow-sm hover:bg-indigo-50 active:scale-95 transition-all"
                             >
                                 <i
-                                    class="pi pi-refresh mr-1"
-                                    :class="{
-                                        'pi-spin': isRefreshingAI[content.id],
-                                    }"
+                                    class="pi text-[8px]"
+                                    :class="isAIFeedbackExpanded(content.id) ? 'pi-chevron-up' : 'pi-chevron-down'"
                                 ></i>
-                                Cek Hasil AI
-                            </Button>
+                                <span>{{ isAIFeedbackExpanded(content.id) ? 'Sembunyikan' : 'Lihat' }}</span>
+                            </button>
+                            <div
+                                v-show="isAIFeedbackExpanded(content.id)"
+                                class="prose prose-sm prose-slate mt-3 max-w-none leading-relaxed rich-text-content animate-in fade-in duration-200"
+                                v-html="renderMarkdown(aiFeedbacks[content.id])"
+                            ></div>
                         </div>
                     </div>
                 </div>
@@ -833,6 +836,7 @@ const refreshDiscussions = () => {
                         <span class="rich-text-content" v-html="content.content_data.question || content.content_data.label || ''"></span>
                     </label>
                     <div
+                        v-if="!props.isLocked"
                         class="group relative mt-2 flex h-36 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-pink-200 bg-white transition-colors hover:bg-pink-50"
                     >
                         <input
@@ -857,6 +861,12 @@ const refreshDiscussions = () => {
                                 Format: PNG, JPG, atau PDF (Maks 2MB)
                             </p>
                         </div>
+                    </div>
+                    <div
+                        v-if="props.isLocked && !(answers[content.id] === 'uploaded' || (answers[content.id] && answers[content.id].includes('/storage/')))"
+                        class="mt-2 inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] font-medium text-slate-500"
+                    >
+                        <i class="pi pi-info-circle mr-2"></i> Tidak ada file yang diunggah.
                     </div>
                     <div
                         v-if="isSubmitting[content.id]"
@@ -1093,17 +1103,62 @@ const refreshDiscussions = () => {
             </div>
 
             <div class="flex justify-end pt-4">
-                <Link :href="route('siswa.classes.show', classroom.id)">
-                    <Button
-                        class="h-11 rounded-xl bg-blue-500 px-8 font-bold text-white shadow-md hover:bg-blue-600"
-                    >
-                        Selesai <i class="pi pi-check-circle ml-2"></i>
-                    </Button>
-                </Link>
+                <Button
+                    @click="handleFinish"
+                    class="h-11 rounded-xl bg-blue-500 px-8 font-bold text-white shadow-md hover:bg-blue-600"
+                >
+                    Selesai <i class="pi pi-check-circle ml-2"></i>
+                </Button>
             </div>
         </div>
     </div>
     <FloatingChatbot v-if="phase.is_chatbot_enabled" :topicTitle="topic.title" :phaseId="phase.id" />
+
+    <Teleport to="body">
+        <div
+            v-if="isConfirmFinishModalOpen"
+            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 dark:bg-black/60 px-4 backdrop-blur-[6px] transition-all"
+        >
+            <div
+                class="w-full max-w-[400px] animate-in overflow-hidden rounded-3xl bg-white dark:bg-slate-950 border border-slate-100/80 dark:border-slate-800/50 shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-6 text-center duration-200 zoom-in-95 fade-in"
+            >
+                <div
+                    class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400 shadow-inner"
+                >
+                    <i class="pi pi-exclamation-triangle text-2xl"></i>
+                </div>
+                <h3
+                    class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100"
+                >
+                    Selesaikan Fase?
+                </h3>
+                <p
+                    class="mt-2 text-[14px] leading-relaxed font-medium text-slate-500 dark:text-slate-400"
+                >
+                    Apakah Anda yakin ingin menyelesaikan fase ini? Setelah diselesaikan, jawaban Anda tidak dapat diubah lagi.
+                </p>
+                <div
+                    class="mt-8 flex flex-col-reverse justify-center gap-3 sm:flex-row"
+                >
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="isConfirmFinishModalOpen = false"
+                        class="h-11 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 px-6 font-bold text-slate-600 dark:text-slate-300 text-[13px] w-full sm:w-auto"
+                    >
+                        Batalkan
+                    </Button>
+                    <Button
+                        type="button"
+                        @click="executeFinish"
+                        class="h-11 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 px-6 font-bold text-white shadow-md shadow-blue-100 dark:shadow-none text-[13px] w-full sm:w-auto"
+                    >
+                        Ya, Selesaikan
+                    </Button>
+                </div>
+            </div>
+        </div>
+    </Teleport>
 </template>
 
 <style>

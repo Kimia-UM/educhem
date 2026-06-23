@@ -100,9 +100,27 @@ class WorksheetController extends Controller
             abort(404, 'Topik tidak ditemukan.');
         }
 
+<<<<<<< HEAD
         // 2. Pastikan siswa terdaftar di minimal satu kelas yang punya akses ke topic ini
         //    dan topic tersebut sudah dipublish di kelas itu
         $classroomMember = DB::table('class_members')
+=======
+        $classroom = $topic->classroom; // Asumsi relasi classroom ada (atau kita bisa ambil lewat classAccesses)
+        
+        // Cek penguncian fase untuk mencegah manipulasi
+        $classroomMember = $request->user()->joinedClasses()->where('class_id', $classroom ? $classroom->id : null)->first();
+        $isEvaluationFinished = $classroomMember?->pivot?->is_evaluation_finished ?? false;
+        $isLocked = $isEvaluationFinished || StudentAnswer::where('user_id', $userId)
+            ->where('phase_id', $phase->id)
+            ->where('is_locked', true)
+            ->exists();
+
+        if ($isLocked) {
+            abort(403, 'Fase ini sudah diselesaikan. Jawaban tidak dapat diubah.');
+        }
+
+        $hasAccess = DB::table('class_members')
+>>>>>>> 724056a850b4163e5f99fdb3c6e9268ac3fd917c
             ->join('class_topic_accesses', 'class_topic_accesses.class_id', '=', 'class_members.class_id')
             ->where('class_members.user_id', $userId)
             ->where('class_topic_accesses.topic_id', $topic->id)
@@ -162,6 +180,7 @@ class WorksheetController extends Controller
     {
         $userId = $request->user()->id;
 
+<<<<<<< HEAD
         // 1. Siswa harus terdaftar di kelas ini
         if (!$request->user()->joinedClasses()->where('class_id', $classroom->id)->exists()) {
             abort(403, 'Akses ditolak. Anda tidak terdaftar di kelas ini.');
@@ -178,6 +197,8 @@ class WorksheetController extends Controller
             abort(403, 'Akses ditolak. Fase ini bukan bagian dari kelas ini.');
         }
 
+=======
+>>>>>>> 724056a850b4163e5f99fdb3c6e9268ac3fd917c
         // Ambil semua konten bertipe evaluasi/input soal di fase ini
         $contents = $phase->contents()
             ->whereIn('type', ['eval_mcq', 'eval_cmcq', 'eval_short', 'eval_essay', 'eval_file', 'input_text'])

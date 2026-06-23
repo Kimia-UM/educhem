@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
-import { ref, watch, h } from 'vue';
+import { ref, watch, h, computed } from 'vue';
 import DataTable from '@/components/DataTable.vue';
 import {
   AlertDialog,
@@ -144,17 +144,49 @@ badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
         },
     },
 ];
+
+const page = usePage();
+const authUser = computed(() => page.props.auth?.user);
 </script>
 
 <template>
     <Head title="Manajemen Pengguna" />
 
-    <div class="min-h-screen bg-[#F8FAFC] py-8 px-6 lg:px-10 font-sans">
-        
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 max-w-7xl mx-auto">
+    <div class="min-h-screen px-4 py-6 font-sans md:px-8 lg:px-10">
+        <div
+            class="mx-auto mb-8 flex max-w-7xl flex-col items-start justify-between gap-4 md:flex-row md:items-center"
+        >
             <div>
-                <h2 class="text-[26px] font-bold text-slate-900 tracking-tight">Manajemen Pengguna</h2>
-                <p class="text-[14px] text-slate-500 mt-1 font-medium">Kelola hak akses dan peran (role) dari seluruh pengguna sistem.</p>
+                <h1 class="text-[26px] font-bold tracking-tight text-slate-900">Manajemen Pengguna</h1>
+                <p class="mt-1 text-[14px] font-medium text-slate-500">
+                    Kelola hak akses dan peran (role) dari seluruh pengguna sistem.
+                </p>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    class="h-9 w-9 rounded-lg border-slate-200 bg-white shadow-sm transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                >
+                    <i class="pi pi-bell text-[14px]"></i>
+                </Button>
+
+                <div
+                    class="flex cursor-pointer items-center gap-3 rounded-full border border-slate-200 bg-white py-1.5 pr-4 pl-1.5 shadow-sm transition-colors hover:bg-slate-50"
+                >
+                    <div
+                        class="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white shadow-inner"
+                    >
+                        <i class="pi pi-shield text-[10px]"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-[13px] leading-none font-bold text-slate-800"
+                            >{{ authUser?.name || 'Admin' }}</span
+                        >
+                        <span class="mt-0.5 text-[9px] font-bold tracking-wider text-indigo-500">ROLE: ADMIN</span>
+                    </div>
+                </div>
             </div>
         </div>
 

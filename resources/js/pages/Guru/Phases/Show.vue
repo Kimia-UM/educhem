@@ -324,11 +324,33 @@ const saveContent = (content: any) => {
     );
 };
 
+const isDeleteContentModalOpen = ref(false);
+const contentIdToDelete = ref<number | null>(null);
+
 const removeContent = (id: number) => {
-    if (confirm('Yakin ingin menghapus blok materi ini permanen?')) {
-        router.delete(route('guru.contents.destroy', { content: id }), {
+    contentIdToDelete.value = id;
+    isDeleteContentModalOpen.value = true;
+};
+
+const closeDeleteContentModal = () => {
+    isDeleteContentModalOpen.value = false;
+    contentIdToDelete.value = null;
+};
+
+const executeDeleteContent = () => {
+    if (contentIdToDelete.value) {
+        router.delete(route('guru.contents.destroy', { content: contentIdToDelete.value }), {
             preserveScroll: true,
-            onSuccess: () => toast.success('Blok dihapus.'),
+            onSuccess: () => {
+                closeDeleteContentModal();
+                toast.success('Blok dihapus.');
+            },
+            onError: () => {
+                closeDeleteContentModal();
+                toast.error('Gagal Menghapus', {
+                    description: 'Terjadi kesalahan saat menghapus blok.',
+                });
+            }
         });
     }
 };
@@ -986,4 +1008,52 @@ const toggleCorrectAnswer = (content: any, index: number) => {
             </div>
         </div>
     </div>
+
+    <Teleport to="body">
+        <div
+            v-if="isDeleteContentModalOpen"
+            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 dark:bg-black/60 px-4 backdrop-blur-[6px] transition-all"
+        >
+            <div
+                class="w-full max-w-[400px] animate-in overflow-hidden rounded-3xl bg-white dark:bg-slate-950 border border-slate-100/80 dark:border-slate-800/50 shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-6 text-center duration-200 zoom-in-95 fade-in"
+            >
+                <div
+                    class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400 shadow-inner"
+                >
+                    <i
+                        class="pi pi-exclamation-triangle text-2xl"
+                    ></i>
+                </div>
+                <h3
+                    class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100"
+                >
+                    Hapus Blok Materi?
+                </h3>
+                <p
+                    class="mt-2 text-[14px] leading-relaxed font-medium text-slate-500 dark:text-slate-400"
+                >
+                    Yakin ingin menghapus blok materi ini secara permanen?
+                </p>
+                <div
+                    class="mt-8 flex flex-col-reverse justify-center gap-3 sm:flex-row"
+                >
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="closeDeleteContentModal"
+                        class="h-11 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 px-6 font-bold text-slate-600 dark:text-slate-300 text-[13px] w-full sm:w-auto"
+                    >
+                        Batalkan
+                    </Button>
+                    <Button
+                        type="button"
+                        @click="executeDeleteContent"
+                        class="h-11 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 px-6 font-bold text-white shadow-md shadow-rose-100 dark:shadow-none text-[13px] w-full sm:w-auto"
+                    >
+                        Ya, Hapus Blok
+                    </Button>
+                </div>
+            </div>
+        </div>
+    </Teleport>
 </template>

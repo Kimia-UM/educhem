@@ -2,6 +2,7 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { toast } from 'vue-sonner';
 
 const props = defineProps<{
     user: {
@@ -19,7 +20,13 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.put(route('admin.users.update', props.user.id));
+    form.put(route('admin.users.update', props.user.id), {
+        onError: () => {
+            toast.error('Gagal mengubah role', {
+                description: 'Terjadi kesalahan saat menyimpan perubahan.',
+            });
+        }
+    });
 };
 </script>
 

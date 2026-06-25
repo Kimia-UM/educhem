@@ -2,7 +2,6 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan Log Chatbot AI - {{ $classroom->class_name }}</title>
     <style>
         body {
@@ -10,7 +9,7 @@
             color: #1e293b;
             line-height: 1.5;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             background-color: #ffffff;
         }
         .header {
@@ -36,23 +35,30 @@
             page-break-inside: avoid;
         }
         .chat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             border-bottom: 1px solid #f1f5f9;
             padding-bottom: 10px;
             margin-bottom: 15px;
+            width: 100%;
+            clear: both;
         }
         .student-name {
             font-size: 14px;
             font-weight: 700;
             color: #0f172a;
             margin: 0;
+            float: left;
+            width: 60%;
         }
         .chat-date {
             font-size: 11px;
             color: #94a3b8;
             font-weight: 600;
+            float: right;
+            width: 40%;
+            text-align: right;
+        }
+        .clear-float {
+            clear: both;
         }
         .bubble {
             margin-bottom: 15px;
@@ -107,40 +113,9 @@
             border: 1px dashed #cbd5e1;
             border-radius: 12px;
         }
-        .btn-print-container {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 20px;
-        }
-        .btn-print {
-            background-color: #4f46e5;
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            font-size: 13px;
-            font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .btn-print:hover {
-            background-color: #4338ca;
-        }
-        @media print {
-            body {
-                padding: 0;
-            }
-            .btn-print-container {
-                display: none;
-            }
-        }
     </style>
 </head>
 <body>
-    <div class="btn-print-container">
-        <button class="btn-print" onclick="window.print()">Cetak / Simpan PDF</button>
-    </div>
-
     <div class="header">
         <h1>Laporan Log Percakapan Chatbot AI</h1>
         <div class="meta">
@@ -163,6 +138,7 @@
                 <div class="chat-header">
                     <h3 class="student-name">{{ $log->user?->name ?? 'Siswa Terhapus' }}</h3>
                     <span class="chat-date">{{ $log->created_at->translatedFormat('d M Y, H:i') }}</span>
+                    <div class="clear-float"></div>
                 </div>
 
                 <div class="bubble prompt-bubble">
@@ -183,15 +159,5 @@
             </div>
         @endforeach
     @endif
-
-    <script>
-        // Otomatis memicu dialog print ketika dokumen selesai dimuat
-        window.onload = function() {
-            // Tunggu sebentar untuk rendering font/layout yang sempurna
-            setTimeout(function() {
-                window.print();
-            }, 500);
-        }
-    </script>
 </body>
 </html>

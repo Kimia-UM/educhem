@@ -128,9 +128,12 @@ return;
         preserveScroll: true,
         onSuccess: () => {
             closeEditModal();
-            toast.success('Kelas Diperbarui', {
-                description: 'Informasi kelas berhasil disimpan.',
-                icon: '✅',
+        },
+        onError: () => {
+            toast.error('Gagal Memperbarui Kelas', {
+                description:
+                    'Mohon periksa kembali isian form Anda. Nama kelas wajib diisi.',
+                icon: '⚠️',
             });
         },
     });

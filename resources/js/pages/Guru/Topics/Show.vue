@@ -115,8 +115,12 @@ const submitEdit = () => {
             preserveScroll: true,
             onSuccess: () => {
                 closeEditModal();
-                toast.success('Topik Diperbarui', {
-                    description: 'Informasi topik berhasil disimpan.',
+            },
+            onError: () => {
+                toast.error('Gagal Memperbarui Topik', {
+                    description:
+                        'Mohon periksa kembali isian form Anda. Judul topik wajib diisi.',
+                    icon: '⚠️',
                 });
             },
         },

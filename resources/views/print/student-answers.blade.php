@@ -2,7 +2,6 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Evaluasi Jawaban Siswa - {{ $student->name }} - {{ $classroom->class_name }}</title>
     <style>
         body {
@@ -10,61 +9,53 @@
             color: #1e293b;
             line-height: 1.5;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             background-color: #ffffff;
         }
-        .header {
+        .header-table {
+            width: 100%;
             border-bottom: 2px solid #e2e8f0;
             padding-bottom: 15px;
             margin-bottom: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
         }
-        .header h1 {
-            font-size: 20px;
-            margin: 0 0 5px 0;
-            color: #0f172a;
-        }
-        .header .meta {
+        .meta-text {
             font-size: 13px;
             color: #64748b;
             font-weight: 500;
+            line-height: 1.6;
         }
         .score-box {
             background-color: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 12px;
-            padding: 15px 20px;
-            display: flex;
-            gap: 20px;
-            font-size: 13px;
+            padding: 10px 15px;
         }
         .score-item {
             text-align: center;
         }
         .score-label {
+            font-size: 11px;
             font-weight: 600;
             color: #64748b;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
         .score-val {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 800;
             color: #4f46e5;
         }
         .phase-section {
-            margin-bottom: 35px;
+            margin-bottom: 30px;
             page-break-inside: avoid;
         }
         .phase-title {
             background-color: #f1f5f9;
-            padding: 10px 15px;
-            font-size: 15px;
+            padding: 8px 12px;
+            font-size: 14px;
             font-weight: 800;
             color: #1e293b;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            border-radius: 6px;
+            margin-bottom: 15px;
             border-left: 4px solid #4f46e5;
         }
         .answer-card {
@@ -83,24 +74,24 @@
             margin-bottom: 5px;
         }
         .question-text {
-            font-size: 13.5px;
+            font-size: 13px;
             font-weight: 600;
             color: #334155;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .answer-box {
             background-color: #f8fafc;
             border: 1px solid #f1f5f9;
             border-radius: 8px;
-            padding: 12px 15px;
-            font-size: 13px;
-            margin-bottom: 12px;
+            padding: 10px 15px;
+            font-size: 12px;
+            margin-bottom: 10px;
         }
         .answer-box-title {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
             color: #64748b;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
         .answer-text {
             color: #334155;
@@ -108,14 +99,14 @@
         }
         .answer-text p {
             margin-top: 0;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         .answer-text p:last-child {
             margin-bottom: 0;
         }
         .answer-text ul, .answer-text ol {
-            margin-top: 5px;
-            margin-bottom: 8px;
+            margin-top: 4px;
+            margin-bottom: 6px;
             padding-left: 20px;
         }
         .answer-text ul:last-child, .answer-text ol:last-child {
@@ -125,20 +116,31 @@
             display: none;
         }
         .evaluation-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
-            padding-top: 10px;
+            padding-top: 8px;
             border-top: 1px solid #f1f5f9;
+            width: 100%;
+            clear: both;
+        }
+        .eval-left {
+            float: left;
+            width: 50%;
+            color: #475569;
+        }
+        .eval-right {
+            float: right;
+            width: 50%;
+            text-align: right;
+        }
+        .clear-float {
+            clear: both;
         }
         .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 11px;
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
             font-weight: 700;
         }
         .badge-benar {
@@ -161,36 +163,13 @@
             color: #64748b;
             border: 1px solid #e2e8f0;
         }
-        .btn-print-container {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 20px;
-        }
-        .btn-print {
-            background-color: #4f46e5;
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            font-size: 13px;
-            font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-        }
         .no-data {
             text-align: center;
-            padding: 30px;
+            padding: 25px;
             color: #94a3b8;
             font-style: italic;
             border: 1px dashed #e2e8f0;
-            border-radius: 10px;
-        }
-        @media print {
-            body {
-                padding: 0;
-            }
-            .btn-print-container {
-                display: none;
-            }
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -198,12 +177,20 @@
     @php
         $checkAutoGrade = function($answer) {
             $content = $answer->content;
+            if (!$content) return null;
             $correctAnswers = $content->correct_answers ?? [];
             $studentAns = $answer->answer_data;
-
+            
+            $options = $content->content_data['options'] ?? [];
             $correctAnswersStr = array_map('strval', (array)$correctAnswers);
 
             if ($content->type === 'eval_mcq') {
+                if (is_string($studentAns)) {
+                    $idx = array_search($studentAns, $options);
+                    if ($idx !== false) {
+                        return in_array((string)$idx, $correctAnswersStr);
+                    }
+                }
                 return in_array((string)$studentAns, $correctAnswersStr);
             } elseif ($content->type === 'eval_cmcq') {
                 if (is_string($studentAns)) {
@@ -216,47 +203,58 @@
                     $studentAns = (array)$studentAns;
                 }
 
-                $studentAnsStr = array_map('strval', $studentAns);
+                $studentIndices = [];
+                foreach ($studentAns as $ans) {
+                    $idx = array_search($ans, $options);
+                    if ($idx !== false) {
+                        $studentIndices[] = (string)$idx;
+                    } else {
+                        $studentIndices[] = (string)$ans;
+                    }
+                }
 
-                sort($studentAnsStr);
+                sort($studentIndices);
                 sort($correctAnswersStr);
 
-                return $studentAnsStr === $correctAnswersStr;
+                return $studentIndices === $correctAnswersStr;
             }
             return null;
         };
     @endphp
 
-    <div class="btn-print-container">
-        <button class="btn-print" onclick="window.print()">Cetak / Simpan PDF</button>
-    </div>
-
-    <div class="header">
-        <div>
-            <h1>Hasil Evaluasi & Jawaban Siswa</h1>
-            <div class="meta">
-                Siswa: <strong>{{ $student->name }}</strong> ({{ $student->email }}) <br>
-                Kelas: {{ $classroom->class_name }} &nbsp;|&nbsp; 
-                Guru Penguji: {{ auth()->user()->name }} <br>
-                Tanggal Cetak: {{ now()->translatedFormat('d F Y, H:i') }}
-            </div>
-        </div>
-        <div class="score-box">
-            <div class="score-item">
-                <div class="score-label">Pre-test</div>
-                <div class="score-val">{{ $pivot->pre_test_score ?? '-' }}</div>
-            </div>
-            <div class="score-item">
-                <div class="score-label">Post-test</div>
-                <div class="score-val">{{ $pivot->post_test_score ?? '-' }}</div>
-            </div>
-        </div>
-    </div>
+    <table class="header-table" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="vertical-align: top; width: 65%;">
+                <h1 style="font-size: 20px; margin: 0 0 5px 0; color: #0f172a;">Hasil Evaluasi & Jawaban Siswa</h1>
+                <div class="meta-text">
+                    Siswa: <strong>{{ $student->name }}</strong> ({{ $student->email }}) <br>
+                    Kelas: {{ $classroom->class_name }} &nbsp;|&nbsp; 
+                    Guru Penguji: {{ auth()->user()->name }} <br>
+                    Tanggal Cetak: {{ now()->translatedFormat('d F Y, H:i') }}
+                </div>
+            </td>
+            <td style="vertical-align: top; width: 35%; text-align: right;">
+                <div class="score-box" style="display: inline-block; text-align: left;">
+                    <table style="border-collapse: collapse;">
+                        <tr>
+                            <td class="score-item" style="padding-right: 15px;">
+                                <div class="score-label">Pre-test</div>
+                                <div class="score-val">{{ $pivot->pre_test_score ?? '-' }}</div>
+                            </td>
+                            <td class="score-item" style="border-left: 1px solid #e2e8f0; padding-left: 15px;">
+                                <div class="score-label">Post-test</div>
+                                <div class="score-val">{{ $pivot->post_test_score ?? '-' }}</div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </td>
+        </tr>
+    </table>
 
     @foreach($topics as $topic)
         @foreach($topic->phases as $phase)
             @php
-                // Filter answers for this phase
                 $phaseAnswers = $answers->filter(function($a) use ($phase) {
                     return $a->phase_id === $phase->id;
                 });
@@ -317,27 +315,30 @@
                             </div>
 
                             <div class="evaluation-row">
-                                <span>Penilaian / Evaluasi:</span>
-                                @if(in_array($answer->content->type, ['eval_mcq', 'eval_cmcq']))
-                                    @php
-                                        $isAutoCorrect = $checkAutoGrade($answer);
-                                    @endphp
-                                    @if($isAutoCorrect)
-                                        <span class="badge badge-benar">Benar (Auto)</span>
+                                <div class="eval-left">Penilaian / Evaluasi:</div>
+                                <div class="eval-right">
+                                    @if(in_array($answer->content->type, ['eval_mcq', 'eval_cmcq']))
+                                        @php
+                                            $isAutoCorrect = $checkAutoGrade($answer);
+                                        @endphp
+                                        @if($isAutoCorrect)
+                                            <span class="badge badge-benar">Benar (Auto)</span>
+                                        @else
+                                            <span class="badge badge-salah">Salah (Auto)</span>
+                                        @endif
                                     @else
-                                        <span class="badge badge-salah">Salah (Auto)</span>
+                                        @if($answer->evaluation === 'benar')
+                                            <span class="badge badge-benar">Benar</span>
+                                        @elseif($answer->evaluation === 'setengah_benar')
+                                            <span class="badge badge-setengah_benar">Setengah Benar</span>
+                                        @elseif($answer->evaluation === 'salah')
+                                            <span class="badge badge-salah">Salah</span>
+                                        @else
+                                            <span class="badge badge-unreviewed">Belum Dinilai</span>
+                                        @endif
                                     @endif
-                                @else
-                                    @if($answer->evaluation === 'benar')
-                                        <span class="badge badge-benar">Benar</span>
-                                    @elseif($answer->evaluation === 'setengah_benar')
-                                        <span class="badge badge-setengah_benar">Setengah Benar</span>
-                                    @elseif($answer->evaluation === 'salah')
-                                        <span class="badge badge-salah">Salah</span>
-                                    @else
-                                        <span class="badge badge-unreviewed">Belum Dinilai</span>
-                                    @endif
-                                @endif
+                                </div>
+                                <div class="clear-float"></div>
                             </div>
                         </div>
                     @endforeach
@@ -345,13 +346,5 @@
             </div>
         @endforeach
     @endforeach
-
-    <script>
-        window.onload = function() {
-            setTimeout(function() {
-                window.print();
-            }, 500);
-        }
-    </script>
 </body>
 </html>

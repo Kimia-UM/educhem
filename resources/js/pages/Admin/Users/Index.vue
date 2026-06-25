@@ -3,6 +3,7 @@ import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { ref, watch, h, computed } from 'vue';
 import DataTable from '@/components/DataTable.vue';
+import { toast } from 'vue-sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,6 +72,11 @@ const executeDelete = () => {
             onSuccess: () => {
                 isDeleteDialogOpen.value = false;
                 userToDelete.value = null;
+            },
+            onError: () => {
+                toast.error('Gagal menghapus pengguna', {
+                    description: 'Terjadi kesalahan saat menghapus data.',
+                });
             }
         });
     }
@@ -200,14 +206,22 @@ const authUser = computed(() => page.props.auth?.user);
                         </CardDescription>
                     </div>
                     
-                    <div class="relative w-full sm:w-[300px]">
-                        <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                        <Input 
-                            v-model="searchQuery" 
-                            type="text" 
-                            placeholder="Cari nama atau email..." 
-                            class="pl-9 h-9 bg-white border-slate-200 shadow-sm focus-visible:ring-indigo-500 rounded-lg w-full text-[13px] placeholder:text-slate-400" 
-                        />
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <div class="relative w-full sm:w-[260px]">
+                            <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <Input 
+                                v-model="searchQuery" 
+                                type="text" 
+                                placeholder="Cari nama atau email..." 
+                                class="pl-9 h-9 bg-white border-slate-200 shadow-sm focus-visible:ring-indigo-500 rounded-lg w-full text-[13px] placeholder:text-slate-400" 
+                            />
+                        </div>
+                        <Link :href="route('admin.users.create')">
+                            <Button class="h-9 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm text-[12.5px] font-bold rounded-lg px-4 flex items-center gap-1.5 shrink-0">
+                                <i class="pi pi-plus text-[10px]"></i>
+                                Tambah Akun
+                            </Button>
+                        </Link>
                     </div>
                 </CardHeader>
                 

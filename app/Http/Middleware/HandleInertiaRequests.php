@@ -36,7 +36,12 @@ class HandleInertiaRequests extends Middleware
             // Eager load class beserta topic dan phase-nya
             if ($user->hasRole(['SISWA', 'siswa', 'Siswa'])) {
                 $sidebarClasses = $user->joinedClasses()
-                                       ->with('topics.phases')
+                                       ->with([
+                                           'topics' => function ($query) {
+                                               $query->wherePivot('is_published', true);
+                                           },
+                                           'topics.phases'
+                                       ])
                                        ->get();
             } elseif ($user->hasRole(['GURU', 'guru', 'Guru'])) {
                 $sidebarClasses = $user->taughtClasses()
@@ -57,6 +62,11 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarClasses' => $sidebarClasses,
             'pendingPasswordResetsCount' => $pendingPasswordResetsCount,
+            'flash' => [
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
+                'toast' => $request->session()->get('toast'),
+            ],
         ];
     }
 }

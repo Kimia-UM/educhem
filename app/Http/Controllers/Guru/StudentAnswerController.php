@@ -275,12 +275,14 @@ class StudentAnswerController extends Controller
         // Ambil status evaluasi dari pivot
         $pivot = $classroom->students()->where('user_id', $student->id)->first()?->pivot;
 
-        return view('print.student-answers', [
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('print.student-answers', [
             'classroom' => $classroom,
             'student' => $student,
             'topics' => $topics,
             'answers' => $answers,
             'pivot' => $pivot,
         ]);
+
+        return $pdf->stream('evaluasi-' . $student->name . '-' . $classroom->class_name . '.pdf');
     }
 }

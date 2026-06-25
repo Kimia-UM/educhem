@@ -7,6 +7,7 @@ use App\Models\Classroom;
 use App\Models\AiChatLog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AiChatLogController extends Controller
 {
@@ -83,10 +84,12 @@ class AiChatLogController extends Controller
 
         $chatLogs = $query->get();
 
-        return view('print.chat-logs', [
+        $pdf = Pdf::loadView('print.chat-logs', [
             'classroom' => $classroom,
             'chatLogs' => $chatLogs,
             'search' => $request->query('search'),
         ]);
+
+        return $pdf->stream('chat-logs-' . $classroom->class_name . '.pdf');
     }
 }

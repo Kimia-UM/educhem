@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link, usePage, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import NavUser from '@/components/NavUser.vue';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import {
@@ -114,35 +115,32 @@ const menuItems = computed(() => {
 </script>
 
 <template>
-    <Sidebar variant="inset" class="border-none">
+    <Sidebar variant="inset" collapsible="icon" class="border-none">
         
-        <SidebarHeader class="relative overflow-hidden border-b border-white/5 bg-gradient-to-b from-[#112a4a] to-transparent p-6">
-            <div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-blue-500/10 blur-3xl"></div>
+        <SidebarHeader class="relative overflow-hidden border-b border-white/5 bg-gradient-to-b from-[#112a4a] to-transparent p-5 flex items-center justify-center transition-all duration-300 group-data-[collapsible=icon]:p-3">
+            <div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-blue-500/10 blur-3xl group-data-[collapsible=icon]:hidden"></div>
             
-            <div class="relative flex items-center gap-4">
-                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.3)] ring-1 ring-white/10 transition-transform duration-300 hover:scale-105">
-                    <i class="pi pi-share-alt text-2xl"></i>
-                </div>
-                <div class="flex flex-col overflow-hidden">
-                    <span class="truncate text-lg font-semibold tracking-wide text-white">
-                        Educhem LMS
-                    </span>
-                    <span class="truncate text-sm text-white/70">
-                        Learning Management System
-                    </span>
-                </div>
-            </div>
+            <img 
+                src="/assets/images/Logo1.png" 
+                alt="Educhem Logo" 
+                class="relative h-10 w-auto max-w-full object-contain transition-all duration-300 hover:scale-105 group-data-[collapsible=icon]:hidden"
+            />
+            <img 
+                src="/assets/images/Logo_only.png" 
+                alt="Educhem Icon" 
+                class="hidden h-7 w-auto object-contain transition-all duration-300 hover:scale-115 group-data-[collapsible=icon]:block"
+            />
         </SidebarHeader>
 
         <SidebarContent class="px-3 py-6">
             <SidebarMenu>
                 <template v-for="(item, index) in menuItems" :key="item.label">
                     
-                    <div v-if="index === 0" class="mb-3 px-3 text-[10.5px] font-bold uppercase tracking-[0.2em] text-slate-500/80">
+                    <div v-if="index === 0" class="mb-3 px-3 text-[10.5px] font-bold uppercase tracking-[0.2em] text-slate-500/80 group-data-[collapsible=icon]:hidden">
                         Main Menu
                     </div>
 
-                    <div v-if="item.label === 'Manajemen Kelas' || item.label === 'Kelas Saya'" class="mb-3 mt-8 px-3 text-[10.5px] font-bold uppercase tracking-[0.2em] text-slate-500/80">
+                    <div v-if="item.label === 'Manajemen Kelas' || item.label === 'Kelas Saya'" class="mb-3 mt-8 px-3 text-[10.5px] font-bold uppercase tracking-[0.2em] text-slate-500/80 group-data-[collapsible=icon]:hidden">
                         Learning Content
                     </div>
 
@@ -150,11 +148,11 @@ const menuItems = computed(() => {
                         <template v-if="item.route">
                             <SidebarMenuButton as-child :is-active="item.route ? isActiveRoute(item.route) : false">
                                 <Link :href="route(item.route)" class="flex h-11 w-full items-center rounded-lg px-3 transition-all duration-300 ease-in-out hover:bg-white/5">
-                                    <i :class="item.icon" class="mr-3 text-[18px] opacity-80 transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-400"></i>
-                                    <span class="text-[14px] font-medium tracking-wide">{{ item.label }}</span>
+                                    <i :class="item.icon" class="mr-3 text-[18px] opacity-80 transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-400 group-data-[collapsible=icon]:mr-0"></i>
+                                    <span class="text-[14px] font-medium tracking-wide group-data-[collapsible=icon]:hidden">{{ item.label }}</span>
                                     
                                     <span v-if="item.label === 'Reset Password' && $page.props.pendingPasswordResetsCount > 0"
-                                        class="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-red-600 px-1.5 text-[10px] font-bold text-white shadow-sm ring-1 ring-white/20">
+                                        class="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-red-600 px-1.5 text-[10px] font-bold text-white shadow-sm ring-1 ring-white/20 group-data-[collapsible=icon]:hidden">
                                         {{ $page.props.pendingPasswordResetsCount }}
                                     </span>
                                 </Link>
@@ -163,9 +161,9 @@ const menuItems = computed(() => {
 
                         <template v-else>
                             <SidebarMenuButton disabled class="flex h-11 w-full items-center rounded-lg px-3 opacity-50">
-                                <i :class="item.icon" class="mr-3 text-[18px] text-slate-400"></i>
-                                <span class="text-[14px] font-medium text-slate-400">{{ item.label }}</span>
-                                <span class="ml-auto rounded-full bg-white/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-slate-300 shadow-inner">Soon</span>
+                                <i :class="item.icon" class="mr-3 text-[18px] text-slate-400 group-data-[collapsible=icon]:mr-0"></i>
+                                <span class="text-[14px] font-medium text-slate-400 group-data-[collapsible=icon]:hidden">{{ item.label }}</span>
+                                <span class="ml-auto rounded-full bg-white/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-slate-300 shadow-inner group-data-[collapsible=icon]:hidden">Soon</span>
                             </SidebarMenuButton>
                         </template>
                     </SidebarMenuItem>
@@ -175,9 +173,9 @@ const menuItems = computed(() => {
                             <CollapsibleTrigger as-child>
                                 <SidebarMenuButton as-child :is-active="!page.url.startsWith('/guru/dashboard')">
                                     <Link :href="route('guru.classes.index')" @click="handleCollapsibleLinkClick('guru.classes.index', undefined, !page.url.startsWith('/guru/dashboard'), $event)" class="flex h-11 items-center rounded-lg px-3 hover:bg-white/5">
-                                        <i :class="item.icon" class="mr-3 text-[18px] opacity-80 transition-transform duration-300 group-hover/collapsible:text-blue-400"></i>
-                                        <span class="text-[14px] font-medium tracking-wide">{{ item.label }}</span>
-                                        <i class="pi pi-chevron-down ml-auto text-xs opacity-50 transition-transform duration-300 group-data-[state=open]/collapsible:rotate-180"></i>
+                                        <i :class="item.icon" class="mr-3 text-[18px] opacity-80 transition-transform duration-300 group-hover/collapsible:text-blue-400 group-data-[collapsible=icon]:mr-0"></i>
+                                        <span class="text-[14px] font-medium tracking-wide group-data-[collapsible=icon]:hidden">{{ item.label }}</span>
+                                        <i class="pi pi-chevron-down ml-auto text-xs opacity-50 transition-transform duration-300 group-data-[state=open]/collapsible:rotate-180 group-data-[collapsible=icon]:hidden"></i>
                                     </Link>
                                 </SidebarMenuButton>
                             </CollapsibleTrigger>
@@ -231,9 +229,9 @@ const menuItems = computed(() => {
                             <CollapsibleTrigger as-child>
                                 <SidebarMenuButton as-child :is-active="!page.url.startsWith('/siswa/dashboard')">
                                     <Link :href="route('siswa.classes.index')" @click="handleCollapsibleLinkClick('siswa.classes.index', undefined, !page.url.startsWith('/siswa/dashboard'), $event)" class="flex h-11 items-center rounded-lg px-3 hover:bg-white/5">
-                                        <i :class="item.icon" class="mr-3 text-[18px] opacity-80 transition-transform duration-300 group-hover/collapsible:text-blue-400"></i>
-                                        <span class="text-[14px] font-medium tracking-wide">{{ item.label }}</span>
-                                        <i class="pi pi-chevron-down ml-auto text-xs opacity-50 transition-transform duration-300 group-data-[state=open]/collapsible:rotate-180"></i>
+                                        <i :class="item.icon" class="mr-3 text-[18px] opacity-80 transition-transform duration-300 group-hover/collapsible:text-blue-400 group-data-[collapsible=icon]:mr-0"></i>
+                                        <span class="text-[14px] font-medium tracking-wide group-data-[collapsible=icon]:hidden">{{ item.label }}</span>
+                                        <i class="pi pi-chevron-down ml-auto text-xs opacity-50 transition-transform duration-300 group-data-[state=open]/collapsible:rotate-180 group-data-[collapsible=icon]:hidden"></i>
                                     </Link>
                                 </SidebarMenuButton>
                             </CollapsibleTrigger>
@@ -301,8 +299,8 @@ const menuItems = computed(() => {
             </SidebarMenu>
         </SidebarContent>
 
-        <SidebarFooter class="border-t border-white/5 bg-[#081627] p-4">
-            <div class="rounded-xl border border-white/5 bg-white/[0.03] p-1.5 shadow-sm transition-all hover:bg-white/[0.08] hover:border-white/10">
+        <SidebarFooter class="border-t border-white/5 bg-[#081627] p-4 group-data-[collapsible=icon]:p-2">
+            <div class="rounded-xl border border-white/5 bg-white/[0.03] p-1.5 shadow-sm transition-all hover:bg-white/[0.08] hover:border-white/10 group-data-[collapsible=icon]:p-1">
                 <NavUser class="text-white bg-transparent hover:bg-transparent" />
             </div>
         </SidebarFooter>
@@ -358,5 +356,16 @@ const menuItems = computed(() => {
 /* 5. Tooltip/Collapsed specific adjustments */
 :deep([data-state="collapsed"] .text-\[10\.5px\]) {
     display: none !important; /* Sembunyikan label saat ditutup */
+}
+
+/* 6. Custom collapsed size for buttons and alignment */
+:deep([data-collapsible="icon"] [data-sidebar="menu-button"]) {
+    width: 2.5rem !important; /* 40px */
+    height: 2.5rem !important; /* 40px */
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 auto !important;
 }
 </style>

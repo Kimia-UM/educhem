@@ -67,7 +67,7 @@ class DashboardController extends Controller
 
         $this->classroomService->createClass($validated, $request->user()->id);
 
-        return back()->with('success', 'Kelas baru berhasil dibuat!');
+        return back()->with('success');
     }
 
     public function update(Request $request, string $id)
@@ -104,7 +104,7 @@ class DashboardController extends Controller
         // 3. Eksekusi penghapusan via Service
         $this->classroomService->deleteClass($classroom);
 
-        return back()->with('success', 'Kelas berhasil dihapus permanen!');
+        return back()->with('success');
     }
 
 

@@ -13,8 +13,9 @@ use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 
-// TAMBAHAN IMPORT UNTUK OVERRIDE LOGIN RESPONSE
+// TAMBAHAN IMPORT UNTUK OVERRIDE LOGIN & LOGOUT RESPONSE
 use Laravel\Fortify\Contracts\LoginResponse;
+use Laravel\Fortify\Contracts\LogoutResponse;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -56,6 +57,16 @@ class FortifyServiceProvider extends ServiceProvider
 
                     // 3. Default Jika SISWA (FORCE REDIRECT)
                     return redirect()->route('dashboard');
+                }
+            };
+        });
+
+        // Override LogoutResponse bawaan Fortify untuk dialihkan ke halaman login
+        $this->app->singleton(LogoutResponse::class, function () {
+            return new class implements LogoutResponse {
+                public function toResponse($request): Response
+                {
+                    return redirect()->route('login');
                 }
             };
         });

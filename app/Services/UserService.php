@@ -81,6 +81,19 @@ class UserService
         return $query->latest()->paginate($perPage)->withQueryString();
     }
 
+    public function createUser(array $data)
+    {
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => \Illuminate\Support\Facades\Hash::make($data['password']),
+            'status' => true,
+        ]);
+
+        $user->assignRole($data['role']);
+        return $user;
+    }
+
     public function upgradeToGuru(User $user)
     {
         $user->syncRoles(['GURU']);

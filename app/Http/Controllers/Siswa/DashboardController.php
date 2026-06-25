@@ -213,7 +213,6 @@ class DashboardController extends Controller
             $aiInsights = [
                 "Belum ada masukan AI. Selesaikan latihan esai atau jawaban singkat di Worksheet untuk mendapatkan feedback AI!",
                 "Gunakan AI Tutor di pojok kanan bawah untuk bertanya kapan pun kamu bingung tentang konsep Kimia.",
-                "Siklus belajar POE (Predict-Observe-Explain) membantumu memahami konsep secara mendalam."
             ];
         }
 

@@ -43,9 +43,6 @@ const handleApprove = (id: number) => {
     isProcessing.value[id] = true;
     router.post(route('admin.password-resets.approve', id), {}, {
         preserveScroll: true,
-        onSuccess: () => {
-            toast.success('Permintaan reset password berhasil disetujui!', { icon: '✅' });
-        },
         onFinish: () => {
             isProcessing.value[id] = false;
         }
@@ -56,9 +53,6 @@ const handleReject = (id: number) => {
     isProcessing.value[id] = true;
     router.post(route('admin.password-resets.reject', id), {}, {
         preserveScroll: true,
-        onSuccess: () => {
-            toast.success('Permintaan reset password ditolak.', { icon: '⚠️' });
-        },
         onFinish: () => {
             isProcessing.value[id] = false;
         }

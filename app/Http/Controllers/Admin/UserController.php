@@ -26,6 +26,29 @@ class UserController extends Controller
         ]);
     }
 
+    // --- FITUR BARU: Menampilkan Halaman Pembuatan Akun Baru ---
+    public function create()
+    {
+        return Inertia::render('Admin/Users/Create', [
+            'roles' => Role::all()
+        ]);
+    }
+
+    // --- FITUR BARU: Menyimpan Akun Baru di Database ---
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+            'role' => 'required|string|exists:roles,name',
+        ]);
+
+        $this->userService->createUser($request->only(['name', 'email', 'password', 'role']));
+
+        return redirect()->route('admin.users.index')->with('success', 'Akun pengguna berhasil dibuat.');
+    }
+
     // --- FITUR BARU: Menampilkan Halaman Edit Role ---
     public function edit(User $user)
     {

@@ -115,45 +115,46 @@ const menuItems = computed(() => {
 
 <template>
     <Sidebar variant="inset" class="border-none">
-        <SidebarHeader class="border-b border-white/5 p-4">
-            <div class="flex items-center gap-3">
-                <div
-                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm"
-                >
-                    <i class="pi pi-share-alt text-xl"></i>
+        
+        <SidebarHeader class="relative overflow-hidden border-b border-white/5 bg-gradient-to-b from-[#112a4a] to-transparent p-6">
+            <div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-blue-500/10 blur-3xl"></div>
+            
+            <div class="relative flex items-center gap-4">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.3)] ring-1 ring-white/10 transition-transform duration-300 hover:scale-105">
+                    <i class="pi pi-share-alt text-2xl"></i>
                 </div>
                 <div class="flex flex-col overflow-hidden">
-                    <span
-                        class="truncate text-lg leading-tight font-bold text-white"
-                    >
-                        EduChem<span class="text-blue-400">.</span>
+                    <span class="truncate text-lg font-semibold tracking-wide text-white">
+                        Educhem LMS
                     </span>
-                    <span
-                        class="truncate text-[10px] font-semibold tracking-wider text-blue-200/80 uppercase"
-                    >
-                        {{ userRole }} Workspace
+                    <span class="truncate text-sm text-white/70">
+                        Learning Management System
                     </span>
                 </div>
             </div>
         </SidebarHeader>
 
-        <SidebarContent class="px-2 py-4">
+        <SidebarContent class="px-3 py-6">
             <SidebarMenu>
-                <template v-for="item in menuItems" :key="item.label">
-                    <!-- Standard Menu Items -->
-                    <SidebarMenuItem v-if="item.label !== 'Kelas Saya' && item.label !== 'Manajemen Kelas'" class="mb-1">
+                <template v-for="(item, index) in menuItems" :key="item.label">
+                    
+                    <div v-if="index === 0" class="mb-3 px-3 text-[10.5px] font-bold uppercase tracking-[0.2em] text-slate-500/80">
+                        Main Menu
+                    </div>
+
+                    <div v-if="item.label === 'Manajemen Kelas' || item.label === 'Kelas Saya'" class="mb-3 mt-8 px-3 text-[10.5px] font-bold uppercase tracking-[0.2em] text-slate-500/80">
+                        Learning Content
+                    </div>
+
+                    <SidebarMenuItem v-if="item.label !== 'Kelas Saya' && item.label !== 'Manajemen Kelas'" class="mb-1.5 group">
                         <template v-if="item.route">
-                            <SidebarMenuButton
-                                as-child
-                                :is-active="item.route ? isActiveRoute(item.route) : false"
-                            >
-                                <Link :href="route(item.route)" class="h-11 rounded-lg w-full flex items-center">
-                                    <i :class="item.icon" class="mr-2 text-[18px]"></i>
-                                    <span class="text-[14px] font-medium">{{ item.label }}</span>
-                                    <span 
-                                        v-if="item.label === 'Reset Password' && $page.props.pendingPasswordResetsCount > 0"
-                                        class="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-sm"
-                                    >
+                            <SidebarMenuButton as-child :is-active="item.route ? isActiveRoute(item.route) : false">
+                                <Link :href="route(item.route)" class="flex h-11 w-full items-center rounded-lg px-3 transition-all duration-300 ease-in-out hover:bg-white/5">
+                                    <i :class="item.icon" class="mr-3 text-[18px] opacity-80 transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-400"></i>
+                                    <span class="text-[14px] font-medium tracking-wide">{{ item.label }}</span>
+                                    
+                                    <span v-if="item.label === 'Reset Password' && $page.props.pendingPasswordResetsCount > 0"
+                                        class="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-red-600 px-1.5 text-[10px] font-bold text-white shadow-sm ring-1 ring-white/20">
                                         {{ $page.props.pendingPasswordResetsCount }}
                                     </span>
                                 </Link>
@@ -161,83 +162,61 @@ const menuItems = computed(() => {
                         </template>
 
                         <template v-else>
-                            <SidebarMenuButton disabled class="h-11 rounded-lg opacity-60">
-                                <i :class="item.icon" class="mr-2 text-[18px] text-slate-300"></i>
-                                <span class="text-[14px] font-medium text-slate-300">{{ item.label }}</span>
-                                <span class="ml-auto rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold tracking-widest text-slate-300 uppercase">Soon</span>
+                            <SidebarMenuButton disabled class="flex h-11 w-full items-center rounded-lg px-3 opacity-50">
+                                <i :class="item.icon" class="mr-3 text-[18px] text-slate-400"></i>
+                                <span class="text-[14px] font-medium text-slate-400">{{ item.label }}</span>
+                                <span class="ml-auto rounded-full bg-white/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-slate-300 shadow-inner">Soon</span>
                             </SidebarMenuButton>
                         </template>
                     </SidebarMenuItem>
 
-                    <!-- Dynamic Menu for 'Manajemen Kelas' (Guru) -->
-                    <Collapsible v-else-if="item.label === 'Manajemen Kelas' && userRole === 'GURU'" as-child default-open class="group/collapsible mb-1">
+                    <Collapsible v-else-if="item.label === 'Manajemen Kelas' && userRole === 'GURU'" as-child default-open class="group/collapsible mb-1.5">
                         <SidebarMenuItem>
                             <CollapsibleTrigger as-child>
                                 <SidebarMenuButton as-child :is-active="!page.url.startsWith('/guru/dashboard')">
-                                    <Link :href="route('guru.classes.index')" @click="handleCollapsibleLinkClick('guru.classes.index', undefined, !page.url.startsWith('/guru/dashboard'), $event)">
-                                        <i :class="item.icon" class="mr-2 text-[18px]"></i>
-                                        <span class="text-[14px] font-medium">{{ item.label }}</span>
-                                        <i class="pi pi-chevron-down ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180"></i>
+                                    <Link :href="route('guru.classes.index')" @click="handleCollapsibleLinkClick('guru.classes.index', undefined, !page.url.startsWith('/guru/dashboard'), $event)" class="flex h-11 items-center rounded-lg px-3 hover:bg-white/5">
+                                        <i :class="item.icon" class="mr-3 text-[18px] opacity-80 transition-transform duration-300 group-hover/collapsible:text-blue-400"></i>
+                                        <span class="text-[14px] font-medium tracking-wide">{{ item.label }}</span>
+                                        <i class="pi pi-chevron-down ml-auto text-xs opacity-50 transition-transform duration-300 group-data-[state=open]/collapsible:rotate-180"></i>
                                     </Link>
                                 </SidebarMenuButton>
                             </CollapsibleTrigger>
                             
-                            <CollapsibleContent>
-                                <SidebarMenuSub class="mt-1">
-                                    <!-- LEVEL 2: Classes -->
+                            <CollapsibleContent class="overflow-hidden transition-all data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                                <SidebarMenuSub class="mt-2 ml-5 border-l border-white/10 pl-0">
                                     <Collapsible as-child v-for="classroom in $page.props.sidebarClasses" :key="classroom.id" class="group/class" :default-open="isClassActive(classroom.id)">
-                                        <SidebarMenuSubItem>
+                                        <SidebarMenuSubItem class="relative pl-3">
+                                            <div class="absolute -left-[1px] top-[18px] h-px w-3 bg-white/10"></div>
+                                            
                                             <CollapsibleTrigger as-child>
                                                 <SidebarMenuSubButton as-child :is-active="isClassActive(classroom.id)">
-                                                    <Link :href="route('guru.classes.show', classroom.id)" @click="handleCollapsibleLinkClick('guru.classes.show', classroom.id, isClassActive(classroom.id), $event)">
-                                                        <span class="font-semibold">{{ classroom.class_name }}</span>
-                                                        <i class="pi pi-chevron-down ml-auto text-[10px] transition-transform group-data-[state=open]/class:rotate-180"></i>
+                                                    <Link :href="route('guru.classes.show', classroom.id)" @click="handleCollapsibleLinkClick('guru.classes.show', classroom.id, isClassActive(classroom.id), $event)" class="flex h-9 rounded-md">
+                                                        <span class="text-[13.5px] font-semibold tracking-wide">{{ classroom.class_name }}</span>
+                                                        <i class="pi pi-chevron-down ml-auto text-[10px] opacity-40 transition-transform duration-300 group-data-[state=open]/class:rotate-180"></i>
                                                     </Link>
                                                 </SidebarMenuSubButton>
                                             </CollapsibleTrigger>
                                             
-                                            <CollapsibleContent>
-                                                <SidebarMenuSub class="border-l border-white/10 ml-3 pl-2 mt-1">
-                                                    <!-- Topik Pembelajaran -->
-                                                    <SidebarMenuSubItem class="mb-1">
-                                                        <SidebarMenuSubButton as-child class="text-[12.5px] opacity-90 hover:opacity-100" :is-active="(route().current('guru.classes.show') && route().params.class == classroom.id && $page.props.defaultTab !== 'siswa' && $page.props.defaultTab !== 'rekapNilai') || ((route().current('guru.classes.topics.*') || route().current('guru.phases.*')) && route().params.classroom == classroom.id)">
-                                                            <Link :href="route('guru.classes.show', classroom.id)">
-                                                                <i class="pi pi-book mr-1 text-[11px]"></i>
-                                                                <span>Topik Pembelajaran</span>
-                                                            </Link>
-                                                        </SidebarMenuSubButton>
-                                                    </SidebarMenuSubItem>
+                                            <CollapsibleContent class="overflow-hidden transition-all data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                                                <SidebarMenuSub class="mt-1 mb-2 ml-3 border-l border-white/5 pl-0 space-y-0.5">
+                                                    
+                                                    <template v-for="(subItem, subIdx) in [
+                                                        { label: 'Topik Pembelajaran', icon: 'pi-book', active: (route().current('guru.classes.show') && route().params.class == classroom.id && $page.props.defaultTab !== 'siswa' && $page.props.defaultTab !== 'rekapNilai') || ((route().current('guru.classes.topics.*') || route().current('guru.phases.*')) && route().params.classroom == classroom.id), route: route('guru.classes.show', classroom.id) },
+                                                        { label: 'Daftar Siswa', icon: 'pi-users', active: route().current('guru.classes.show') && route().params.class == classroom.id && $page.props.defaultTab === 'siswa', route: route('guru.classes.show', { class: classroom.id, tab: 'siswa' }) },
+                                                        { label: 'Log Chatbot AI', icon: 'pi-comments', active: route().current('guru.classes.ai-chat-logs.index', {classroom: classroom.id}), route: route('guru.classes.ai-chat-logs.index', {classroom: classroom.id}) },
+                                                        { label: 'Rekap Nilai', icon: 'pi-percentage', active: route().current('guru.classes.show') && route().params.class == classroom.id && $page.props.defaultTab === 'rekapNilai', route: route('guru.classes.show', { class: classroom.id, tab: 'rekapNilai' }) }
+                                                    ]" :key="subIdx">
+                                                        <SidebarMenuSubItem class="relative pl-3">
+                                                            <div class="absolute -left-[1px] top-1/2 h-px w-3 -translate-y-1/2 bg-white/5"></div>
+                                                            <SidebarMenuSubButton as-child :is-active="subItem.active" class="h-8 rounded-md text-[12.5px] opacity-70 transition-all hover:opacity-100">
+                                                                <Link :href="subItem.route" class="flex items-center gap-2">
+                                                                    <i :class="`pi ${subItem.icon} text-[11px]`"></i>
+                                                                    <span>{{ subItem.label }}</span>
+                                                                </Link>
+                                                            </SidebarMenuSubButton>
+                                                        </SidebarMenuSubItem>
+                                                    </template>
 
-                                                    <!-- Daftar Siswa -->
-                                                    <SidebarMenuSubItem class="mb-1">
-                                                        <SidebarMenuSubButton as-child class="text-[12.5px] opacity-90 hover:opacity-100" :is-active="route().current('guru.classes.show') && route().params.class == classroom.id && $page.props.defaultTab === 'siswa'">
-                                                            <!-- Mengarah ke halaman kelas, karena Daftar Siswa adalah tab di dalam halaman tersebut -->
-                                                            <Link :href="route('guru.classes.show', { class: classroom.id, tab: 'siswa' })">
-                                                                <i class="pi pi-users mr-1 text-[11px]"></i>
-                                                                <span>Daftar Siswa</span>
-                                                            </Link>
-                                                        </SidebarMenuSubButton>
-                                                    </SidebarMenuSubItem>
-
-                                                    <!-- Log Chatbot AI -->
-                                                    <SidebarMenuSubItem class="mb-1">
-                                                        <SidebarMenuSubButton as-child class="text-[12.5px] opacity-90 hover:opacity-100" :is-active="route().current('guru.classes.ai-chat-logs.index', {classroom: classroom.id})">
-                                                            <Link :href="route('guru.classes.ai-chat-logs.index', {classroom: classroom.id})">
-                                                                <i class="pi pi-comments mr-1 text-[11px]"></i>
-                                                                <span>Log Chatbot AI</span>
-                                                            </Link>
-                                                        </SidebarMenuSubButton>
-                                                    </SidebarMenuSubItem>
-
-                                                    <!-- Rekap Nilai -->
-                                                    <SidebarMenuSubItem class="mb-1">
-                                                        <SidebarMenuSubButton as-child class="text-[12.5px] opacity-90 hover:opacity-100" :is-active="route().current('guru.classes.show') && route().params.class == classroom.id && $page.props.defaultTab === 'rekapNilai'">
-                                                            <Link :href="route('guru.classes.show', { class: classroom.id, tab: 'rekapNilai' })">
-                                                                <i class="pi pi-percentage mr-1 text-[11px]"></i>
-                                                                <span>Rekap Nilai</span>
-                                                            </Link>
-                                                        </SidebarMenuSubButton>
-                                                    </SidebarMenuSubItem>
                                                 </SidebarMenuSub>
                                             </CollapsibleContent>
                                         </SidebarMenuSubItem>
@@ -247,60 +226,61 @@ const menuItems = computed(() => {
                         </SidebarMenuItem>
                     </Collapsible>
 
-                    <!-- 4-Level Dynamic Menu for 'Kelas Saya' -->
-                    <Collapsible v-else as-child default-open class="group/collapsible mb-1">
+                    <Collapsible v-else-if="item.label === 'Kelas Saya' && userRole === 'SISWA'" as-child default-open class="group/collapsible mb-1.5">
                         <SidebarMenuItem>
                             <CollapsibleTrigger as-child>
                                 <SidebarMenuButton as-child :is-active="!page.url.startsWith('/siswa/dashboard')">
-                                    <Link :href="route('siswa.classes.index')" @click="handleCollapsibleLinkClick('siswa.classes.index', undefined, !page.url.startsWith('/siswa/dashboard'), $event)">
-                                        <i :class="item.icon" class="mr-2 text-[18px]"></i>
-                                        <span class="text-[14px] font-medium">{{ item.label }}</span>
-                                        <i class="pi pi-chevron-down ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180"></i>
+                                    <Link :href="route('siswa.classes.index')" @click="handleCollapsibleLinkClick('siswa.classes.index', undefined, !page.url.startsWith('/siswa/dashboard'), $event)" class="flex h-11 items-center rounded-lg px-3 hover:bg-white/5">
+                                        <i :class="item.icon" class="mr-3 text-[18px] opacity-80 transition-transform duration-300 group-hover/collapsible:text-blue-400"></i>
+                                        <span class="text-[14px] font-medium tracking-wide">{{ item.label }}</span>
+                                        <i class="pi pi-chevron-down ml-auto text-xs opacity-50 transition-transform duration-300 group-data-[state=open]/collapsible:rotate-180"></i>
                                     </Link>
                                 </SidebarMenuButton>
                             </CollapsibleTrigger>
                             
-                            <CollapsibleContent>
-                                <SidebarMenuSub class="mt-1">
-                                    <!-- LEVEL 2: Classes -->
+                            <CollapsibleContent class="overflow-hidden transition-all data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                                <SidebarMenuSub class="mt-2 ml-5 border-l border-white/10 pl-0">
                                     <Collapsible as-child v-for="classroom in $page.props.sidebarClasses" :key="classroom.id" class="group/class" :default-open="isClassActive(classroom.id)">
-                                        <SidebarMenuSubItem>
+                                        <SidebarMenuSubItem class="relative pl-3">
+                                            <div class="absolute -left-[1px] top-[18px] h-px w-3 bg-white/10"></div>
+                                            
                                             <CollapsibleTrigger as-child>
                                                 <SidebarMenuSubButton as-child :is-active="isClassActive(classroom.id)">
-                                                    <Link :href="route('siswa.classes.show', {classroom: classroom.id})" @click="handleCollapsibleLinkClick('siswa.classes.show', { classroom: classroom.id }, isClassActive(classroom.id), $event)">
-                                                        <span class="font-semibold">{{ classroom.class_name }}</span>
-                                                        <i class="pi pi-chevron-down ml-auto text-[10px] transition-transform group-data-[state=open]/class:rotate-180"></i>
+                                                    <Link :href="route('siswa.classes.show', {classroom: classroom.id})" @click="handleCollapsibleLinkClick('siswa.classes.show', { classroom: classroom.id }, isClassActive(classroom.id), $event)" class="flex h-9 rounded-md">
+                                                        <span class="text-[13.5px] font-semibold tracking-wide">{{ classroom.class_name }}</span>
+                                                        <i class="pi pi-chevron-down ml-auto text-[10px] opacity-40 transition-transform duration-300 group-data-[state=open]/class:rotate-180"></i>
                                                     </Link>
                                                 </SidebarMenuSubButton>
                                             </CollapsibleTrigger>
                                             
-                                            <CollapsibleContent>
-                                                <SidebarMenuSub class="border-l border-white/10 ml-3 pl-2 mt-1">
-                                                    <!-- LEVEL 3: Topics -->
+                                            <CollapsibleContent class="overflow-hidden transition-all data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                                                <SidebarMenuSub class="mt-1 ml-3 border-l border-white/5 pl-0 space-y-1">
                                                     <Collapsible as-child v-for="topic in classroom.topics" :key="topic.id" class="group/topic" :default-open="route().current('siswa.worksheet.*') && route().params.topic == topic.id">
-                                                        <SidebarMenuSubItem>
+                                                        <SidebarMenuSubItem class="relative pl-3">
+                                                            <div class="absolute -left-[1px] top-[16px] h-px w-3 bg-white/5"></div>
+                                                            
                                                             <CollapsibleTrigger as-child>
-                                                                <SidebarMenuSubButton as-child class="text-[13px] opacity-90" :is-active="route().current('siswa.worksheet.*') && route().params.topic == topic.id">
-                                                                    <!-- Jika topik memiliki fase, klik topik langsung mengarah ke fase pertama! -->
+                                                                <SidebarMenuSubButton as-child class="h-8 rounded-md text-[13px] opacity-80 transition-all hover:opacity-100" :is-active="route().current('siswa.worksheet.*') && route().params.topic == topic.id">
                                                                     <Link v-if="topic.phases && topic.phases.length > 0" :href="route('siswa.worksheet.show', {classroom: classroom.id, topic: topic.id, phase: topic.phases[0].id})" @click="handleCollapsibleLinkClick('siswa.worksheet.show', { classroom: classroom.id, topic: topic.id, phase: topic.phases[0].id }, route().current('siswa.worksheet.*') && route().params.topic == topic.id, $event)">
-                                                                        <span>{{ topic.title }}</span>
-                                                                        <i class="pi pi-chevron-down ml-auto text-[9px] transition-transform group-data-[state=open]/topic:rotate-180"></i>
+                                                                        <span class="truncate">{{ topic.title }}</span>
+                                                                        <i class="pi pi-chevron-down ml-auto text-[9px] opacity-50 transition-transform duration-300 group-data-[state=open]/topic:rotate-180"></i>
                                                                     </Link>
-                                                                    <div v-else class="cursor-pointer flex items-center w-full">
-                                                                        <span>{{ topic.title }}</span>
-                                                                        <i class="pi pi-chevron-down ml-auto text-[9px] transition-transform group-data-[state=open]/topic:rotate-180"></i>
+                                                                    <div v-else class="flex w-full cursor-pointer items-center">
+                                                                        <span class="truncate">{{ topic.title }}</span>
+                                                                        <i class="pi pi-chevron-down ml-auto text-[9px] opacity-50 transition-transform duration-300 group-data-[state=open]/topic:rotate-180"></i>
                                                                     </div>
                                                                 </SidebarMenuSubButton>
                                                             </CollapsibleTrigger>
 
-                                                            <CollapsibleContent>
-                                                                <SidebarMenuSub class="border-l border-white/10 ml-3 pl-2 mt-1 mb-2">
-                                                                    <!-- LEVEL 4: Phases -->
-                                                                    <SidebarMenuSubItem v-for="phase in topic.phases" :key="phase.id">
-                                                                        <SidebarMenuSubButton as-child class="text-[12px] opacity-75 hover:opacity-100" :is-active="route().current('siswa.worksheet.show', {classroom: classroom.id, topic: topic.id, phase: phase.id})">
-                                                                            <Link :href="route('siswa.worksheet.show', {classroom: classroom.id, topic: topic.id, phase: phase.id})">
-                                                                                <i class="pi pi-file-edit mr-1 text-[10px]"></i>
-                                                                                <span>{{ phase.name }}</span>
+                                                            <CollapsibleContent class="overflow-hidden transition-all data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                                                                <SidebarMenuSub class="mt-1 mb-2 ml-3 border-l border-white/5 pl-0 space-y-0.5">
+                                                                    <SidebarMenuSubItem v-for="phase in topic.phases" :key="phase.id" class="relative pl-3">
+                                                                        <div class="absolute -left-[1px] top-1/2 h-px w-3 -translate-y-1/2 bg-white/5"></div>
+                                                                        
+                                                                        <SidebarMenuSubButton as-child class="h-7 rounded-md text-[12px] opacity-60 transition-all hover:opacity-100" :is-active="route().current('siswa.worksheet.show', {classroom: classroom.id, topic: topic.id, phase: phase.id})">
+                                                                            <Link :href="route('siswa.worksheet.show', {classroom: classroom.id, topic: topic.id, phase: phase.id})" class="flex items-center gap-1.5">
+                                                                                <i class="pi pi-file-edit text-[9px]"></i>
+                                                                                <span class="truncate">{{ phase.name }}</span>
                                                                             </Link>
                                                                         </SidebarMenuSubButton>
                                                                     </SidebarMenuSubItem>
@@ -316,63 +296,67 @@ const menuItems = computed(() => {
                             </CollapsibleContent>
                         </SidebarMenuItem>
                     </Collapsible>
+
                 </template>
             </SidebarMenu>
         </SidebarContent>
 
-        <SidebarFooter class="border-t border-white/5 p-4">
-            <NavUser
-                class="rounded-lg text-white transition-colors hover:bg-white/10"
-            />
+        <SidebarFooter class="border-t border-white/5 bg-[#081627] p-4">
+            <div class="rounded-xl border border-white/5 bg-white/[0.03] p-1.5 shadow-sm transition-all hover:bg-white/[0.08] hover:border-white/10">
+                <NavUser class="text-white bg-transparent hover:bg-transparent" />
+            </div>
         </SidebarFooter>
+        
     </Sidebar>
 </template>
 
 <style scoped>
-/* TRICK AMAN: Memaksa background sidebar menjadi Biru Navy via CSS agar Vue Template tidak hancur */
+/* 1. Base Navy Background Override (Safety Fallback) */
 :deep(.bg-sidebar) {
     background-color: #0b1e36 !important;
-    --sidebar-foreground: #ffffff;
-    --sidebar-accent: rgba(255, 255, 255, 0.08);
-    --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: rgba(255, 255, 255, 0.08);
+    --sidebar-foreground: #cbd5e1; /* Slate 300 base */
+    --sidebar-border: rgba(255, 255, 255, 0.05);
 }
 :deep(.text-sidebar-foreground) {
-    color: #ffffff !important; /* White for inactive items as requested */
-    transition: color 0.2s ease !important;
+    color: #cbd5e1 !important;
 }
 
-/* Custom Hover state overrides for Sidebar Buttons on Dark Navy Background */
-:deep([data-sidebar="menu-button"]:not([data-active='true']):hover),
-:deep([data-sidebar="menu-sub-button"]:not([data-active='true']):hover) {
+/* 2. LEVEL 1: Active Main Menu - Enterprise LMS Style */
+/* Background gradient halus, Indicator Bar kiri, & shadow lembut */
+:deep([data-sidebar="menu-button"][data-active='true']) {
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.02) 100%) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border-left: 3.5px solid #3b82f6 !important;
+    border-radius: 4px 8px 8px 4px !important;
+    box-shadow: inset 1px 0 0 rgba(255,255,255,0.05) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+:deep([data-sidebar="menu-button"][data-active='true'] i) {
+    color: #60a5fa !important; /* Icon blue when active */
+    opacity: 1 !important;
+}
+
+/* 3. LEVEL 2-4: Active Sub Menu (Kelas, Topik, Fase) */
+/* Lebih subtle tanpa shadow berat, fokus pada readability */
+:deep([data-sidebar="menu-sub-button"][data-active='true']) {
     background-color: rgba(255, 255, 255, 0.08) !important;
     color: #ffffff !important;
-    transition: all 0.2s ease !important;
-}
-
-/* 1. Hanya tombol Menu Utama yang mendapatkan efek Glow Solid & Border Kiri Putih */
-:deep([data-sidebar="menu-button"][data-active='true']) {
-    background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-hover) 100%) !important;
-    color: white !important;
-    font-weight: 700 !important;
-    box-shadow: 0 4px 14px 0 rgba(var(--theme-primary-rgb), 0.4) !important;
-    border-left: 3.5px solid #ffffff !important;
-    transition: all 0.3s ease !important;
-}
-:deep([data-sidebar="menu-button"][data-active='true']:hover) {
-    opacity: 0.95 !important;
-}
-
-/* 2. Tombol Sub-Menu (Level 2 ke bawah seperti Kelas, Topik, Fase) mendapatkan warna soft transparan tanpa glow tebal */
-:deep([data-sidebar="menu-sub-button"][data-active='true']) {
-    background: rgba(var(--theme-primary-rgb), 0.15) !important;
-    color: #ffffff !important; /* Bright white text for readability on navy background */
     font-weight: 600 !important;
-    box-shadow: none !important;
-    border-left: 2.5px solid var(--theme-primary) !important;
     transition: all 0.2s ease !important;
 }
-:deep([data-sidebar="menu-sub-button"][data-active='true']:hover) {
-    background: rgba(var(--theme-primary-rgb), 0.25) !important; /* Slightly brighter hover when active */
+:deep([data-sidebar="menu-sub-button"][data-active='true'] i) {
+    color: #93c5fd !important;
+}
+
+/* 4. Hover States untuk item yang tidak aktif */
+:deep([data-sidebar="menu-button"]:not([data-active='true']):hover),
+:deep([data-sidebar="menu-sub-button"]:not([data-active='true']):hover) {
+    color: #ffffff !important;
+}
+
+/* 5. Tooltip/Collapsed specific adjustments */
+:deep([data-state="collapsed"] .text-\[10\.5px\]) {
+    display: none !important; /* Sembunyikan label saat ditutup */
 }
 </style>

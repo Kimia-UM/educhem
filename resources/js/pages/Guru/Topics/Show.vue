@@ -17,7 +17,8 @@ const props = defineProps<{
         id: number;
         title: string;
         description: string | null;
-        pivot: { is_published: boolean; is_open: boolean };
+        is_published: boolean;
+        pivot: { is_open: boolean };
         phases: Array<{
             id: number;
             name: string;

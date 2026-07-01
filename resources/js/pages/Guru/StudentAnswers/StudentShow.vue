@@ -135,6 +135,22 @@ const totalEvaluated = computed(() => {
 const totalQuestions = computed(() => props.answers.length);
 const progressPercent = computed(() => totalQuestions.value > 0 ? Math.round((totalEvaluated.value / totalQuestions.value) * 100) : 0);
 
+const totalScore = computed(() => {
+    let score = 0;
+    props.answers.forEach(a => {
+        if (['eval_mcq', 'eval_cmcq'].includes(a.content.type)) {
+            if (checkAutoGrade(a)) score += 2;
+        } else {
+            if (a.evaluation === 'benar') score += 2;
+            else if (a.evaluation === 'setengah_benar') score += 1;
+        }
+    });
+    return score;
+});
+
+const maxScore = computed(() => props.answers.length * 2);
+const scorePercent = computed(() => maxScore.value > 0 ? Math.round((totalScore.value / maxScore.value) * 100) : 0);
+
 const getScoreText = (evaluation: string | null) => {
     switch (evaluation) {
         case 'benar': return '2';
@@ -255,12 +271,12 @@ const isImage = (url: string | null) => {
                 <div class="flex justify-between items-end mb-2">
                     <div>
                         <h3 class="text-[14px] font-bold text-slate-800">Nilai Siswa</h3>
-                        <p class="text-[12px] text-slate-500">{{ totalEvaluated }} dari {{ totalQuestions }} soal telah dievaluasi</p>
+                        <p class="text-[12px] text-slate-500">Skor maksimal: {{ maxScore }} ({{ totalEvaluated }}/{{ totalQuestions }} dievaluasi)</p>
                     </div>
-                    <span class="text-[20px] font-extrabold text-indigo-600">{{ progressPercent }}%</span>
+                    <span class="text-[20px] font-extrabold" :class="scorePercent >= 75 ? 'text-emerald-600' : (scorePercent >= 50 ? 'text-amber-500' : 'text-rose-600')">{{ totalScore }} <span class="text-[14px] font-bold text-slate-400">Poin</span></span>
                 </div>
                 <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-indigo-600 transition-all duration-500" :style="{ width: progressPercent + '%' }"></div>
+                    <div class="h-full transition-all duration-500" :class="scorePercent >= 75 ? 'bg-emerald-500' : (scorePercent >= 50 ? 'bg-amber-500' : 'bg-rose-500')" :style="{ width: scorePercent + '%' }"></div>
                 </div>
             </Card>
 

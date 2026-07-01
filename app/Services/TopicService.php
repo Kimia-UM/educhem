@@ -37,9 +37,9 @@ class TopicService
 
         abort_unless($access, 404, 'Topik tidak ditemukan di kelas ini.');
 
-        $newValue = !$access->pivot->is_published;
+        $newValue = !$topic->is_published;
 
-        $classroom->topics()->updateExistingPivot($topic->id, [
+        $topic->update([
             'is_published' => $newValue,
         ]);
 

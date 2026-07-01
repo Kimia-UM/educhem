@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Spinner } from '@/components/ui/spinner';
+import { Sparkles } from 'lucide-vue-next';
 
 defineOptions({
     layout: {
@@ -52,8 +53,9 @@ const submit = () => {
                     <Link :href="route('home')" class="hover:opacity-85 transition-opacity duration-200">
                         <img src="/assets/images/Logo_only.png" alt="EduChem Logo" class="w-20 h-20 mb-4 object-contain cursor-pointer" />
                     </Link>
-                    <div class="mb-3 text-[11px] font-black tracking-[0.25em] uppercase bg-gradient-to-r from-[#4F46E5] via-purple-600 to-[#ec4899] bg-clip-text text-transparent select-none">
-                        EDUCHEM
+                    <div class="mb-3 text-lg font-extrabold tracking-tight select-none flex items-center justify-center">
+                        <span class="bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 bg-clip-text text-transparent">Educhem_</span><span class="text-yellow-500">Gen</span><span class="bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 bg-clip-text text-transparent">AI</span>
+                        <Sparkles class="inline-block w-5 h-5 text-yellow-400 animate-pulse ml-1 align-middle relative -top-0.5" />
                     </div>
                     <h1
                         class="mb-2 text-[28px] font-bold tracking-tight text-gray-900"

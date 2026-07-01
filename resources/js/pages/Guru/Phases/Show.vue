@@ -705,11 +705,14 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                                 />
                                 <div
                                     v-if="content.content_data.path"
-                                    class="aspect-video w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-900"
+                                    class="w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-900"
+                                    :class="(content.content_data.path.includes('youtube.com') || content.content_data.path.includes('youtu.be')) ? 'aspect-video relative' : ''"
                                 >
                                     <iframe
                                         :src="content.content_data.path"
-                                        class="h-full w-full border-0"
+                                        class="border-0"
+                                        :class="(content.content_data.path.includes('youtube.com') || content.content_data.path.includes('youtu.be')) ? 'absolute top-0 left-0 w-full h-full' : 'w-full'"
+                                        :style="(content.content_data.path.includes('youtube.com') || content.content_data.path.includes('youtu.be')) ? '' : 'height: 1000px; width: 125%; transform: scale(0.8); transform-origin: top left; overflow-y: hidden;'"
                                     ></iframe>
                                 </div>
                             </div>

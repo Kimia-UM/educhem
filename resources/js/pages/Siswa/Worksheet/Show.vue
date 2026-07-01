@@ -444,14 +444,15 @@ const refreshDiscussions = () => {
                         </a>
                     </div>
                     <div
-                        class="w-full rounded-xl bg-slate-900"
-                        style="max-height: 85vh; overflow-y: auto; -webkit-overflow-scrolling: touch;"
+                        class="w-full rounded-xl bg-slate-900 overflow-hidden"
+                        :class="(content.content_data.path.includes('youtube.com') || content.content_data.path.includes('youtu.be')) ? 'aspect-video relative' : ''"
                     >
                         <iframe
                             :src="content.content_data.path"
-                            class="w-full border-0"
-                            style="height: 1000px; width: 125%; transform: scale(0.8); transform-origin: top left;overflow-y: hidden;"
-                            scrolling="no"
+                            class="border-0"
+                            :class="(content.content_data.path.includes('youtube.com') || content.content_data.path.includes('youtu.be')) ? 'absolute top-0 left-0 w-full h-full' : 'w-full'"
+                            :style="(content.content_data.path.includes('youtube.com') || content.content_data.path.includes('youtu.be')) ? '' : 'height: 1000px; width: 125%; transform: scale(0.8); transform-origin: top left; overflow-y: hidden;'"
+                            scrolling="auto"
                             allowfullscreen="allowfullscreen"
                             allow="
                                 geolocation *;

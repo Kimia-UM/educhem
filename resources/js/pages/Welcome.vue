@@ -119,7 +119,7 @@ const features = [
         <header :class="[
             'fixed inset-x-0 top-0 z-50 transition-all duration-300',
             activeSection === 'home'
-                ? 'bg-indigo-700/80 backdrop-blur-md border-b border-white/10'
+                ? 'bg-gradient-to-r from-blue-600/90 to-emerald-400/90 backdrop-blur-md border-b border-white/10'
                 : 'bg-white/90 backdrop-blur-md border-b border-slate-200/50 shadow-sm'
         ]">
             <nav class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-12" aria-label="Global">
@@ -145,14 +145,14 @@ const features = [
                         :class="[
                             'text-sm transition-colors cursor-pointer relative pb-0.5',
                             activeSection === 'home'
-                                ? activeSection === item.id ? 'text-white font-bold' : 'text-indigo-200 font-medium hover:text-white'
-                                : activeSection === item.id ? 'text-indigo-600 font-bold' : 'text-slate-600 font-medium hover:text-indigo-600'
+                                ? activeSection === item.id ? 'text-white font-bold' : 'text-blue-200 font-medium hover:text-white'
+                                : activeSection === item.id ? 'text-blue-600 font-bold' : 'text-slate-600 font-medium hover:text-blue-600'
                         ]"
                     >
                         {{ item.label }}
                         <span
                             v-if="activeSection === item.id"
-                            :class="['absolute -bottom-0.5 left-0 right-0 h-0.5 rounded-full', activeSection === 'home' ? 'bg-emerald-400' : 'bg-indigo-600']"
+                            :class="['absolute -bottom-0.5 left-0 right-0 h-0.5 rounded-full', activeSection === 'home' ? 'bg-emerald-400' : 'bg-blue-600']"
                         ></span>
                     </Link>
                 </div>
@@ -161,7 +161,7 @@ const features = [
                     <template v-if="$page.props.auth?.user">
                         <Link
                             :href="route('dashboard')"
-                            :class="['text-sm font-semibold transition-colors', activeSection === 'home' ? 'text-indigo-100 hover:text-white' : 'text-slate-700 hover:text-indigo-600']"
+                            :class="['text-sm font-semibold transition-colors', activeSection === 'home' ? 'text-blue-100 hover:text-white' : 'text-slate-700 hover:text-blue-600']"
                         >
                             Dashboard <span aria-hidden="true">&rarr;</span>
                         </Link>
@@ -169,7 +169,7 @@ const features = [
                     <template v-else>
                         <Link
                             :href="route('login')"
-                            :class="['text-sm font-semibold transition-colors', activeSection === 'home' ? 'text-indigo-100 hover:text-white' : 'text-slate-700 hover:text-indigo-600']"
+                            :class="['text-sm font-semibold transition-colors', activeSection === 'home' ? 'text-blue-100 hover:text-white' : 'text-slate-700 hover:text-blue-600']"
                         >
                             Masuk
                         </Link>
@@ -177,7 +177,7 @@ const features = [
                             :href="route('register')"
                             :class="[
                                 'rounded-full px-4 py-2 text-sm font-semibold transition-all shadow-sm',
-                                activeSection === 'home' ? 'bg-white text-indigo-700 hover:bg-indigo-50' : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                activeSection === 'home' ? 'bg-white text-blue-600 hover:bg-blue-50' : 'bg-blue-600 text-white hover:bg-blue-700'
                             ]"
                         >
                             Daftar Gratis
@@ -188,21 +188,13 @@ const features = [
         </header>
 
         <!-- ===== HERO ===== -->
-        <section id="home" class="relative overflow-hidden pt-32 pb-16 sm:pt-40 sm:pb-24 lg:pb-32 bg-indigo-700">
+        <section id="home" class="relative overflow-hidden pt-32 pb-16 sm:pt-40 sm:pb-24 lg:pb-32 bg-gradient-to-br from-blue-600 to-emerald-400">
 
             <!-- Pattern + Glow -->
             <div class="absolute inset-0 z-0" aria-hidden="true">
-                <svg class="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <pattern id="hex-pattern" x="0" y="0" width="60" height="52" patternUnits="userSpaceOnUse">
-                            <polygon points="30,2 56,16 56,36 30,50 4,36 4,16" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1.5"/>
-                        </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#hex-pattern)" />
-                </svg>
-                <div class="absolute -top-20 -left-20 h-72 w-72 rounded-full bg-violet-600/40 blur-3xl"></div>
-                <div class="absolute top-10 right-10 h-56 w-56 rounded-full bg-indigo-400/30 blur-3xl"></div>
-                <div class="absolute bottom-0 right-1/3 h-64 w-64 rounded-full bg-sky-500/20 blur-3xl"></div>
+                <div class="absolute -top-20 -left-20 h-72 w-72 rounded-full bg-emerald-600/40 blur-3xl"></div>
+                <div class="absolute top-10 right-10 h-56 w-56 rounded-full bg-blue-400/30 blur-3xl"></div>
+                <div class="absolute bottom-0 right-1/3 h-64 w-64 rounded-full bg-cyan-500/20 blur-3xl"></div>
             </div>
 
             <!-- Floating SVGs -->
@@ -236,13 +228,13 @@ const features = [
 
                 <h1 data-aos="fade-up" data-aos-delay="100" class="text-4xl leading-tight font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl mb-6">
                     Selamat Datang di
-                    <span class="block mt-2 bg-gradient-to-r from-sky-300 via-indigo-200 to-emerald-300 bg-clip-text text-transparent animate-text-gradient pb-2">
-                        Educhem-GenAI
-                        <Sparkles class="inline-block w-8 h-8 text-sky-300 animate-pulse ml-1 align-middle relative -top-1" />
+                    <span class="block mt-2 pb-2">
+                        <span class="bg-gradient-to-r from-sky-300 via-indigo-200 to-emerald-300 bg-clip-text text-transparent animate-text-gradient">Educhem_</span><span class="text-yellow-200">Gen</span><span class="bg-gradient-to-r from-sky-300 via-indigo-200 to-emerald-300 bg-clip-text text-transparent animate-text-gradient">AI</span>
+                        <Sparkles class="inline-block w-8 h-8 text-yellow-300 animate-pulse ml-1 align-middle relative -top-1" />
                     </span>
                 </h1>
 
-                <p data-aos="fade-up" data-aos-delay="200" class="mx-auto max-w-2xl text-base sm:text-lg leading-8 text-indigo-100 mb-10">
+                <p data-aos="fade-up" data-aos-delay="200" class="mx-auto max-w-2xl text-base sm:text-lg leading-8 text-blue-50 mb-10">
                     Tingkatkan pemahaman konsep <strong class="font-semibold text-white">Laju Reaksi</strong> melalui pendekatan
                     <strong class="font-semibold text-white">Learning Cycle 5E</strong>.
                     Belajar lebih interaktif, mendalam, dan menyenangkan bersama AI Tutor.
@@ -252,14 +244,14 @@ const features = [
                     <Link
                         v-if="$page.props.auth?.user"
                         :href="route('dashboard')"
-                        class="w-full sm:w-auto rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-indigo-700 shadow-md hover:bg-indigo-50 transition-all"
+                        class="w-full sm:w-auto rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-blue-600 shadow-md hover:bg-blue-50 transition-all"
                     >
                         Lanjutkan Belajar &rarr;
                     </Link>
                     <template v-else>
                         <Link
                             :href="route('register')"
-                            class="w-full sm:w-auto rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-indigo-700 shadow-md hover:bg-indigo-50 transition-all"
+                            class="w-full sm:w-auto rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-blue-600 shadow-md hover:bg-blue-50 transition-all"
                         >
                             Mulai Sekarang &rarr;
                         </Link>
@@ -275,15 +267,15 @@ const features = [
                 <div data-aos="fade-up" data-aos-delay="400" class="mt-14 pt-8 border-t border-white/10 flex justify-center gap-10 sm:gap-16">
                     <div class="text-center">
                         <p class="text-3xl font-extrabold text-white">5</p>
-                        <p class="text-xs sm:text-sm font-medium text-indigo-200 mt-1">Tahapan Belajar</p>
+                        <p class="text-xs sm:text-sm font-medium text-blue-100 mt-1">Tahapan Belajar</p>
                     </div>
                     <div class="text-center">
                         <p class="text-3xl font-extrabold text-emerald-300">AI</p>
-                        <p class="text-xs sm:text-sm font-medium text-indigo-200 mt-1">Tutor Interaktif</p>
+                        <p class="text-xs sm:text-sm font-medium text-blue-100 mt-1">Tutor Interaktif</p>
                     </div>
                     <div class="text-center">
                         <p class="text-3xl font-extrabold text-sky-300">SMA</p>
-                        <p class="text-xs sm:text-sm font-medium text-indigo-200 mt-1">Laju Reaksi</p>
+                        <p class="text-xs sm:text-sm font-medium text-blue-100 mt-1">Laju Reaksi</p>
                     </div>
                 </div>
             </div>
@@ -394,7 +386,7 @@ const features = [
         <section id="features" class="py-16 sm:py-24 bg-slate-50 border-t border-slate-200/60">
             <div class="mx-auto max-w-7xl px-6 lg:px-12">
                 <div class="text-center mb-16" data-aos="fade-up">
-                    <p class="text-sm font-semibold text-indigo-600 uppercase tracking-wider mb-2">Kenapa EduChem?</p>
+                    <p class="text-sm font-semibold text-blue-600 uppercase tracking-wider mb-2">Kenapa EduChem?</p>
                     <h2 class="text-3xl font-extrabold text-slate-900 sm:text-4xl">Fasilitas Penunjang Belajarmu</h2>
                     <p class="mt-4 text-base text-slate-500 max-w-xl mx-auto">Kombinasi metode pembelajaran terbukti dan kecerdasan buatan untuk pengalaman belajar terbaik.</p>
                 </div>
@@ -404,7 +396,7 @@ const features = [
                         :key="feat.title"
                         data-aos="fade-up"
                         :data-aos-delay="index * 100"
-                        class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-300 group"
+                        class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm hover:shadow-md hover:border-blue-100 transition-all duration-300 group"
                     >
                         <div :class="`h-12 w-12 rounded-xl flex items-center justify-center mb-5 ${feat.bg} ${feat.text} group-hover:scale-110 transition-transform`">
                             <component :is="feat.icon" class="h-6 w-6" :stroke-width="2" />
@@ -431,7 +423,7 @@ const features = [
                         </p>
                     </div>
 
-                    <div data-aos="fade-left" class="rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-600 p-8 sm:p-12 text-center shadow-xl relative overflow-hidden">
+                    <div data-aos="fade-left" class="rounded-3xl bg-gradient-to-br from-blue-600 to-emerald-400 p-8 sm:p-12 text-center shadow-xl relative overflow-hidden">
                         <div class="absolute inset-0 opacity-10">
                             <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
                                 <defs>
@@ -443,17 +435,17 @@ const features = [
                             </svg>
                         </div>
                         <h3 class="text-2xl font-bold text-white mb-3 relative z-10">Siap Belajar Cara Baru?</h3>
-                        <p class="text-indigo-100 text-sm sm:text-base mb-8 relative z-10">Dapatkan akses penuh ke materi LC5E, AI Tutor, dan evaluasi adaptif sekarang juga.</p>
+                        <p class="text-blue-100 text-sm sm:text-base mb-8 relative z-10">Dapatkan akses penuh ke materi kimia, AI Tutor, dan evaluasi adaptif sekarang juga.</p>
                         <div class="flex flex-col sm:flex-row items-center justify-center gap-3 relative z-10">
                             <Link
                                 v-if="$page.props.auth?.user"
                                 :href="route('dashboard')"
-                                class="w-full sm:w-auto rounded-full bg-white px-8 py-3 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 transition-all shadow-md"
+                                class="w-full sm:w-auto rounded-full bg-white px-8 py-3 text-sm font-semibold text-blue-600 hover:bg-blue-50 transition-all shadow-md"
                             >
                                 Buka Dashboard &rarr;
                             </Link>
                             <template v-else>
-                                <Link :href="route('register')" class="w-full sm:w-auto rounded-full bg-white px-8 py-3 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 transition-all shadow-md">
+                                <Link :href="route('register')" class="w-full sm:w-auto rounded-full bg-white px-8 py-3 text-sm font-semibold text-blue-600 hover:bg-blue-50 transition-all shadow-md">
                                     Daftar Gratis
                                 </Link>
                                 <Link :href="route('login')" class="w-full sm:w-auto rounded-full border border-white/30 bg-white/10 px-8 py-3 text-sm font-semibold text-white hover:bg-white/20 transition-all">
@@ -476,7 +468,7 @@ const features = [
                 <p class="text-xs text-center">© {{ new Date().getFullYear() }} EduChem. Platform Pembelajaran Kimia SMA Berbasis AI.</p>
                 <div>
                     <p class="text-xs text-center">
-                        Developed by <a href="https://instagram.com/scalenix.studio" target="_blank" class="text-indigo-400 hover:text-indigo-300 transition-colors">Scalenix Studio</a>
+                        Developed by <a href="https://instagram.com/scalenix.studio" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">Scalenix Studio</a>
                     </p>
                 </div>
             </div>

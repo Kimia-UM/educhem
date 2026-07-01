@@ -38,7 +38,7 @@ class HandleInertiaRequests extends Middleware
                 $sidebarClasses = $user->joinedClasses()
                                        ->with([
                                            'topics' => function ($query) {
-                                               $query->wherePivot('is_published', true);
+                                               $query->where('topics.is_published', true);
                                            },
                                            'topics.phases'
                                        ])

@@ -528,7 +528,7 @@ const saveScores = (studentId: number) => {
                                     >
                                         {{ topic.title }}
                                         <span
-                                            v-if="!topic.pivot?.is_published"
+                                            v-if="!topic.is_published"
                                             class="ml-2 inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 align-middle text-[10px] font-bold text-amber-600"
                                         >
                                             DRAFT

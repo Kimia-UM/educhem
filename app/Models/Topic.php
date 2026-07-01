@@ -13,6 +13,7 @@ class Topic extends Model
     protected $fillable = [
         'title',
         'description',
+        'is_published',
     ];
 
     // RELASI BARU: Satu topik memiliki banyak fase (Urut berdasarkan kolom 'order')

@@ -36,18 +36,37 @@ const props = defineProps<{
         to: number;
         total: number;
     },
-    filters?: { search?: string; }
+    filters?: { search?: string; per_page?: number | string; }
 }>();
 
 const form = useForm({});
 const searchQuery = ref(props.filters?.search || '');
+const perPage = ref(Number(props.filters?.per_page) || 10);
+
+const performSearch = () => {
+    router.get(
+        route('admin.users.index'),
+        { 
+            search: searchQuery.value, 
+            per_page: perPage.value 
+        },
+        { 
+            preserveState: true, 
+            replace: true 
+        }
+    );
+};
 
 let searchTimeout: any = null;
-watch(searchQuery, (value) => {
+watch(searchQuery, () => {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
-        router.get(route('admin.users.index'), { search: value }, { preserveState: true, replace: true });
+        performSearch();
     }, 300);
+});
+
+watch(perPage, () => {
+    performSearch();
 });
 
 // --- STATE UNTUK ALERT DIALOG ---
@@ -207,6 +226,21 @@ const authUser = computed(() => page.props.auth?.user);
                     </div>
                     
                     <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <!-- Entries Selector (DataTable Style) -->
+                        <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1 rounded-xl h-9 w-full sm:w-auto justify-between sm:justify-start">
+                            <span class="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Tampilkan</span>
+                            <select
+                                v-model="perPage"
+                                class="h-6 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer"
+                            >
+                                <option :value="5">5</option>
+                                <option :value="10">10</option>
+                                <option :value="25">25</option>
+                                <option :value="50">50</option>
+                            </select>
+                            <span class="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Data</span>
+                        </div>
+
                         <div class="relative w-full sm:w-[260px]">
                             <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
                             <Input 

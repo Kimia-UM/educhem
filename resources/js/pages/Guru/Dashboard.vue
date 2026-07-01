@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, useForm, Link } from '@inertiajs/vue3';
+import { Head, useForm, Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { toast } from 'vue-sonner';
 import { Badge } from '@/components/ui/badge';
@@ -83,6 +83,10 @@ const submitClass = () => {
 };
 
 const stats = computed(() => props.stats || { total_students: 0, pending_reviews: 0 });
+
+const page = usePage();
+const authUser = computed(() => page.props.auth?.user);
+const userRole = computed(() => authUser.value?.roles?.[0]?.name || 'GURU');
 </script>
 
 <template>
@@ -122,11 +126,11 @@ const stats = computed(() => props.stats || { total_students: 0, pending_reviews
                     <div class="flex flex-col">
                         <span
                             class="text-[13px] leading-none font-bold text-slate-800 dark:text-slate-200"
-                            >Panel Guru</span
+                            >{{ authUser?.name || 'Guru' }}</span
                         >
                         <span
-                            class="mt-0.5 text-[9px] font-bold tracking-wider text-emerald-600 dark:text-emerald-450"
-                            >ROLE: GURU</span
+                            class="mt-0.5 text-[9px] font-bold tracking-wider text-emerald-600 dark:text-emerald-450 uppercase"
+                            >ROLE: {{ userRole }}</span
                         >
                     </div>
                 </div>

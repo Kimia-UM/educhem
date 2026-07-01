@@ -78,6 +78,14 @@ class PhaseController extends Controller
         return back();
     }
 
+    public function reorderPhase(Request $request, Classroom $classroom, Topic $topic, TopicPhase $phase, string $direction)
+    {
+        if ($classroom->teacher_id !== $request->user()->id) { abort(403, 'Akses ditolak.'); }
+
+        $this->phaseService->reorderPhase($topic, $phase, $direction);
+        return back()->with('success', 'Urutan fase berhasil diubah!');
+    }
+
     // ==========================================
     // MANAJEMEN KONTEN FASE (BUILDER BLOK)
     // ==========================================
@@ -104,5 +112,18 @@ class PhaseController extends Controller
     {
         $this->phaseService->deleteContent($content);
         return back();
+    }
+
+    public function reorderContent(Request $request, TopicPhase $phase, PhaseContent $content, string $direction)
+    {
+        if ($phase->topic && $phase->topic->classroom) {
+            $classroom = $phase->topic->classroom;
+            if ($classroom->teacher_id !== $request->user()->id) {
+                abort(403, 'Akses ditolak.');
+            }
+        }
+
+        $this->phaseService->reorderContent($phase, $content, $direction);
+        return back()->with('success', 'Urutan konten berhasil diubah!');
     }
 }

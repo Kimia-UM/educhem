@@ -355,6 +355,28 @@ const executeDeleteContent = () => {
     }
 };
 
+const moveContent = (content: any, direction: 'up' | 'down') => {
+    router.post(
+        route('guru.contents.reorder', {
+            phase: props.phase.id,
+            content: content.id,
+            direction: direction
+        }),
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success('Urutan blok berhasil diperbarui', {
+                    icon: '↕️'
+                });
+            },
+            onError: () => {
+                toast.error('Gagal memperbarui urutan blok');
+            }
+        }
+    );
+};
+
 // HELPER UNTUK OPSI PILIHAN GANDA
 const addOption = (content: any) => {
     content.content_data.options.push(`Pilihan Baru`);
@@ -443,17 +465,18 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                                     localAisEnabled ? 'Aktif' : 'Nonaktif'
                                 }}</span>
                             </div>
-                            <div
-                                class="ml-2 cursor-pointer"
-                                @click.prevent="toggleAI"
+                            <button
+                                type="button"
+                                :disabled="isTogglingAI"
+                                @click="toggleAI"
+                                class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ml-2"
+                                :class="localAisEnabled ? 'bg-indigo-500' : 'bg-slate-600'"
                             >
-                                 <Switch
-                                     :checked="localAisEnabled"
-                                     :disabled="isTogglingAI"
-                                     class="pointer-events-none"
-                                     :class="localAisEnabled ? '!bg-indigo-500' : '!bg-slate-600'"
-                                 />
-                            </div>
+                                <span
+                                    class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200"
+                                    :class="localAisEnabled ? 'translate-x-6' : 'translate-x-1'"
+                                />
+                            </button>
                         </div>
 
                         <!-- Chatbot AI Toggle -->
@@ -469,17 +492,18 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                                     localChatbotEnabled ? 'Aktif' : 'Nonaktif'
                                 }}</span>
                             </div>
-                            <div
-                                class="ml-2 cursor-pointer"
-                                @click.prevent="toggleChatbot"
+                            <button
+                                type="button"
+                                :disabled="isTogglingChatbot"
+                                @click="toggleChatbot"
+                                class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ml-2"
+                                :class="localChatbotEnabled ? 'bg-sky-500' : 'bg-slate-600'"
                             >
-                                 <Switch
-                                     :checked="localChatbotEnabled"
-                                     :disabled="isTogglingChatbot"
-                                     class="pointer-events-none"
-                                     :class="localChatbotEnabled ? '!bg-sky-500' : '!bg-slate-600'"
-                                 />
-                            </div>
+                                <span
+                                    class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200"
+                                    :class="localChatbotEnabled ? 'translate-x-6' : 'translate-x-1'"
+                                />
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -557,6 +581,28 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                             class="flex items-center justify-between rounded-t-2xl border-b border-slate-100 bg-slate-50/50 px-6 py-4"
                         >
                             <div class="flex items-center gap-3">
+                                <!-- Reorder Buttons for Content -->
+                                <div class="flex flex-col gap-0.5 shrink-0">
+                                    <button
+                                        type="button"
+                                        @click="moveContent(content, 'up')"
+                                        :disabled="index === 0"
+                                        class="flex h-4 w-4 items-center justify-center rounded bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                        title="Geser ke Atas"
+                                    >
+                                        <i class="pi pi-chevron-up text-[7px] font-bold"></i>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="moveContent(content, 'down')"
+                                        :disabled="index === localContents.length - 1"
+                                        class="flex h-4 w-4 items-center justify-center rounded bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                        title="Geser ke Bawah"
+                                    >
+                                        <i class="pi pi-chevron-down text-[7px] font-bold"></i>
+                                    </button>
+                                </div>
+
                                 <span
                                     class="flex h-7 w-7 items-center justify-center rounded-xl bg-indigo-100 text-[11px] font-black text-indigo-700"
                                     >{{ index + 1 }}</span

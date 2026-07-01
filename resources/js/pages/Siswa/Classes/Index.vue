@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { toast } from 'vue-sonner';
 
 const stripHtml = (html: string | null | undefined): string => {
     if (!html) return '';
@@ -29,8 +30,24 @@ const submitJoinClass = () => {
         preserveScroll: true,
         onSuccess: () => {
             form.reset('class_code');
-            alert('Berhasil bergabung ke kelas!');
+            toast.success('Berhasil Bergabung!', {
+                description: 'Anda telah berhasil masuk ke kelas baru.',
+                position: 'bottom-right',
+            });
         },
+        onError: (errors) => {
+            if (errors.class_code) {
+                toast.error('Gagal Bergabung', {
+                    description: errors.class_code,
+                    position: 'bottom-right',
+                });
+            } else {
+                toast.error('Gagal Bergabung', {
+                    description: 'Terjadi kesalahan saat mencoba bergabung.',
+                    position: 'bottom-right',
+                });
+            }
+        }
     });
 };
 </script>

@@ -15,14 +15,14 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
-        // Tangkap input search dari frontend
         $search = $request->input('search');
+        $perPage = $request->input('per_page', 10);
         
-        $users = $this->userService->getAllUsersWithRoles(10, $search);
+        $users = $this->userService->getAllUsersWithRoles($perPage, $search);
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
-            'filters' => $request->only('search') // Kirim kembali ke frontend agar kolom input tidak reset
+            'filters' => $request->only(['search', 'per_page'])
         ]);
     }
 

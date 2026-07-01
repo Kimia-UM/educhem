@@ -100,6 +100,19 @@ const submitJoinClass = () => {
                 icon: '✓'
             });
         },
+        onError: (errors) => {
+            if (errors.class_code) {
+                toast.error('Gagal Bergabung', {
+                    description: errors.class_code,
+                    position: 'bottom-right',
+                });
+            } else {
+                toast.error('Gagal Bergabung', {
+                    description: 'Terjadi kesalahan saat mencoba bergabung.',
+                    position: 'bottom-right',
+                });
+            }
+        }
     });
 };
 

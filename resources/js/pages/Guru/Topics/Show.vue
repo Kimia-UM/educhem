@@ -251,6 +251,29 @@ const executeDeletePhase = () => {
         );
     }
 };
+
+const movePhase = (phase: any, direction: 'up' | 'down') => {
+    router.post(
+        route('guru.phases.reorder', {
+            classroom: props.classroom.id,
+            topic: props.topic.id,
+            phase: phase.id,
+            direction: direction
+        }),
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success('Urutan fase berhasil diperbarui', {
+                    icon: '↕️'
+                });
+            },
+            onError: () => {
+                toast.error('Gagal memperbarui urutan fase');
+            }
+        }
+    );
+};
 </script>
 
 <template>
@@ -452,6 +475,28 @@ const executeDeletePhase = () => {
                         class="flex flex-col justify-between gap-4 overflow-hidden rounded-2xl border-slate-200 bg-white p-4 shadow-sm transition-all hover:border-indigo-300 hover:shadow-md md:flex-row md:items-center md:p-5"
                     >
                         <div class="flex flex-1 items-center gap-4">
+                            <!-- Arrow Reorder Buttons -->
+                            <div class="flex flex-col gap-1 shrink-0">
+                                <button
+                                    type="button"
+                                    @click="movePhase(phase, 'up')"
+                                    :disabled="pIdx === 0"
+                                    class="flex h-5 w-5 items-center justify-center rounded bg-slate-50 border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-slate-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                    title="Geser ke Atas"
+                                >
+                                    <i class="pi pi-chevron-up text-[9px] font-bold"></i>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="movePhase(phase, 'down')"
+                                    :disabled="pIdx === topic.phases.length - 1"
+                                    class="flex h-5 w-5 items-center justify-center rounded bg-slate-50 border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-slate-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                    title="Geser ke Bawah"
+                                >
+                                    <i class="pi pi-chevron-down text-[9px] font-bold"></i>
+                                </button>
+                            </div>
+
                             <span
                                 class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-[16px] font-black text-indigo-600"
                             >

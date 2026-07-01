@@ -3,6 +3,7 @@ import { h } from 'vue';
 import { Form, Head, usePage } from '@inertiajs/vue3';
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { toast } from 'vue-sonner';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/DeleteUser.vue';
 import InputError from '@/components/InputError.vue';
@@ -52,6 +53,8 @@ const user = computed(() => page.props.auth.user);
 
             <Form
                 v-bind="ProfileController.update.form()"
+                @success="toast.success('Profil Diperbarui', { description: 'Perubahan profil Anda berhasil disimpan.', position: 'bottom-right' })"
+                @error="toast.error('Gagal memperbarui profil')"
                 v-slot="{ errors, processing }"
             >
                 <CardContent class="space-y-6">

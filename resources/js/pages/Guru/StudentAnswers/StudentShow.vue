@@ -135,6 +135,15 @@ const totalEvaluated = computed(() => {
 const totalQuestions = computed(() => props.answers.length);
 const progressPercent = computed(() => totalQuestions.value > 0 ? Math.round((totalEvaluated.value / totalQuestions.value) * 100) : 0);
 
+const getScoreText = (evaluation: string | null) => {
+    switch (evaluation) {
+        case 'benar': return '2';
+        case 'setengah_benar': return '1';
+        case 'salah': return '0';
+        default: return '-';
+    }
+};
+
 const isImage = (url: string | null) => {
     if (!url) return false;
     return /\.(jpeg|jpg|gif|png|webp)/i.test(url);
@@ -245,7 +254,7 @@ const isImage = (url: string | null) => {
             <Card class="mb-8 p-5 bg-white border-slate-200">
                 <div class="flex justify-between items-end mb-2">
                     <div>
-                        <h3 class="text-[14px] font-bold text-slate-800">Progress Evaluasi Keseluruhan</h3>
+                        <h3 class="text-[14px] font-bold text-slate-800">Nilai Siswa</h3>
                         <p class="text-[12px] text-slate-500">{{ totalEvaluated }} dari {{ totalQuestions }} soal telah dievaluasi</p>
                     </div>
                     <span class="text-[20px] font-extrabold text-indigo-600">{{ progressPercent }}%</span>
@@ -346,7 +355,7 @@ const isImage = (url: string | null) => {
                                 </div>
 
                                 <!-- Form Evaluasi Manual (Hanya untuk uraian) -->
-                                <div v-if="!['eval_mcq', 'eval_cmcq'].includes(answer.content.type)" class="flex flex-wrap items-center gap-2.5 pt-2">
+                                <div v-if="!['eval_mcq', 'eval_cmcq'].includes(answer.content.type)" class="flex flex-wrap items-center gap-2.5 pt-2 w-full">
                                     <span class="text-[12px] font-bold text-slate-500 mr-2">Evaluasi:</span>
                                     <button 
                                         @click="evaluateAnswer(answer.id, 'benar')"
@@ -357,7 +366,7 @@ const isImage = (url: string | null) => {
                                             answer.evaluation === 'benar' ? 'bg-emerald-500 text-white border-emerald-600 shadow-sm' : 'bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50'
                                         ]"
                                     >
-                                        <i class="pi pi-check mr-1 text-[10px]"></i> Benar
+                                        <i class="pi pi-check mr-1 text-[10px]"></i> Benar (Skor: 2)
                                     </button>
                                     <button 
                                         @click="evaluateAnswer(answer.id, 'setengah_benar')"
@@ -368,7 +377,7 @@ const isImage = (url: string | null) => {
                                             answer.evaluation === 'setengah_benar' ? 'bg-amber-500 text-white border-amber-600 shadow-sm' : 'bg-white text-amber-600 border-amber-200 hover:bg-amber-50'
                                         ]"
                                     >
-                                        <i class="pi pi-minus mr-1 text-[10px]"></i> Setengah Benar
+                                        <i class="pi pi-minus mr-1 text-[10px]"></i> Setengah Benar (Skor: 1)
                                     </button>
                                     <button 
                                         @click="evaluateAnswer(answer.id, 'salah')"
@@ -379,8 +388,13 @@ const isImage = (url: string | null) => {
                                             answer.evaluation === 'salah' ? 'bg-rose-500 text-white border-rose-600 shadow-sm' : 'bg-white text-rose-600 border-rose-200 hover:bg-rose-50'
                                         ]"
                                     >
-                                        <i class="pi pi-times mr-1 text-[10px]"></i> Salah
+                                        <i class="pi pi-times mr-1 text-[10px]"></i> Salah (Skor: 0)
                                     </button>
+
+                                    <!-- Tampilkan skor saat ini -->
+                                    <span class="ml-auto text-[12px] font-extrabold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+                                        Skor Akhir: {{ getScoreText(answer.evaluation) }} / 2
+                                    </span>
                                 </div>
                             </Card>
                         </div>

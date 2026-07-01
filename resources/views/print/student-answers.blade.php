@@ -327,15 +327,15 @@
                                             <span class="badge badge-salah">Salah (Auto)</span>
                                         @endif
                                     @else
-                                        @if($answer->evaluation === 'benar')
-                                            <span class="badge badge-benar">Benar</span>
-                                        @elseif($answer->evaluation === 'setengah_benar')
-                                            <span class="badge badge-setengah_benar">Setengah Benar</span>
-                                        @elseif($answer->evaluation === 'salah')
-                                            <span class="badge badge-salah">Salah</span>
-                                        @else
-                                            <span class="badge badge-unreviewed">Belum Dinilai</span>
-                                        @endif
+                                         @if($answer->evaluation === 'benar')
+                                             <span class="badge badge-benar">Benar (Skor: 2/2)</span>
+                                         @elseif($answer->evaluation === 'setengah_benar')
+                                             <span class="badge badge-setengah_benar">Setengah Benar (Skor: 1/2)</span>
+                                         @elseif($answer->evaluation === 'salah')
+                                             <span class="badge badge-salah">Salah (Skor: 0/2)</span>
+                                         @else
+                                             <span class="badge badge-unreviewed">Belum Dinilai (Skor: -)</span>
+                                         @endif
                                     @endif
                                 </div>
                                 <div class="clear-float"></div>

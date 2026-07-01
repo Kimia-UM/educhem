@@ -35,7 +35,7 @@ class TopicController extends Controller
         ]);
 
         $this->topicService->updateTopic($topic, $validated);
-        return back()->with('success', 'Informasi topik berhasil diperbarui!');
+        return back()->with('success');
     }
 
     public function show(Request $request, Classroom $classroom, Topic $topic)

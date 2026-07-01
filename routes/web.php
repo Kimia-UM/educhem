@@ -80,6 +80,7 @@ Route::middleware(['auth', 'role:GURU'])->prefix('guru')->name('guru.')->group(f
     Route::get('/dashboard', [GuruDashboardController::class, 'index'])->name('dashboard');
     
     Route::resource('classes', GuruDashboardController::class)->only(['index', 'store', 'update', 'destroy', 'show']);
+    Route::delete('classes/{classroom}/students/{student}/kick', [GuruDashboardController::class, 'kickStudent'])->name('classes.students.kick');
 
     Route::get('classes/{classroom}/ai-chat-logs', [\App\Http\Controllers\Guru\AiChatLogController::class, 'index'])->name('classes.ai-chat-logs.index');
 
@@ -109,11 +110,13 @@ Route::middleware(['auth', 'role:GURU'])->prefix('guru')->name('guru.')->group(f
     Route::get('classes/{classroom}/topics/{topic}/phases/{phase}', [PhaseController::class, 'show'])->name('phases.show');
     Route::put('phases/{phase}', [PhaseController::class, 'update'])->name('phases.update');
     Route::delete('phases/{phase}', [PhaseController::class, 'destroy'])->name('phases.destroy');
+    Route::post('classes/{classroom}/topics/{topic}/phases/{phase}/reorder/{direction}', [PhaseController::class, 'reorderPhase'])->name('phases.reorder');
 
     // Manajemen Konten (Content) menggunakan PhaseController
     Route::post('phases/{phase}/contents', [PhaseController::class, 'storeContent'])->name('contents.store');
     Route::put('contents/{content}', [PhaseController::class, 'updateContent'])->name('contents.update');
     Route::delete('contents/{content}', [PhaseController::class, 'destroyContent'])->name('contents.destroy');
+    Route::post('phases/{phase}/contents/{content}/reorder/{direction}', [PhaseController::class, 'reorderContent'])->name('contents.reorder');
 
     // Rekap Jawaban Siswa
     Route::get('classes/{classroom}/topics/{topic}/phases/{phase}/answers', [\App\Http\Controllers\Guru\StudentAnswerController::class, 'index'])

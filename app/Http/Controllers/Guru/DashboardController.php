@@ -119,4 +119,20 @@ class DashboardController extends Controller
             'defaultTab' => $request->query('tab', 'topik'),
         ]);
     }
+
+    public function kickStudent(Request $request, Classroom $classroom, \App\Models\User $student)
+    {
+        if ($classroom->teacher_id !== $request->user()->id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        $classroom->students()->detach($student->id);
+
+        $phaseIds = $classroom->topics()->with('phases')->get()->flatMap->phases->pluck('id');
+        \App\Models\StudentAnswer::where('user_id', $student->id)
+            ->whereIn('phase_id', $phaseIds)
+            ->delete();
+
+        return back()->with('success');
+    }
 }

@@ -105,6 +105,15 @@ const checkAutoGrade = (answer: any) => {
     return null;
 };
 
+const getScoreText = (evaluation: string | null) => {
+    switch (evaluation) {
+        case 'benar': return '2';
+        case 'setengah_benar': return '1';
+        case 'salah': return '0';
+        default: return '-';
+    }
+};
+
 const isImage = (url: string | null) => {
     if (!url) return false;
     return /\.(jpeg|jpg|gif|png|webp)/i.test(url);
@@ -269,11 +278,11 @@ const isImage = (url: string | null) => {
                                                             <i class="pi pi-times-circle"></i> Jawaban Salah
                                                         </span>
                                                     </template>
-                                                    <template v-else-if="answer.evaluation">
-                                                        <span class="px-3 py-1 rounded-full text-[11px] font-bold border" :class="getEvaluationColor(answer.evaluation)">
-                                                            {{ getEvaluationLabel(answer.evaluation) }}
+                                                     <template v-else-if="answer.evaluation">
+                                                        <span class="px-3 py-1 rounded-full text-[11px] font-bold border inline-flex items-center gap-1" :class="getEvaluationColor(answer.evaluation)">
+                                                            {{ getEvaluationLabel(answer.evaluation) }} (Skor: {{ getScoreText(answer.evaluation) }} / 2)
                                                         </span>
-                                                    </template>
+                                                     </template>
                                                 </div>
 
                                                 <div class="pr-0 sm:pr-36">

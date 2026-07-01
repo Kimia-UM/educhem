@@ -24,6 +24,7 @@ import {
 
 const page = usePage();
 const authUser = computed(() => page.props.auth?.user);
+const userRole = computed(() => authUser.value?.roles?.[0]?.name || 'ADMIN');
 
 // --- TypeScript Interfaces ---
 interface RecentUser {
@@ -117,8 +118,8 @@ onUnmounted(() => {
                             >{{ authUser?.name || 'Admin' }}</span
                         >
                         <span
-                            class="mt-0.5 text-[9px] font-bold tracking-wider text-indigo-500"
-                            >ROLE: ADMIN</span
+                            class="mt-0.5 text-[9px] font-bold tracking-wider text-indigo-500 uppercase"
+                            >ROLE: {{ userRole }}</span
                         >
                     </div>
                 </div>

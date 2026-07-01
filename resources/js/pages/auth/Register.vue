@@ -49,7 +49,9 @@ const submit = () => {
                 class="border border-gray-100 bg-white px-6 py-8 shadow-sm sm:rounded-xl sm:px-10"
             >
                 <div class="mb-7 text-center flex flex-col items-center">
-                    <img src="/assets/images/Logo_only.png" alt="EduChem Logo" class="w-20 h-20 mb-4 object-contain" />
+                    <Link :href="route('home')" class="hover:opacity-85 transition-opacity duration-200">
+                        <img src="/assets/images/Logo_only.png" alt="EduChem Logo" class="w-20 h-20 mb-4 object-contain cursor-pointer" />
+                    </Link>
                     <div class="mb-3 text-[11px] font-black tracking-[0.25em] uppercase bg-gradient-to-r from-[#4F46E5] via-purple-600 to-[#ec4899] bg-clip-text text-transparent select-none">
                         EDUCHEM
                     </div>

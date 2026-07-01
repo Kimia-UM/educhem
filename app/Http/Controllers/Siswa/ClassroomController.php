@@ -60,7 +60,7 @@ class ClassroomController extends Controller
         $user->joinedClasses()->attach($classroom->id);
 
         // 6. Kembalikan ke dashboard dengan pesan sukses
-        return back()->with('success', 'Berhasil bergabung dengan kelas: ' . $classroom->class_name);
+        return back()->with('success');
     }
 
     public function show(Request $request, Classroom $classroom)

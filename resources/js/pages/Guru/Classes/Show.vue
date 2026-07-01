@@ -246,6 +246,66 @@ const filteredStudents = computed(() => {
     return students.filter(s => s.name.toLowerCase().includes(studentSearchQuery.value.toLowerCase()));
 });
 
+const currentPage = ref(1);
+const itemsPerPage = ref(10);
+
+watch(studentSearchQuery, () => {
+    currentPage.value = 1;
+});
+
+watch(itemsPerPage, () => {
+    currentPage.value = 1;
+});
+
+const paginatedStudents = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage.value;
+    const end = start + itemsPerPage.value;
+    return filteredStudents.value.slice(start, end);
+});
+
+const totalPages = computed(() => {
+    return Math.ceil(filteredStudents.value.length / itemsPerPage.value) || 1;
+});
+
+const isKickModalOpen = ref(false);
+const studentToKick = ref<any | null>(null);
+
+const kickStudent = (student: any) => {
+    studentToKick.value = student;
+    isKickModalOpen.value = true;
+};
+
+const closeKickModal = () => {
+    isKickModalOpen.value = false;
+    studentToKick.value = null;
+};
+
+const executeKickStudent = () => {
+    if (studentToKick.value) {
+        router.delete(
+            route('guru.classes.students.kick', {
+                classroom: props.classroom.id,
+                student: studentToKick.value.id,
+            }),
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    closeKickModal();
+                    toast.success('Siswa Dikeluarkan', {
+                        description: `Siswa telah berhasil dikeluarkan dari kelas.`,
+                    });
+                },
+                onError: () => {
+                    closeKickModal();
+                    toast.error('Gagal', {
+                        description: 'Terjadi kesalahan saat mengeluarkan siswa.',
+                    });
+                },
+            }
+        );
+    }
+};
+
 const scoresForm = ref<Record<number, { pre_test_score: number | null, post_test_score: number | null, loading: boolean }>>({});
 
 watch(() => props.classroom.students, (students) => {
@@ -542,52 +602,174 @@ const saveScores = (studentId: number) => {
                 v-show="activeTab === 'siswa'"
                 class="animate-in duration-300 fade-in"
             >
-                <div class="mb-6 flex items-center justify-between">
-                    <h2 class="text-[16px] font-bold text-slate-800">
-                        Siswa Terdaftar
-                    </h2>
-                    <Button
-                        @click="copyCode"
-                        variant="outline"
-                        class="h-9 border-slate-200 bg-white text-[12px]"
-                    >
-                        <i class="pi pi-copy mr-1.5"></i> Salin Kode
-                    </Button>
+                <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div>
+                        <h2 class="text-[16px] font-bold text-slate-800">
+                            Siswa Terdaftar
+                        </h2>
+                        <p class="text-[12px] text-slate-500 mt-1">
+                            Daftar seluruh siswa aktif yang terdaftar di kelas ini.
+                        </p>
+                    </div>
+                    
+                    <!-- Controls -->
+                    <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                        <!-- Entries Selector (DataTable Style) -->
+                        <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1 rounded-xl h-9 w-full sm:w-auto justify-between sm:justify-start">
+                            <span class="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Tampilkan</span>
+                            <select
+                                v-model="itemsPerPage"
+                                class="h-6 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer"
+                            >
+                                <option :value="5">5</option>
+                                <option :value="10">10</option>
+                                <option :value="25">25</option>
+                                <option :value="50">50</option>
+                            </select>
+                            <span class="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Data</span>
+                        </div>
+
+                        <Button
+                            @click="copyCode"
+                            variant="outline"
+                            class="h-9 border-slate-200 bg-white text-[12px] w-full sm:w-auto inline-flex items-center justify-center gap-1.5"
+                        >
+                            <i class="pi pi-copy text-[12px]"></i>
+                            <span>Salin Kode</span>
+                        </Button>
+                        
+                        <!-- Search Input -->
+                        <div class="relative w-full sm:w-64">
+                            <i class="pi pi-search absolute top-1/2 left-3 -translate-y-1/2 text-[12px] text-slate-400"></i>
+                            <input
+                                v-model="studentSearchQuery"
+                                type="text"
+                                placeholder="Cari nama siswa..."
+                                class="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pr-3 pl-8 text-[12px] font-medium text-slate-800 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            />
+                        </div>
+                    </div>
                 </div>
 
-                <div
-                    v-if="classroom.students && classroom.students.length > 0"
-                    class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
-                >
-                    <Link
-                        v-for="(siswa, index) in classroom.students"
-                        :key="siswa.id"
-                        :href="route('guru.classes.students.show', { classroom: classroom.id, student: siswa.id })"
-                        class="block"
-                    >
-                        <Card
-                            class="flex h-full items-center gap-4 border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-indigo-400 hover:shadow-md cursor-pointer"
-                        >
-                            <div
-                                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 font-bold text-slate-500 uppercase"
+                <div v-if="classroom.students && classroom.students.length > 0" class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <table class="w-full border-collapse text-left text-[13px] text-slate-600">
+                        <thead class="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-4 font-bold">No</th>
+                                <th class="px-6 py-4 font-bold">Nama Siswa</th>
+                                <th class="px-6 py-4 font-bold text-center">Tanggal Bergabung</th>
+                                <th class="px-6 py-4 font-bold text-center">Status Evaluasi</th>
+                                <th class="px-6 py-4 font-bold text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr v-if="filteredStudents.length === 0">
+                                <td colspan="5" class="px-6 py-10 text-center text-slate-400 italic">
+                                    <i class="pi pi-users text-2xl mb-2 block"></i>
+                                    Tidak ada data siswa ditemukan.
+                                </td>
+                            </tr>
+                            <tr
+                                v-for="(siswa, idx) in paginatedStudents"
+                                :key="siswa.id"
+                                class="hover:bg-slate-50/50 transition-colors"
                             >
-                                {{ siswa.name.substring(0, 2) }}
-                            </div>
-                            <div class="flex-1 overflow-hidden">
-                                <h4
-                                    class="truncate text-[14px] font-bold text-slate-900 flex items-center justify-between"
-                                >
-                                    {{ siswa.name }}
-                                    <span v-if="siswa.pivot?.is_evaluation_sent" class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded-md text-[10px] font-extrabold ml-2">
-                                        <i class="pi pi-check text-[8px]"></i> Dikirim
+                                <td class="px-6 py-4 font-medium text-slate-400">
+                                    {{ (currentPage - 1) * itemsPerPage + idx + 1 }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[11px] text-indigo-600 font-bold uppercase border border-indigo-100">
+                                            {{ siswa.name.substring(0, 2) }}
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-slate-900 leading-tight">{{ siswa.name }}</p>
+                                            <p class="text-[11px] text-slate-400 mt-0.5">{{ siswa.email }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <span class="text-[12.5px] font-medium text-slate-600">
+                                        {{ siswa.pivot?.created_at ? formatDate(siswa.pivot.created_at) : '-' }}
                                     </span>
-                                </h4>
-                                <p class="truncate text-[11px] text-slate-500">
-                                    {{ siswa.email }}
-                                </p>
-                            </div>
-                        </Card>
-                    </Link>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <span v-if="siswa.pivot?.is_evaluation_sent" class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-0.5 rounded-full text-[10px] font-extrabold">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Telah Dikirim
+                                    </span>
+                                    <span v-else class="inline-flex items-center gap-1 bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded-full text-[10px] font-extrabold">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span> Belum Dikirim
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex justify-center items-center gap-2">
+                                        <Link :href="route('guru.classes.students.show', { classroom: classroom.id, student: siswa.id })">
+                                            <Button class="h-8 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-3 text-[11px] font-bold text-white shadow-sm inline-flex items-center gap-1">
+                                                <i class="pi pi-search text-[10px]"></i>
+                                                <span>Detail Evaluasi</span>
+                                            </Button>
+                                        </Link>
+
+                                        <Button 
+                                            @click="kickStudent(siswa)"
+                                            variant="outline"
+                                            class="h-8 rounded-xl border-rose-100 text-rose-600 hover:bg-rose-50 hover:text-rose-700 px-3 text-[11px] font-bold inline-flex items-center gap-1.5"
+                                            title="Keluarkan Siswa"
+                                        >
+                                            <i class="pi pi-user-minus text-[10px]"></i>
+                                            <span>Keluarkan</span>
+                                        </Button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Pagination Controls -->
+                    <div v-if="filteredStudents.length > 0" class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white px-6 py-4 border-t border-slate-100">
+                        <p class="text-[12.5px] font-medium text-slate-500">
+                            Menampilkan 
+                            <span class="font-extrabold text-slate-800">{{ (currentPage - 1) * itemsPerPage + 1 }}</span>
+                            sampai 
+                            <span class="font-extrabold text-slate-800">{{ Math.min(currentPage * itemsPerPage, filteredStudents.length) }}</span>
+                            dari 
+                            <span class="font-extrabold text-slate-800">{{ filteredStudents.length }}</span>
+                            siswa
+                        </p>
+
+                        <div v-if="totalPages > 1" class="flex items-center gap-1.5">
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                class="h-8 w-8 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
+                                :disabled="currentPage === 1"
+                                @click="currentPage--"
+                            >
+                                <i class="pi pi-chevron-left text-[10px]"></i>
+                            </Button>
+
+                            <Button
+                                v-for="page in totalPages"
+                                :key="page"
+                                variant="outline"
+                                class="h-8 w-8 rounded-lg border text-[12px] font-bold transition-all cursor-pointer"
+                                :class="currentPage === page ? 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700 hover:text-white' : 'border-slate-200 hover:bg-slate-50 text-slate-600'"
+                                @click="currentPage = page"
+                            >
+                                {{ page }}
+                            </Button>
+
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                class="h-8 w-8 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
+                                :disabled="currentPage === totalPages"
+                                @click="currentPage++"
+                            >
+                                <i class="pi pi-chevron-right text-[10px]"></i>
+                            </Button>
+                        </div>
+                    </div>
                 </div>
 
                 <div
@@ -949,6 +1131,68 @@ const saveScores = (studentId: number) => {
                         </Button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </Teleport>
+
+    <!-- Modal Konfirmasi Keluarkan Siswa -->
+    <Teleport to="body">
+        <div
+            v-if="isKickModalOpen"
+            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 dark:bg-black/60 px-4 backdrop-blur-[6px] transition-all"
+        >
+            <div
+                class="w-full max-w-[420px] animate-in overflow-hidden rounded-3xl bg-white dark:bg-slate-950 border border-slate-100/80 dark:border-slate-800/50 shadow-[0_20px_50px_rgba(244,63,94,0.08),_0_10px_30px_rgba(244,63,94,0.03)] duration-200 zoom-in-95 fade-in"
+            >
+                <!-- Header -->
+                <div
+                    class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-rose-50/50 to-rose-100/20 dark:from-slate-900/50 px-6 py-4.5"
+                >
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200/50 text-rose-600">
+                            <i class="pi pi-exclamation-triangle text-[15px]"></i>
+                        </div>
+                        <span class="text-base font-extrabold text-slate-800 dark:text-slate-100">Keluarkan Siswa?</span>
+                    </div>
+                    <button
+                        @click="closeKickModal"
+                        class="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-600 transition-colors hover:bg-slate-50"
+                    >
+                        <i class="pi pi-times text-sm"></i>
+                    </button>
+                </div>
+                
+                <!-- Body -->
+                <div class="p-6">
+                    <p class="text-[14px] leading-relaxed text-slate-600 dark:text-slate-350">
+                        Apakah Anda yakin ingin mengeluarkan <strong>{{ studentToKick?.name }}</strong> dari kelas?
+                    </p>
+                    <div class="mt-3 rounded-2xl bg-rose-50/50 border border-rose-100 p-4 text-[12px] text-rose-700 leading-normal flex gap-2.5 items-start">
+                        <i class="pi pi-info-circle text-[14px] mt-0.5 shrink-0"></i>
+                        <span>
+                            <strong>Tindakan ini tidak bisa dibatalkan!</strong> Semua data pengerjaan, nilai pre-test/post-test, dan jawaban lembar kerja siswa ini di kelas ini akan dihapus secara permanen dari sistem.
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Footer / Action Buttons -->
+                <div class="border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 p-6 flex justify-end gap-3">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="closeKickModal"
+                        class="h-10 rounded-xl border border-slate-200 hover:bg-slate-50 px-5 font-bold text-[13px] text-slate-600"
+                    >
+                        Batal
+                    </Button>
+                    <Button
+                        type="button"
+                        @click="executeKickStudent"
+                        class="h-10 rounded-xl bg-rose-600 hover:bg-rose-700 px-6 font-bold text-white shadow-md shadow-rose-100 text-[13px]"
+                    >
+                        Ya, Keluarkan
+                    </Button>
+                </div>
             </div>
         </div>
     </Teleport>

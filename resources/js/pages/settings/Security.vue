@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { h } from 'vue';
 import { Form, Head } from '@inertiajs/vue3';
+import { toast } from 'vue-sonner';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import InputError from '@/components/InputError.vue';
 import type { Props as ManageTwoFactorProps } from '@/components/ManageTwoFactor.vue';
@@ -62,6 +63,8 @@ defineOptions({
                     'password_confirmation',
                     'current_password',
                 ]"
+                @success="toast.success('Kata Sandi Diperbarui', { description: 'Kata sandi Anda berhasil diperbarui.', position: 'bottom-right' })"
+                @error="toast.error('Gagal memperbarui kata sandi')"
                 v-slot="{ errors, processing }"
             >
                 <CardContent class="space-y-6">

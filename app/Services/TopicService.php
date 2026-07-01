@@ -33,13 +33,9 @@ class TopicService
     // ==========================================
     public function togglePublish(Classroom $classroom, Topic $topic): bool
     {
-        $access = $classroom->topics()->where('topic_id', $topic->id)->first();
+        $newValue = !$topic->is_published;
 
-        abort_unless($access, 404, 'Topik tidak ditemukan di kelas ini.');
-
-        $newValue = !$access->pivot->is_published;
-
-        $classroom->topics()->updateExistingPivot($topic->id, [
+        $topic->update([
             'is_published' => $newValue,
         ]);
 

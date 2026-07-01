@@ -16,7 +16,6 @@ class ClassTopicAccess extends Model
         'class_id',
         'topic_id',
         'is_open',
-        'is_published',
     ];
 
     /**
@@ -26,7 +25,6 @@ class ClassTopicAccess extends Model
     {
         return [
             'is_open' => 'boolean',
-            'is_published' => 'boolean',
         ];
     }
 

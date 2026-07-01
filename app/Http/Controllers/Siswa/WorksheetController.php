@@ -27,7 +27,7 @@ class WorksheetController extends Controller
 
         // 2. Topic harus terdaftar di kelas ini dan sudah dipublish
         $topicAccess = $classroom->topics()->where('topic_id', $topic->id)->first();
-        if (!$topicAccess || !$topicAccess->pivot->is_published) {
+        if (!$topicAccess || !$topicAccess->is_published) {
             abort(403, 'Materi ini masih berstatus DRAFT dan belum dipublikasikan oleh Guru.');
         }
 
@@ -104,9 +104,10 @@ class WorksheetController extends Controller
         //    dan topic tersebut sudah dipublish di kelas itu
         $classroomMember = DB::table('class_members')
             ->join('class_topic_accesses', 'class_topic_accesses.class_id', '=', 'class_members.class_id')
+            ->join('topics', 'topics.id', '=', 'class_topic_accesses.topic_id')
             ->where('class_members.user_id', $userId)
             ->where('class_topic_accesses.topic_id', $topic->id)
-            ->where('class_topic_accesses.is_published', true)
+            ->where('topics.is_published', true)
             ->select('class_members.class_id', 'class_members.is_evaluation_finished')
             ->first();
 
@@ -171,7 +172,7 @@ class WorksheetController extends Controller
         $topic = $phase->topic;
         $topicBelongsToClass = $classroom->topics()
             ->where('topic_id', $topic?->id)
-            ->wherePivot('is_published', true)
+            ->where('topics.is_published', true)
             ->exists();
 
         if (!$topic || !$topicBelongsToClass) {

@@ -17,7 +17,8 @@ const props = defineProps<{
         id: number;
         title: string;
         description: string | null;
-        pivot: { is_published: boolean; is_open: boolean };
+        is_published: boolean;
+        pivot: { is_open: boolean };
         phases: Array<{
             id: number;
             name: string;
@@ -32,10 +33,10 @@ const props = defineProps<{
 // 1. LOGIKA PUBLISH / UNPUBLISH (Optimistic)
 // ==========================================
 const isToggling = ref(false);
-const localIsPublished = ref(!!props.topic.pivot?.is_published);
+const localIsPublished = ref(!!props.topic.is_published);
 
 watch(
-    () => props.topic.pivot?.is_published,
+    () => props.topic.is_published,
     (newVal) => {
         localIsPublished.value = !!newVal;
     },

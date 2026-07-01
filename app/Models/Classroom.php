@@ -47,7 +47,7 @@ class Classroom extends Model
     public function topics(): BelongsToMany
     {
         return $this->belongsToMany(Topic::class, 'class_topic_accesses', 'class_id', 'topic_id')
-                    ->withPivot('is_open', 'is_published')
+                    ->withPivot('is_open')
                     ->withTimestamps();
     }
 }

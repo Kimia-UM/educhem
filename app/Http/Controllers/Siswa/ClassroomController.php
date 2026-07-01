@@ -75,9 +75,9 @@ class ClassroomController extends Controller
         
         $isEvaluationSent = $classroomMember->pivot->is_evaluation_sent ?? false;
 
-        // Memuat topik yang sudah dipublish di kelas ini (cek pivot, bukan master)
+        // Memuat topik yang sudah dipublish di kelas ini
         $classroom->load(['teacher', 'topics' => function ($query) {
-            $query->wherePivot('is_published', true)
+            $query->where('topics.is_published', true)
                   ->with(['phases' => function($q) {
                       $q->orderBy('order', 'asc');
                   }]);
@@ -101,8 +101,8 @@ class ClassroomController extends Controller
 
         $isEvaluationSent = $classroomMember->pivot->is_evaluation_sent ?? false;
 
-        // Ambil semua topik yang sudah dipublish di kelas ini (cek pivot, bukan master)
-        $topics = $classroom->topics()->wherePivot('is_published', true)->with(['phases' => function ($query) {
+        // Ambil semua topik yang sudah dipublish di kelas ini
+        $topics = $classroom->topics()->where('topics.is_published', true)->with(['phases' => function ($query) {
             $query->orderBy('order', 'asc');
         }])->orderBy('topics.id', 'asc')->get();
 

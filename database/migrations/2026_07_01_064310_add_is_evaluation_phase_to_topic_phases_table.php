@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('topic_phases', function (Blueprint $table) {
-            //
+            $table->boolean('is_evaluation_phase')->default(false)->after('is_chatbot_enabled');
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('topic_phases', function (Blueprint $table) {
-            //
+            $table->dropColumn('is_evaluation_phase');
         });
     }
 };

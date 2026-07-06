@@ -209,7 +209,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div class="fixed bottom-6 right-6 z-[9999] flex flex-col items-end">
         
         <transition 
             enter-active-class="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-bottom-right" 
@@ -297,7 +297,7 @@ onUnmounted(() => {
         </transition>
 
         <div class="relative group">
-            <span v-if="!isOpen" class="absolute inset-0 bg-indigo-500 rounded-full opacity-40 animate-ping" style="animation-duration: 2s;"></span>
+            <span v-if="!isOpen" class="absolute inset-0 bg-indigo-500 rounded-full opacity-40 animate-ping pointer-events-none" style="animation-duration: 2s;"></span>
             
             <button 
                 @click="toggleChat"

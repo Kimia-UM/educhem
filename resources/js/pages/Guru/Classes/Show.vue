@@ -185,7 +185,7 @@ const isLogTimedOut = (dateString: string) => {
         const nowTime = new Date().getTime();
         const diffSeconds = (nowTime - createdTime) / 1000;
 
-        return diffSeconds > 45;
+        return diffSeconds > 90;
     } catch (e) {
         return false;
     }

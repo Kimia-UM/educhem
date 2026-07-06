@@ -93,7 +93,7 @@ const fetchChats = async () => {
             if (log.response) {
                 newMessages.push({ id: `ai_${log.id}`, sender: 'ai', text: log.response });
             } else {
-                // Cek apakah chat log sudah terlalu lama (misal > 45 detik) tapi belum ada respon.
+                // Cek apakah chat log sudah terlalu lama (misal > 90 detik) tapi belum ada respon.
                 // Jika iya, berarti job AI di backend telah gagal/limit.
                 const createdTimeStr = log.created_at;
                 const utcTimeStr = (createdTimeStr.endsWith('Z') || createdTimeStr.includes('+')) 
@@ -104,7 +104,7 @@ const fetchChats = async () => {
                 const nowTime = new Date().getTime();
                 const diffSeconds = (nowTime - createdTime) / 1000;
 
-                if (diffSeconds > 45) {
+                if (diffSeconds > 90) {
                     newMessages.push({ 
                         id: `ai_failed_${log.id}`, 
                         sender: 'ai', 

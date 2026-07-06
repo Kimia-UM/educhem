@@ -69,7 +69,7 @@ class User extends Authenticatable implements PasskeyUser
     public function joinedClasses(): BelongsToMany
     {
         return $this->belongsToMany(Classroom::class, 'class_members', 'user_id', 'class_id')
-                    ->withPivot('is_evaluation_sent', 'pre_test_score', 'post_test_score')
+                    ->withPivot('is_evaluation_sent', 'is_evaluation_finished', 'pre_test_score', 'post_test_score')
                     ->withTimestamps();
     }
     

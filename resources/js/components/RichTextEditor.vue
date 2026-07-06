@@ -121,7 +121,7 @@ const showImageResizeOverlay = (img: HTMLImageElement, quill: any) => {
     overlay.style.gap = '4px'
 
     // Size buttons
-    const sizes = ['25%', '50%', '75%', '100%']
+    const sizes = ['5%', '10%', '25%', '50%', '75%', '100%']
     sizes.forEach(size => {
         const btn = document.createElement('button')
         btn.innerText = size
@@ -199,6 +199,92 @@ const showImageResizeOverlay = (img: HTMLImageElement, quill: any) => {
     })
 
     overlay.appendChild(cropBtn)
+
+    // Divider
+    const divider = document.createElement('div')
+    divider.style.width = '1px'
+    divider.style.backgroundColor = '#cbd5e1'
+    divider.style.margin = '0 4px'
+    overlay.appendChild(divider)
+
+    // Alignment buttons
+    const aligns = [
+        { label: '⬅️ Kiri', title: 'Kiri (Teks Mengelilingi)', float: 'left', display: 'inline-block', margin: '0 1.5rem 1rem 0' },
+        { label: '🔲 Tengah', title: 'Tengah', float: 'none', display: 'block', margin: '0 auto 1rem auto' },
+        { label: '➡️ Kanan', title: 'Kanan (Teks Mengelilingi)', float: 'right', display: 'inline-block', margin: '0 0 1rem 1.5rem' },
+        { label: '✖️ Reset', title: 'Kembalikan (Inline)', float: 'none', display: 'inline-block', margin: '0' }
+    ]
+
+    aligns.forEach(align => {
+        const btn = document.createElement('button')
+        btn.innerHTML = align.label
+        btn.title = align.title
+        btn.style.fontSize = '12px'
+        btn.style.fontWeight = '600'
+        btn.style.padding = '4px 8px'
+        btn.style.borderRadius = '0.25rem'
+        btn.style.border = '1px solid #e2e8f0'
+        btn.style.backgroundColor = '#ffffff'
+        btn.style.color = '#334155'
+        btn.style.cursor = 'pointer'
+        btn.style.transition = 'all 0.15s ease'
+        
+        const f = img.style.cssFloat || img.style.float || 'none'
+        const d = img.style.display || 'inline-block'
+        
+        let isActive = false
+        if (align.float === 'left' && f === 'left') isActive = true
+        else if (align.float === 'right' && f === 'right') isActive = true
+        else if (align.float === 'none' && align.display === 'block' && d === 'block') isActive = true
+        else if (align.label === '✖️ Reset' && f === 'none' && d !== 'block') isActive = true
+
+        if (isActive) {
+            btn.style.backgroundColor = '#e0e7ff'
+            btn.style.color = '#4f46e5'
+            btn.style.borderColor = '#6366f1'
+        }
+
+        btn.addEventListener('mouseenter', () => {
+            if (!isActive) btn.style.backgroundColor = '#f1f5f9'
+        })
+        btn.addEventListener('mouseleave', () => {
+            if (!isActive) btn.style.backgroundColor = '#ffffff'
+        })
+
+        btn.addEventListener('click', (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            
+            const currentWidth = img.style.width || img.getAttribute('width') || ''
+            
+            img.style.cssFloat = align.float === 'none' ? '' : align.float
+            img.style.display = align.display === 'inline-block' ? '' : align.display
+            img.style.margin = align.margin === '0' ? '' : align.margin
+            
+            const newStyle = `float: ${align.float}; display: ${align.display}; margin: ${align.margin}; width: ${currentWidth};`
+            const cleanStyle = newStyle
+                .replace(/float: none;/g, '')
+                .replace(/display: inline-block;/g, '')
+                .replace(/margin: 0;/g, '')
+                .trim()
+            
+            if (cleanStyle) {
+                img.setAttribute('style', cleanStyle)
+            } else {
+                img.removeAttribute('style')
+            }
+            if (currentWidth) {
+                img.setAttribute('width', currentWidth)
+                img.style.width = currentWidth
+            }
+            
+            quill.update()
+            emit('update:modelValue', quill.root.innerHTML)
+            hideImageResizeOverlay()
+        })
+
+        overlay.appendChild(btn)
+    })
 
     // Posisikan overlay di atas gambar di dalam wrapper editor
     const wrapper = quill.root.closest('.quill-custom-wrapper')

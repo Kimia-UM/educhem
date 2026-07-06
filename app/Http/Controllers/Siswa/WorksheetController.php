@@ -64,11 +64,82 @@ class WorksheetController extends Controller
         // Tentukan apakah fase terkunci untuk siswa ini
         $classroomMember = $request->user()->joinedClasses()->where('class_id', $classroom->id)->first();
         $isEvaluationFinished = $classroomMember?->pivot?->is_evaluation_finished ?? false;
+        $isEvaluationSent = $classroomMember?->pivot?->is_evaluation_sent ?? false;
 
         $isLocked = $isEvaluationFinished || StudentAnswer::where('user_id', $request->user()->id)
             ->where('phase_id', $phase->id)
             ->where('is_locked', true)
             ->exists();
+
+        $finalScore = null;
+        $evaluations = [];
+        $correctAnswersList = [];
+
+        if ($isEvaluationSent) {
+            $evaluations = $studentData->pluck('evaluation', 'content_id')->toArray();
+            
+            $totalScore = 0;
+            $maxScore = 0;
+            
+            foreach ($phase->contents as $content) {
+                if (!in_array($content->type, ['eval_mcq', 'eval_cmcq', 'eval_short', 'eval_essay', 'input_text', 'eval_file'])) {
+                    continue;
+                }
+
+                $answer = $studentData->where('content_id', $content->id)->first();
+                if (!$answer) continue;
+
+                // Jika guru mengecualikan dari penilaian
+                if ($answer->evaluation === 'tidak_dinilai') {
+                    continue;
+                }
+
+                if (in_array($content->type, ['eval_mcq', 'eval_cmcq'])) {
+                    $correctIndices = $content->correct_answers ?? [];
+                    $options = $content->content_data['options'] ?? [];
+                    
+                    // Resolve indeks kunci jawaban menjadi teks opsi
+                    $correctTexts = [];
+                    foreach ($correctIndices as $idx) {
+                        if (isset($options[(int)$idx])) {
+                            $correctTexts[] = $options[(int)$idx];
+                        }
+                    }
+                    
+                    // Kirim teks opsi yang benar ke frontend (bukan indeks)
+                    $correctAnswersList[$content->id] = $correctTexts;
+                    $studentAns = $answer->answer_data;
+                    
+                    $isCorrect = false;
+                    if ($content->type === 'eval_mcq') {
+                        // PG biasa: jawaban siswa berupa teks opsi, bandingkan langsung
+                        $isCorrect = in_array((string)$studentAns, $correctTexts);
+                    } else if ($content->type === 'eval_cmcq') {
+                        // PG kompleks: jawaban siswa berupa JSON array teks opsi
+                        $studentAnsArray = is_array($studentAns) ? $studentAns : json_decode($studentAns, true) ?? [];
+                        if (is_array($studentAnsArray)) {
+                            $isSameLength = count($studentAnsArray) === count($correctTexts);
+                            $hasAllCorrect = collect($correctTexts)->every(fn($c) => in_array((string)$c, array_map('strval', $studentAnsArray)));
+                            $isCorrect = $isSameLength && $hasAllCorrect;
+                        }
+                    }
+
+                    $maxScore += 1;
+                    if ($isCorrect) $totalScore += 1;
+                    
+                } else {
+                    $maxScore += 2;
+                    if ($answer->evaluation === 'benar') $totalScore += 2;
+                    else if ($answer->evaluation === 'setengah_benar') $totalScore += 1;
+                }
+            }
+            
+            if ($maxScore > 0) {
+                $finalScore = round(($totalScore / $maxScore) * 100);
+            } else {
+                $finalScore = 0;
+            }
+        }
 
         return Inertia::render('Siswa/Worksheet/Show', [
             'classroom' => $classroom,
@@ -78,6 +149,10 @@ class WorksheetController extends Controller
             'aiFeedbacks' => (object) $aiFeedbacks,
             'discussions' => $discussions,
             'isLocked' => $isLocked,
+            'isEvaluationSent' => $isEvaluationSent,
+            'finalScore' => $finalScore,
+            'evaluations' => (object) $evaluations,
+            'correctAnswersList' => (object) $correctAnswersList,
         ]);
     }
 
@@ -89,7 +164,7 @@ class WorksheetController extends Controller
         $validated = $request->validate([
             'content_id' => 'required|integer|exists:phase_contents,id',
             'answer_text' => 'nullable|string',
-            'answer_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'answer_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
         ]);
 
         $userId = $request->user()->id;

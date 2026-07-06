@@ -41,6 +41,10 @@ const props = defineProps<{
         }>;
     }>;
     isLocked: boolean;
+    isEvaluationSent?: boolean;
+    finalScore?: number | null;
+    evaluations?: Record<number, string>;
+    correctAnswersList?: Record<number, any>;
 }>();
 
 const answers = ref<Record<number, any>>({});
@@ -83,13 +87,17 @@ clearInterval(pollIntervals[contentId]);
             only: ['aiFeedbacks'],
             preserveScroll: true,
             preserveState: true,
-            onSuccess: () => {
+            onSuccess: (page: any) => {
+                const updatedFeedbacks = page.props.aiFeedbacks || {};
                 // Jika AI sudah memberikan jawaban baru (berisi teks)
-                if (props.aiFeedbacks && props.aiFeedbacks[contentId]) {
+                if (updatedFeedbacks[contentId]) {
                     clearInterval(pollIntervals[contentId]);
                     isWaitingForAI.value[contentId] = false;
                     expandedAIFeedbacks.value[contentId] = true; // Auto-expand when AI finishes
-                    toast.success('Evaluasi AI Selesai!', { icon: '✨' });
+                    toast.success('Evaluasi AI Selesai!', { 
+                        id: `ai-finish-${contentId}`,
+                        icon: '✨' 
+                    });
                 }
                 // Jika sudah 15 kali percobaan (45 detik) tapi AI belum jawab (Timeout/Error API)
                 else if (pollAttempts[contentId] >= 15) {
@@ -97,6 +105,7 @@ clearInterval(pollIntervals[contentId]);
                     isWaitingForAI.value[contentId] = false;
                     toast.error(
                         'Waktu tunggu AI habis. Silakan klik "Cek Hasil AI" nanti.',
+                        { id: `ai-timeout-${contentId}` }
                     );
                 }
             },
@@ -161,6 +170,7 @@ return;
             preserveState: true,
             onSuccess: () => {
                 toast.success('Jawaban terkirim!', {
+                    id: `save-answer-${contentId}`,
                     icon: '🚀',
                 });
 
@@ -174,11 +184,11 @@ props.aiFeedbacks[contentId] = '';
                     startPollingAI(contentId);
                 }
             },
-            onError: () => {
-                toast.error('Gagal Mengirim', {
-                    description: 'Periksa koneksi internet Anda.',
-                    icon: '⚠️',
-                });
+            onError: (errors: any) => {
+                toast.error(
+                    errors.message || 'Gagal menyimpan jawaban. Silakan coba lagi.',
+                    { id: `error-answer-${contentId}` }
+                );
             },
             onFinish: () => {
                 isSubmitting.value[contentId] = false;
@@ -209,7 +219,7 @@ return;
         },
         onError: () => {
             toast.error(
-                'Gagal mengunggah file. Pastikan ukurannya di bawah 2MB.',
+                'Gagal mengunggah file. Pastikan ukurannya di bawah 10MB.',
             );
         },
         onFinish: () => {
@@ -406,6 +416,28 @@ const refreshDiscussions = () => {
             </div>
         </div>
 
+        <!-- TOTAL SCORE CARD -->
+        <div v-if="props.isEvaluationSent && props.finalScore !== null" class="mx-auto mb-6 max-w-4xl">
+            <Card class="p-6 border-slate-200 shadow-sm bg-gradient-to-r from-indigo-50 to-emerald-50 overflow-hidden relative">
+                <div class="absolute -right-10 -top-10 opacity-10">
+                    <i class="pi pi-verified text-[150px] text-emerald-500"></i>
+                </div>
+                <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-black uppercase tracking-wider mb-2">
+                            <i class="pi pi-check-circle"></i> Evaluasi Selesai
+                        </div>
+                        <h2 class="text-[20px] font-extrabold text-slate-800">Hasil Penilaian Guru</h2>
+                        <p class="text-[13px] text-slate-600 mt-1">Guru telah memeriksa dan memberikan nilai untuk lembar kerja ini.</p>
+                    </div>
+                    <div class="flex items-end gap-2 bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100">
+                        <span class="text-[48px] font-black leading-none" :class="props.finalScore >= 75 ? 'text-emerald-500' : (props.finalScore >= 50 ? 'text-amber-500' : 'text-rose-500')">{{ props.finalScore }}</span>
+                        <span class="text-[16px] font-bold text-slate-400 mb-1.5">Poin</span>
+                    </div>
+                </div>
+            </Card>
+        </div>
+
         <div class="mx-auto mb-12 max-w-4xl space-y-6">
             <div v-for="content in phase.contents" :key="content.id">
                 <div
@@ -508,10 +540,21 @@ const refreshDiscussions = () => {
                             ></span>
                         </label>
                     </div>
-                    <div class="mt-3 flex min-h-[20px] justify-end">
+                    <div class="mt-3 flex min-h-[20px] items-center justify-between">
+                        <div v-if="props.isEvaluationSent">
+                            <span v-if="props.evaluations && props.evaluations[content.id] === 'tidak_dinilai'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[11px] font-bold border border-slate-200">
+                                <i class="pi pi-ban"></i> Tidak dimasukkan ke dalam penilaian
+                            </span>
+                            <span v-else-if="props.correctAnswersList && props.correctAnswersList[content.id] && props.correctAnswersList[content.id].includes(String(answers[content.id]))" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 text-[11px] font-bold border border-emerald-100">
+                                <i class="pi pi-check-circle"></i> Status: Benar
+                            </span>
+                            <span v-else-if="answers[content.id]" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 text-rose-600 text-[11px] font-bold border border-rose-100">
+                                <i class="pi pi-times-circle"></i> Status: Salah
+                            </span>
+                        </div>
                         <span
                             v-if="isSubmitting[content.id]"
-                            class="text-[11px] font-bold text-indigo-500"
+                            class="text-[11px] font-bold text-indigo-500 ml-auto"
                             ><i class="pi pi-spinner pi-spin mr-1"></i>
                             Menyimpan...</span
                         >
@@ -562,10 +605,21 @@ const refreshDiscussions = () => {
                             ></span>
                         </label>
                     </div>
-                    <div class="mt-3 flex min-h-[20px] justify-end">
+                    <div class="mt-3 flex min-h-[20px] items-center justify-between">
+                        <div v-if="props.isEvaluationSent">
+                            <span v-if="props.evaluations && props.evaluations[content.id] === 'tidak_dinilai'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[11px] font-bold border border-slate-200">
+                                <i class="pi pi-ban"></i> Tidak dimasukkan ke dalam penilaian
+                            </span>
+                            <span v-else-if="props.correctAnswersList && props.correctAnswersList[content.id] && Array.isArray(answers[content.id]) && answers[content.id].length === props.correctAnswersList[content.id].length && props.correctAnswersList[content.id].every((c: any) => answers[content.id].map(String).includes(String(c)))" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 text-[11px] font-bold border border-emerald-100">
+                                <i class="pi pi-check-circle"></i> Status: Benar
+                            </span>
+                            <span v-else-if="Array.isArray(answers[content.id]) && answers[content.id].length > 0" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 text-rose-600 text-[11px] font-bold border border-rose-100">
+                                <i class="pi pi-times-circle"></i> Status: Salah
+                            </span>
+                        </div>
                         <span
                             v-if="isSubmitting[content.id]"
-                            class="text-[11px] font-bold text-indigo-500"
+                            class="text-[11px] font-bold text-indigo-500 ml-auto"
                             ><i class="pi pi-spinner pi-spin mr-1"></i>
                             Menyimpan...</span
                         >
@@ -601,8 +655,23 @@ const refreshDiscussions = () => {
                     />
 
                     <div
-                        class="mt-3 flex min-h-[32px] items-center justify-end gap-3"
+                        class="mt-3 flex min-h-[32px] items-center justify-between gap-3"
                     >
+                        <div v-if="props.isEvaluationSent">
+                            <span v-if="props.evaluations && props.evaluations[content.id] === 'tidak_dinilai'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[11px] font-bold border border-slate-200">
+                                <i class="pi pi-ban"></i> Tidak dimasukkan ke dalam penilaian
+                            </span>
+                            <span v-else-if="props.evaluations && props.evaluations[content.id] === 'benar'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 text-[11px] font-bold border border-emerald-100">
+                                <i class="pi pi-check-circle"></i> Status: Benar
+                            </span>
+                            <span v-else-if="props.evaluations && props.evaluations[content.id] === 'setengah_benar'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-600 text-[11px] font-bold border border-amber-100">
+                                <i class="pi pi-minus-circle"></i> Status: Setengah Benar
+                            </span>
+                            <span v-else-if="props.evaluations && props.evaluations[content.id] === 'salah'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 text-rose-600 text-[11px] font-bold border border-rose-100">
+                                <i class="pi pi-times-circle"></i> Status: Salah
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-3 ml-auto">
                         <!-- Tombol disembunyikan saat sedang proses atau terkunci -->
                         <Button
                             v-if="!isWaitingForAI[content.id] && !props.isLocked"
@@ -620,6 +689,7 @@ const refreshDiscussions = () => {
                             ></i>
                             Kirim Jawaban
                         </Button>
+                        </div>
                     </div>
 
                     <!-- AREA BUBBLE AI -->
@@ -737,25 +807,41 @@ const refreshDiscussions = () => {
                     />
 
                     <div
-                        class="mt-3 flex min-h-[32px] items-center justify-end gap-3"
+                        class="mt-3 flex min-h-[32px] items-center justify-between gap-3"
                     >
-                        <!-- Tombol disembunyikan saat sedang proses atau terkunci -->
-                        <Button
-                            v-if="!isWaitingForAI[content.id] && !props.isLocked"
-                            @click="saveAnswer(content.id)"
-                            size="sm"
-                            class="h-9 rounded-xl bg-indigo-600 px-5 text-xs font-bold text-white shadow-sm transition-all hover:scale-105 hover:bg-indigo-700 active:scale-95"
-                            :disabled="isSubmitting[content.id]"
-                        >
-                            <i
-                                class="pi pi-send mr-1.5"
-                                :class="{
-                                    'pi-spin pi-spinner':
-                                        isSubmitting[content.id],
-                                }"
-                            ></i>
-                            Kirim Jawaban
-                        </Button>
+                        <div v-if="props.isEvaluationSent">
+                            <span v-if="props.evaluations && props.evaluations[content.id] === 'tidak_dinilai'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[11px] font-bold border border-slate-200">
+                                <i class="pi pi-ban"></i> Tidak dimasukkan ke dalam penilaian
+                            </span>
+                            <span v-else-if="props.evaluations && props.evaluations[content.id] === 'benar'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 text-[11px] font-bold border border-emerald-100">
+                                <i class="pi pi-check-circle"></i> Status: Benar
+                            </span>
+                            <span v-else-if="props.evaluations && props.evaluations[content.id] === 'setengah_benar'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-600 text-[11px] font-bold border border-amber-100">
+                                <i class="pi pi-minus-circle"></i> Status: Setengah Benar
+                            </span>
+                            <span v-else-if="props.evaluations && props.evaluations[content.id] === 'salah'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 text-rose-600 text-[11px] font-bold border border-rose-100">
+                                <i class="pi pi-times-circle"></i> Status: Salah
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-3 ml-auto">
+                            <!-- Tombol disembunyikan saat sedang proses atau terkunci -->
+                            <Button
+                                v-if="!isWaitingForAI[content.id] && !props.isLocked"
+                                @click="saveAnswer(content.id)"
+                                size="sm"
+                                class="h-9 rounded-xl bg-indigo-600 px-5 text-xs font-bold text-white shadow-sm transition-all hover:scale-105 hover:bg-indigo-700 active:scale-95"
+                                :disabled="isSubmitting[content.id]"
+                            >
+                                <i
+                                    class="pi pi-send mr-1.5"
+                                    :class="{
+                                        'pi-spin pi-spinner':
+                                            isSubmitting[content.id],
+                                    }"
+                                ></i>
+                                Kirim Jawaban
+                            </Button>
+                        </div>
                     </div>
 
                     <!-- AREA BUBBLE AI -->
@@ -859,7 +945,7 @@ const refreshDiscussions = () => {
                                 atau Drag & Drop foto
                             </p>
                             <p class="text-[11px] text-slate-400">
-                                Format: PNG, JPG, atau PDF (Maks 2MB)
+                                Format: PNG, JPG, atau PDF (Maks 10MB)
                             </p>
                         </div>
                     </div>
@@ -886,6 +972,20 @@ const refreshDiscussions = () => {
                     >
                         <i class="pi pi-check-circle mr-2"></i> File Anda
                         berhasil diunggah dan diamankan.
+                    </div>
+                    <div v-if="props.isEvaluationSent" class="mt-3">
+                        <span v-if="props.evaluations && props.evaluations[content.id] === 'tidak_dinilai'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[11px] font-bold border border-slate-200">
+                            <i class="pi pi-ban"></i> Tidak dimasukkan ke dalam penilaian
+                        </span>
+                        <span v-else-if="props.evaluations && props.evaluations[content.id] === 'benar'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 text-[11px] font-bold border border-emerald-100">
+                            <i class="pi pi-check-circle"></i> Status: Benar
+                        </span>
+                        <span v-else-if="props.evaluations && props.evaluations[content.id] === 'setengah_benar'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-600 text-[11px] font-bold border border-amber-100">
+                            <i class="pi pi-minus-circle"></i> Status: Setengah Benar
+                        </span>
+                        <span v-else-if="props.evaluations && props.evaluations[content.id] === 'salah'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 text-rose-600 text-[11px] font-bold border border-rose-100">
+                            <i class="pi pi-times-circle"></i> Status: Salah
+                        </span>
                     </div>
                 </div>
 

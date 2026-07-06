@@ -195,6 +195,12 @@ const togglePassword = () => {
                             />
                             Login
                         </button>
+                        <Link
+                            :href="route('home')"
+                            class="mt-3 flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-[15px] font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-gray-200 focus:ring-offset-2 focus:outline-none"
+                        >
+                            Kembali ke Beranda
+                        </Link>
                     </div>
                 </Form>
 

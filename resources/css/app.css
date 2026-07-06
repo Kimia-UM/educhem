@@ -224,6 +224,11 @@
    Restores styles stripped by Tailwind CSS Preflight for Quill HTML outputs
    ========================================================================== */
 
+/* Clearfix for floated images */
+.rich-text-content {
+    display: flow-root;
+}
+
 /* Subscript & Superscript */
 .rich-text-content sub,
 .rich-text-content sup {
@@ -250,6 +255,15 @@
     line-height: 1.25 !important;
     color: inherit !important;
     display: block !important;
+}
+
+/* Image alignment margins fallback */
+.rich-text-content img[style*="float: left"] {
+    margin: 0.25rem 1.5rem 1rem 0 !important;
+}
+
+.rich-text-content img[style*="float: right"] {
+    margin: 0.25rem 0 1rem 1.5rem !important;
 }
 
 .rich-text-content h2 {
@@ -511,4 +525,19 @@
     /* slate-600 */
     margin-top: 0.75rem !important;
     margin-bottom: 0.75rem !important;
+}
+
+/* ==========================================================================
+   PRIMEVUE COMPONENT OVERRIDES
+   ========================================================================== */
+.p-drawer-header {
+    display: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 0 !important;
+}
+
+.p-drawer-content {
+    padding: 0 !important;
+    margin: 0 !important;
 }

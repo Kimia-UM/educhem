@@ -71,9 +71,13 @@ class StudentAnswerController extends Controller
             ->whereIn('phase_id', $phaseIds)
             ->with(['content' => function ($query) {
                 // Memastikan data konten yang dibutuhkan untuk evaluasi tersedia
-                $query->select('id', 'topic_phase_id', 'type', 'content_data', 'correct_answers');
+                $query->select('id', 'topic_phase_id', 'type', 'content_data', 'correct_answers', 'order');
             }])
-            ->get();
+            ->get()
+            ->sortBy(function ($answer) {
+                return $answer->content ? $answer->content->order : 999;
+            })
+            ->values();
 
         // Ambil status pengiriman evaluasi dari pivot
         $pivot = $classroom->students()->where('user_id', $student->id)->first()?->pivot;
@@ -96,7 +100,7 @@ class StudentAnswerController extends Controller
     public function evaluateAnswer(Request $request, StudentAnswer $answer)
     {
         $request->validate([
-            'evaluation' => 'required|string|in:benar,setengah_benar,salah',
+            'evaluation' => 'required|string|in:benar,setengah_benar,salah,tidak_dinilai',
         ]);
 
         // Validasi keamanan: Pastikan guru yang menilai adalah pengajar di kelas jawaban ini
@@ -267,9 +271,12 @@ class StudentAnswerController extends Controller
         $answers = StudentAnswer::where('user_id', $student->id)
             ->whereIn('phase_id', $phaseIds)
             ->with(['content' => function ($query) {
-                $query->select('id', 'topic_phase_id', 'type', 'content_data', 'correct_answers');
+                $query->select('id', 'topic_phase_id', 'type', 'content_data', 'correct_answers', 'order');
             }])
             ->get()
+            ->sortBy(function ($answer) {
+                return $answer->content ? $answer->content->order : 999;
+            })
             ->keyBy('content_id');
 
         // Ambil status evaluasi dari pivot

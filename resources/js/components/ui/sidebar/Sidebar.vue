@@ -37,9 +37,10 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
     :position="side === 'left' ? 'left' : 'right'"
     :showCloseIcon="false"
     :pt="{
-        root: { class: 'bg-[#0b1e36] text-white w-(--sidebar-width) p-0 border-none shadow-2xl' },
-        header: { class: 'hidden' },
-        content: { class: 'p-0 h-full flex flex-col bg-[#0b1e36]' }
+        root: { class: 'bg-[#0b1e36] text-white w-(--sidebar-width) p-0 m-0 border-none shadow-2xl' },
+        header: { class: 'hidden p-0 h-0 min-h-0 overflow-hidden' },
+        content: { class: 'p-0 pt-0 h-full flex flex-col bg-[#0b1e36]' },
+        mask: { class: 'z-50' }
     }"
     :style="{
       '--sidebar-width': SIDEBAR_WIDTH_MOBILE,

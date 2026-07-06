@@ -112,9 +112,13 @@ class ClassroomController extends Controller
         $answers = \App\Models\StudentAnswer::where('user_id', $user->id)
             ->whereIn('phase_id', $phaseIds)
             ->with(['content' => function ($query) {
-                $query->select('id', 'topic_phase_id', 'type', 'content_data', 'correct_answers');
+                $query->select('id', 'topic_phase_id', 'type', 'content_data', 'correct_answers', 'order');
             }])
-            ->get();
+            ->get()
+            ->sortBy(function ($answer) {
+                return $answer->content ? $answer->content->order : 999;
+            })
+            ->values();
 
         return inertia('Siswa/Classes/EvaluationResult', [
             'classroom' => $classroom->load('teacher'),

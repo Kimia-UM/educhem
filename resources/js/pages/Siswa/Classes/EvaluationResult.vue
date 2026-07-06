@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import { Card } from '@/components/ui/card';
 import { marked } from 'marked';
 import katex from 'katex';
@@ -69,6 +70,7 @@ const getEvaluationColor = (evaluation: string | null) => {
         case 'benar': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
         case 'setengah_benar': return 'bg-amber-100 text-amber-700 border-amber-200';
         case 'salah': return 'bg-rose-100 text-rose-700 border-rose-200';
+        case 'tidak_dinilai': return 'bg-slate-50 text-slate-400 border-slate-200';
         default: return 'bg-slate-100 text-slate-700 border-slate-200';
     }
 };
@@ -78,6 +80,7 @@ const getEvaluationLabel = (evaluation: string | null) => {
         case 'benar': return 'Jawaban Benar';
         case 'setengah_benar': return 'Kurang Tepat';
         case 'salah': return 'Jawaban Salah';
+        case 'tidak_dinilai': return 'Tidak Masuk Penilaian';
         default: return 'Belum Dinilai';
     }
 };
@@ -91,15 +94,25 @@ const getPhaseAnswers = (phaseId: number) => {
 const checkAutoGrade = (answer: any) => {
     const content = answer.content;
     if (!content) return null;
-    const correctAnswers = content.correct_answers || [];
+    const correctIndices = content.correct_answers || [];
+    const options = content.content_data?.options || [];
     const studentAns = answer.answer_data;
 
+    // Resolve indeks kunci jawaban menjadi teks opsi
+    const correctTexts = correctIndices
+        .map((idx: any) => options[Number(idx)])
+        .filter((v: any) => v !== undefined);
+
     if (content.type === 'eval_mcq') {
-        return correctAnswers.includes(String(studentAns));
+        return correctTexts.includes(String(studentAns));
     } else if (content.type === 'eval_cmcq') {
-        if (!Array.isArray(studentAns)) return false;
-        const isSameLength = studentAns.length === correctAnswers.length;
-        const hasAllCorrect = correctAnswers.every((c: any) => studentAns.map(String).includes(String(c)));
+        let studentAnsArray = studentAns;
+        if (typeof studentAns === 'string') {
+            try { studentAnsArray = JSON.parse(studentAns); } catch(e) { return false; }
+        }
+        if (!Array.isArray(studentAnsArray)) return false;
+        const isSameLength = studentAnsArray.length === correctTexts.length;
+        const hasAllCorrect = correctTexts.every((c: any) => studentAnsArray.map(String).includes(String(c)));
         return isSameLength && hasAllCorrect;
     }
     return null;
@@ -112,6 +125,33 @@ const getScoreText = (evaluation: string | null) => {
         case 'salah': return '0';
         default: return '-';
     }
+};
+
+const getTopicScore = (topic: any) => {
+    const phaseIds = topic.phases.map((p: any) => p.id);
+    const topicAnswers = props.answers.filter((a: any) => phaseIds.includes(a.phase_id) && a.evaluation !== 'tidak_dinilai');
+    
+    let score = 0;
+    let mScore = 0;
+    
+    topicAnswers.forEach(a => {
+        if (['eval_mcq', 'eval_cmcq'].includes(a.content.type)) {
+            if (checkAutoGrade(a)) score += 1;
+            mScore += 1;
+        } else {
+            if (a.evaluation === 'benar') score += 2;
+            else if (a.evaluation === 'setengah_benar') score += 1;
+            mScore += 2;
+        }
+    });
+    
+    const final = mScore === 0 ? 0 : Math.round((score / mScore) * 100);
+    
+    return {
+        total: score,
+        max: mScore,
+        final: final
+    };
 };
 
 const isImage = (url: string | null) => {
@@ -235,23 +275,36 @@ const isImage = (url: string | null) => {
                         </h2>
                     </div>
 
+
                     <div v-if="topics.length > 0" class="space-y-6">
                         <Card
                             v-for="(topic, index) in topics"
                             :key="topic.id"
                             class="flex flex-col gap-5 rounded-2xl border-slate-200 bg-white p-6 transition-all shadow-sm"
                         >
-                            <div class="flex items-start gap-4">
-                                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50 text-xl font-black text-indigo-600">
-                                    {{ index + 1 }}
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div class="flex items-start gap-4">
+                                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50 text-xl font-black text-indigo-600">
+                                        {{ index + 1 }}
+                                    </div>
+                                    <div class="flex-1">
+                                        <h3 class="text-lg font-bold text-slate-900">
+                                            {{ topic.title }}
+                                        </h3>
+                                        <p class="mt-1 text-[13px] text-slate-500">
+                                            Berikut adalah hasil pengerjaan Anda untuk topik ini.
+                                        </p>
+                                    </div>
                                 </div>
-                                <div class="flex-1">
-                                    <h3 class="text-lg font-bold text-slate-900">
-                                        {{ topic.title }}
-                                    </h3>
-                                    <p class="mt-1 text-[13px] text-slate-500">
-                                        Berikut adalah hasil pengerjaan Anda untuk topik ini.
-                                    </p>
+                                <div v-if="props.isEvaluationSent" class="flex items-center gap-4 bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
+                                    <div>
+                                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Nilai Topik</p>
+                                        <p class="text-[12px] font-bold text-slate-500">{{ getTopicScore(topic).total }} / {{ getTopicScore(topic).max }} Poin</p>
+                                    </div>
+                                    <div class="h-8 w-px bg-slate-200"></div>
+                                    <span class="text-[28px] font-black leading-none" :class="getTopicScore(topic).final >= 75 ? 'text-emerald-500' : (getTopicScore(topic).final >= 50 ? 'text-amber-500' : 'text-rose-500')">
+                                        {{ getTopicScore(topic).final }}
+                                    </span>
                                 </div>
                             </div>
 
@@ -270,7 +323,13 @@ const isImage = (url: string | null) => {
                                             <div v-for="(answer, aIdx) in getPhaseAnswers(phase.id)" :key="answer.id" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm relative overflow-hidden">
                                                 <!-- Evaluasi Badge (Auto-grade / Manual) -->
                                                 <div class="mb-3 sm:mb-0 sm:absolute sm:top-5 sm:right-5 z-10">
-                                                    <template v-if="['eval_mcq', 'eval_cmcq'].includes(answer.content.type)">
+                                                    <!-- Tidak dinilai (berlaku untuk semua tipe soal) -->
+                                                    <template v-if="answer.evaluation === 'tidak_dinilai'">
+                                                        <span class="px-3 py-1 rounded-full text-[11px] font-bold border inline-flex items-center gap-1 bg-slate-50 text-slate-400 border-slate-200">
+                                                            <i class="pi pi-ban"></i> Tidak Masuk Penilaian
+                                                        </span>
+                                                    </template>
+                                                    <template v-else-if="['eval_mcq', 'eval_cmcq'].includes(answer.content.type)">
                                                         <span v-if="checkAutoGrade(answer)" class="px-3 py-1 rounded-full text-[11px] font-bold border bg-emerald-100 text-emerald-700 border-emerald-200 inline-flex items-center gap-1">
                                                             <i class="pi pi-check-circle"></i> Jawaban Benar
                                                         </span>

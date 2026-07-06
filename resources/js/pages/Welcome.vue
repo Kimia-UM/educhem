@@ -113,19 +113,19 @@ const features = [
 <template>
     <Head title="Selamat Datang di EduChem" />
 
-    <div class="min-h-screen bg-slate-50 font-sans selection:bg-indigo-500 selection:text-white">
+    <div class="min-h-screen w-full overflow-x-hidden bg-slate-50 font-sans selection:bg-indigo-500 selection:text-white">
 
         <!-- ===== NAVBAR ===== -->
         <header class="fixed inset-x-0 top-0 z-50 transition-all duration-300 bg-white/90 backdrop-blur-md border-b border-slate-200/50 shadow-sm">
-            <nav class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-12" aria-label="Global">
+            <nav class="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3 sm:py-4 lg:px-12" aria-label="Global">
 
                 <!-- Logo -->
                 <div class="flex lg:flex-1">
-                    <Link href="#home" @click.prevent="scrollToSection('home')" class="-m-1.5 flex items-center gap-2.5 p-1.5">
+                    <Link href="#home" @click.prevent="scrollToSection('home')" class="-m-1.5 flex items-center gap-2.5 p-1.5 shrink-0">
                         <img
                             src="/assets/images/Logo1.png"
                             alt="EduChem Logo"
-                            class="h-9 w-auto object-contain transition-all duration-300"
+                            class="h-7 sm:h-9 w-auto object-contain transition-all duration-300"
                         />
                     </Link>
                 </div>
@@ -150,11 +150,11 @@ const features = [
                     </Link>
                 </div>
                 <!-- Auth Buttons -->
-                <div class="flex flex-1 items-center justify-end gap-3">
+                <div class="flex flex-1 items-center justify-end gap-2 sm:gap-3 shrink-0">
                     <template v-if="$page.props.auth?.user">
                         <Link
                             :href="route('dashboard')"
-                            class="text-sm font-semibold transition-colors text-slate-700 hover:text-blue-600"
+                            class="text-xs sm:text-sm font-semibold transition-colors text-slate-700 hover:text-blue-600"
                         >
                             Dashboard <span aria-hidden="true">&rarr;</span>
                         </Link>
@@ -162,13 +162,13 @@ const features = [
                     <template v-else>
                         <Link
                             :href="route('login')"
-                            class="text-sm font-semibold transition-colors text-slate-700 hover:text-blue-600"
+                            class="text-xs sm:text-sm font-semibold transition-colors text-slate-700 hover:text-blue-600 whitespace-nowrap"
                         >
                             Masuk
                         </Link>
                         <Link
                             :href="route('register')"
-                            class="rounded-full px-4 py-2 text-sm font-semibold transition-all shadow-sm bg-blue-600 text-white hover:bg-blue-700"
+                            class="rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold transition-all shadow-sm bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap"
                         >
                             Daftar Gratis
                         </Link>

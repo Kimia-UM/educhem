@@ -312,7 +312,7 @@
     "src": "node_modules/primeicons/fonts/primeicons.woff2"
   },
   "node_modules/quill/quill.js": {
-    "file": "assets/quill-CqaVyomL.js",
+    "file": "assets/quill-BgneViTk.js",
     "name": "quill",
     "src": "node_modules/quill/quill.js",
     "isDynamicEntry": true,
@@ -330,7 +330,7 @@
     "isEntry": true
   },
   "resources/js/app.ts": {
-    "file": "assets/app-DY4nTWSZ.js",
+    "file": "assets/app-BMCpKV2Y.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,

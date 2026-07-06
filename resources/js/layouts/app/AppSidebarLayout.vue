@@ -105,7 +105,7 @@ const { theme } = useTheme();
                 </div>
             </div>
         </AppContent>
-        <Toaster position="top-right" />
+        <Toaster position="top-right" richColors />
     </AppShell>
 </template>
 

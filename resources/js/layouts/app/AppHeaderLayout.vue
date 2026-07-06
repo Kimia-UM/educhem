@@ -20,6 +20,6 @@ withDefaults(defineProps<Props>(), {
         <AppContent variant="header">
             <slot />
         </AppContent>
-        <Toaster position="top-right" />
+        <Toaster position="top-right" richColors />
     </AppShell>
 </template>

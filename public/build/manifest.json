@@ -312,7 +312,7 @@
     "src": "node_modules/primeicons/fonts/primeicons.woff2"
   },
   "node_modules/quill/quill.js": {
-    "file": "assets/quill-N7u5rYyM.js",
+    "file": "assets/quill-C_PTzjLB.js",
     "name": "quill",
     "src": "node_modules/quill/quill.js",
     "isDynamicEntry": true,
@@ -321,7 +321,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-BggNjX4m.css",
+    "file": "assets/app-CDB9XdgB.css",
     "name": "app",
     "names": [
       "app.css"
@@ -330,7 +330,7 @@
     "isEntry": true
   },
   "resources/js/app.ts": {
-    "file": "assets/app-_UXiDsUq.js",
+    "file": "assets/app-BhUMMD7d.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -338,7 +338,7 @@
       "node_modules/quill/quill.js"
     ],
     "css": [
-      "assets/app-CDhOSuAX.css"
+      "assets/app-LlnuKCp_.css"
     ],
     "assets": [
       "assets/KaTeX_AMS-Regular-BQhdFMY1.woff2",

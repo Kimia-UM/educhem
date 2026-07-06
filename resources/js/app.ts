@@ -21,9 +21,9 @@ const appName = import.meta.env.VITE_APP_NAME || 'EduChem';
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     resolve: async (name) => {
-        // Pemetaan folder 'pages' (huruf kecil)
-        const pages = import.meta.glob('./pages/**/*.vue', { eager: true });
-        const page: any = await resolvePageComponent(`./pages/${name}.vue`, pages);
+        // Pemetaan folder 'Pages' (huruf besar untuk kompatibilitas Linux)
+        const pages = import.meta.glob('./Pages/**/*.vue', { eager: true });
+        const page: any = await resolvePageComponent(`./Pages/${name}.vue`, pages);
         
         // PASANG LAYOUT SECARA OTOMATIS
         if (page.default.layout === undefined) {

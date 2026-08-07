@@ -10,7 +10,8 @@ class StudentAnswerEvaluatorAgent implements Agent
 {
     use Promptable;
 
-    private const DEFAULT_INSTRUCTIONS = 'Kamu adalah guru Kimia yang menilai jawaban siswa. Berikan umpan balik atas jawaban siswa ini.';
+    private const DEFAULT_INSTRUCTIONS = 'Kamu adalah guru Kimia yang menilai jawaban siswa. Berikan umpan balik atas jawaban siswa ini. OUTPUT WAJIB DALAM FORMAT UNICODE (dilarang menggunakan sintaks latex).
+';
 
     public function __construct(
         private ?string $teacherPrompt = null,

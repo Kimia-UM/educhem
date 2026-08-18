@@ -89,29 +89,26 @@ const fetchChats = async () => {
             // Masukkan pesan siswa
             newMessages.push({ id: `user_${log.id}`, sender: 'user', text: log.prompt });
             
-            // Masukkan pesan AI (jika sudah dijawab oleh background worker)
+            // Masukkan pesan AI (jika sudah dijawab)
             if (log.response) {
                 newMessages.push({ id: `ai_${log.id}`, sender: 'ai', text: log.response });
             } else {
-                // Cek apakah chat log sudah terlalu lama (misal > 90 detik) tapi belum ada respon.
-                // Jika iya, berarti job AI di backend telah gagal/limit.
-                const createdTimeStr = log.created_at;
-                const utcTimeStr = (createdTimeStr.endsWith('Z') || createdTimeStr.includes('+')) 
-                    ? createdTimeStr 
-                    : createdTimeStr.replace(' ', 'T') + 'Z';
-                
-                const createdTime = new Date(utcTimeStr).getTime();
-                const nowTime = new Date().getTime();
-                const diffSeconds = (nowTime - createdTime) / 1000;
+                // Cek apakah chat log sudah terlalu lama (misal > 180 detik)
+                let diffSeconds = 0;
+                if (log.created_at) {
+                    const createdTime = new Date(log.created_at).getTime();
+                    const nowTime = new Date().getTime();
+                    diffSeconds = (nowTime - createdTime) / 1000;
+                }
 
-                if (diffSeconds > 90) {
+                if (diffSeconds > 180) {
                     newMessages.push({ 
                         id: `ai_failed_${log.id}`, 
                         sender: 'ai', 
-                        text: 'Maaf, sepertinya terjadi gangguan koneksi atau batas kuota API terlampaui di server AI. Silakan kirim pesan baru atau coba sesaat lagi.' 
+                        text: 'Maaf, pemrosesan pesan ini memakan waktu terlalu lama. Silakan tanyakan kembali pertanyaanmu.' 
                     });
                 } else {
-                    isWaiting = true; // Menandakan ada pesan yang masih antre di antrean server
+                    isWaiting = true; // Menandakan ada pesan yang masih dalam antrean
                 }
             }
         });
@@ -177,24 +174,37 @@ return;
     const userText = newMessage.value;
     newMessage.value = '';
     
-    // Tampilkan langsung di layar secara instan agar terasa responsif
+    // Tampilkan pesan siswa langsung di layar secara instan
     messages.value.push({ id: Date.now(), sender: 'user', text: userText });
     isTyping.value = true;
     scrollToBottom();
 
     try {
         // Kirim post request menuju backend controller rute siswa
-        await axios.post(route('siswa.chatbot.store'), {
+        const response = await axios.post(route('siswa.chatbot.store'), {
             prompt: userText,
-            topic_context: props.topicTitle || 'Materi Umum',
+            topic_context: props.topicTitle || 'Materi Kimia',
             phase_id: props.phaseId
         });
 
-        // Jalankan pemantauan latar belakang
-        startPolling();
-    } catch (error) {
+        if (response.data && response.data.status === 'success' && response.data.response) {
+            // Direct Response / Cache Hit berhasil diterima langsung!
+            messages.value.push({ 
+                id: `ai_${response.data.log_id || Date.now()}`, 
+                sender: 'ai', 
+                text: response.data.response 
+            });
+            isTyping.value = false;
+            stopPolling();
+            scrollToBottom();
+        } else {
+            // Fallback ke Background Polling jika job dialihkan ke antrean
+            startPolling();
+        }
+    } catch (error: any) {
         isTyping.value = false;
-        messages.value.push({ id: Date.now(), sender: 'ai', text: 'Maaf, terjadi gangguan jaringan saat mengirim pesan.' });
+        const errMsg = error?.response?.data?.message || 'Maaf, terjadi gangguan jaringan saat menghubungi AI Tutor.';
+        messages.value.push({ id: Date.now(), sender: 'ai', text: errMsg });
         scrollToBottom();
     }
 };

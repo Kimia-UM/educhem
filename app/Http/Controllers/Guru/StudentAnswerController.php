@@ -99,8 +99,10 @@ class StudentAnswerController extends Controller
      */
     public function evaluateAnswer(Request $request, StudentAnswer $answer)
     {
-        $request->validate([
-            'evaluation' => 'required|string|in:benar,setengah_benar,salah,tidak_dinilai',
+        $validated = $request->validate([
+            // Nilai null digunakan untuk mengembalikan soal auto-grading yang
+            // sebelumnya dikecualikan agar kembali mengikuti penilaian.
+            'evaluation' => 'present|nullable|string|in:benar,setengah_benar,salah,tidak_dinilai',
         ]);
 
         // Validasi keamanan: Pastikan guru yang menilai adalah pengajar di kelas jawaban ini
@@ -119,7 +121,7 @@ class StudentAnswerController extends Controller
         }
 
         $answer->update([
-            'evaluation' => $request->evaluation,
+            'evaluation' => $validated['evaluation'],
         ]);
 
         return back()->with('success', 'Penilaian berhasil disimpan.');

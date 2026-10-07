@@ -5,18 +5,17 @@ namespace App\Providers;
 use App\Actions\Fortify\ResetUserPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use Laravel\Fortify\Contracts\LoginResponse;
+// TAMBAHAN IMPORT UNTUK OVERRIDE LOGIN & LOGOUT RESPONSE
+use Laravel\Fortify\Contracts\LogoutResponse;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
-
-// TAMBAHAN IMPORT UNTUK OVERRIDE LOGIN & LOGOUT RESPONSE
-use Laravel\Fortify\Contracts\LoginResponse;
-use Laravel\Fortify\Contracts\LogoutResponse;
-use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -40,7 +39,8 @@ class FortifyServiceProvider extends ServiceProvider
 
         // KUNCI UTAMA: Override LoginResponse bawaan Fortify untuk Multi-Role
         $this->app->singleton(LoginResponse::class, function () {
-            return new class implements LoginResponse {
+            return new class implements LoginResponse
+            {
                 public function toResponse($request): Response
                 {
                     $user = Auth::user();
@@ -48,8 +48,8 @@ class FortifyServiceProvider extends ServiceProvider
                     // 1. Cek jika user adalah ADMIN (FORCE REDIRECT)
                     if ($user->hasRole('ADMIN')) {
                         return redirect()->route('admin.dashboard');
-                    } 
-                    
+                    }
+
                     // 2. Cek jika user adalah GURU (FORCE REDIRECT)
                     if ($user->hasRole('GURU')) {
                         return redirect()->route('guru.dashboard');
@@ -63,7 +63,8 @@ class FortifyServiceProvider extends ServiceProvider
 
         // Override LogoutResponse bawaan Fortify untuk dialihkan ke halaman login
         $this->app->singleton(LogoutResponse::class, function () {
-            return new class implements LogoutResponse {
+            return new class implements LogoutResponse
+            {
                 public function toResponse($request): Response
                 {
                     return redirect()->route('login');

@@ -13,13 +13,13 @@ return new class extends Migration
     {
         Schema::create('exercise_attempts', function (Blueprint $table) {
             $table->id();
-            
+
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('question_id')->constrained('questions')->cascadeOnDelete();
-            
+
             $table->text('answer'); // Menggunakan Text agar bisa menampung jawaban panjang/JSON string
             $table->boolean('is_correct')->default(false);
-            
+
             $table->timestamps();
         });
     }

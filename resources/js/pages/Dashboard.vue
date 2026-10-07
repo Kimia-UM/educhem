@@ -22,11 +22,11 @@ defineOptions({
         class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4"
     >
         <div class="flex justify-end">
-            <Link 
-                :href="route('logout')" 
-                method="post" 
+            <Link
+                :href="route('logout')"
+                method="post"
                 as="button"
-                class="bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold py-2.5 px-6 rounded-lg shadow-sm transition-colors cursor-pointer"
+                class="cursor-pointer rounded-lg bg-rose-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-rose-700"
             >
                 <i class="pi pi-sign-out mr-2"></i> Keluar / Logout
             </Link>

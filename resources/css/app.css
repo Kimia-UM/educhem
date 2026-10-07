@@ -74,7 +74,6 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
-
     *,
     ::after,
     ::before,
@@ -85,7 +84,6 @@
 }
 
 @layer utilities {
-
     body,
     html {
         --font-sans:
@@ -174,7 +172,7 @@
 
 /* DEFAULT / ELEGAN THEME */
 :root,
-[data-theme="elegan"] {
+[data-theme='elegan'] {
     --theme-primary: #4f46e5;
     --theme-primary-rgb: 79, 70, 229;
     --theme-primary-hover: #4338ca;
@@ -186,7 +184,7 @@
 }
 
 /* GENZ THEME (Neon, Pink-Violet, Vibrant Glow) */
-[data-theme="genz"] {
+[data-theme='genz'] {
     --theme-primary: #d946ef;
     --theme-primary-rgb: 217, 70, 239;
     --theme-primary-hover: #c084fc;
@@ -198,7 +196,7 @@
 }
 
 /* CLASSIC THEME (Forest Green, Bookish Warm Cream) */
-[data-theme="classic"] {
+[data-theme='classic'] {
     --theme-primary: #15803d;
     --theme-primary-rgb: 21, 128, 61;
     --theme-primary-hover: #166534;
@@ -258,11 +256,11 @@
 }
 
 /* Image alignment margins fallback */
-.rich-text-content img[style*="float: left"] {
+.rich-text-content img[style*='float: left'] {
     margin: 0.25rem 1.5rem 1rem 0 !important;
 }
 
-.rich-text-content img[style*="float: right"] {
+.rich-text-content img[style*='float: right'] {
     margin: 0.25rem 0 1rem 1.5rem !important;
 }
 
@@ -348,14 +346,14 @@
     margin-bottom: 0.5rem !important;
 }
 
-.rich-text-content ol>li {
+.rich-text-content ol > li {
     counter-increment: list-0;
     position: relative;
     list-style-type: none !important;
 }
 
-.rich-text-content ol>li::before {
-    content: counter(list-0, decimal) ". ";
+.rich-text-content ol > li::before {
+    content: counter(list-0, decimal) '. ';
     position: absolute;
     left: -1.5rem;
     width: 1.25rem;
@@ -363,43 +361,43 @@
 }
 
 /* Level 1 Ordered List */
-.rich-text-content ol>li.ql-indent-1 {
+.rich-text-content ol > li.ql-indent-1 {
     counter-increment: list-1;
     padding-left: 1.5rem !important;
 }
 
-.rich-text-content ol>li.ql-indent-1::before {
-    content: counter(list-1, lower-alpha) ". ";
+.rich-text-content ol > li.ql-indent-1::before {
+    content: counter(list-1, lower-alpha) '. ';
     left: 0rem;
 }
 
-.rich-text-content ol>li.ql-indent-1 {
+.rich-text-content ol > li.ql-indent-1 {
     counter-reset: list-2;
 }
 
 /* Level 2 Ordered List */
-.rich-text-content ol>li.ql-indent-2 {
+.rich-text-content ol > li.ql-indent-2 {
     counter-increment: list-2;
     padding-left: 3rem !important;
 }
 
-.rich-text-content ol>li.ql-indent-2::before {
-    content: counter(list-2, lower-roman) ". ";
+.rich-text-content ol > li.ql-indent-2::before {
+    content: counter(list-2, lower-roman) '. ';
     left: 1.5rem;
 }
 
-.rich-text-content ol>li.ql-indent-2 {
+.rich-text-content ol > li.ql-indent-2 {
     counter-reset: list-3;
 }
 
 /* Level 3 Ordered List */
-.rich-text-content ol>li.ql-indent-3 {
+.rich-text-content ol > li.ql-indent-3 {
     counter-increment: list-3;
     padding-left: 4.5rem !important;
 }
 
-.rich-text-content ol>li.ql-indent-3::before {
-    content: counter(list-3, decimal) ". ";
+.rich-text-content ol > li.ql-indent-3::before {
+    content: counter(list-3, decimal) '. ';
     left: 3rem;
 }
 
@@ -411,34 +409,34 @@
     margin-bottom: 0.5rem !important;
 }
 
-.rich-text-content ul>li {
+.rich-text-content ul > li {
     position: relative;
     list-style-type: none !important;
 }
 
-.rich-text-content ul>li::before {
-    content: "•";
+.rich-text-content ul > li::before {
+    content: '•';
     position: absolute;
     left: -1.25rem;
 }
 
 /* Level 1 Unordered List */
-.rich-text-content ul>li.ql-indent-1 {
+.rich-text-content ul > li.ql-indent-1 {
     padding-left: 1.5rem !important;
 }
 
-.rich-text-content ul>li.ql-indent-1::before {
-    content: "○";
+.rich-text-content ul > li.ql-indent-1::before {
+    content: '○';
     left: 0.25rem;
 }
 
 /* Level 2 Unordered List */
-.rich-text-content ul>li.ql-indent-2 {
+.rich-text-content ul > li.ql-indent-2 {
     padding-left: 3rem !important;
 }
 
-.rich-text-content ul>li.ql-indent-2::before {
-    content: "▪";
+.rich-text-content ul > li.ql-indent-2::before {
+    content: '▪';
     left: 1.75rem;
 }
 

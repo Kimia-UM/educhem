@@ -25,7 +25,7 @@ class ClassroomService
     {
         $data['teacher_id'] = $teacherId;
         $data['class_code'] = $this->generateUniqueCode();
-        
+
         return Classroom::create($data);
     }
 
@@ -57,15 +57,15 @@ class ClassroomService
     public function getClassDetail(string $id, int $teacherId)
     {
         return Classroom::with([
-                // Mengambil relasi topik
-                'topics' => function ($query) {
-                    $query->latest(); // Mengurutkan topik dari yang terbaru
-                },
-                // Mengambil relasi siswa yang bergabung
-                'students' => function ($query) {
-                    $query->orderBy('name', 'asc'); // Mengurutkan siswa sesuai abjad (A-Z)
-                }
-            ])
+            // Mengambil relasi topik
+            'topics' => function ($query) {
+                $query->latest(); // Mengurutkan topik dari yang terbaru
+            },
+            // Mengambil relasi siswa yang bergabung
+            'students' => function ($query) {
+                $query->orderBy('name', 'asc'); // Mengurutkan siswa sesuai abjad (A-Z)
+            },
+        ])
             ->where('id', $id)
             ->where('teacher_id', $teacherId)
             ->firstOrFail();

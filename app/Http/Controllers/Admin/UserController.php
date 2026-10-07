@@ -17,12 +17,12 @@ class UserController extends Controller
     {
         $search = $request->input('search');
         $perPage = $request->input('per_page', 10);
-        
+
         $users = $this->userService->getAllUsersWithRoles($perPage, $search);
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
-            'filters' => $request->only(['search', 'per_page'])
+            'filters' => $request->only(['search', 'per_page']),
         ]);
     }
 
@@ -30,7 +30,7 @@ class UserController extends Controller
     public function create()
     {
         return Inertia::render('Admin/Users/Create', [
-            'roles' => Role::all()
+            'roles' => Role::all(),
         ]);
     }
 
@@ -54,7 +54,7 @@ class UserController extends Controller
     {
         return Inertia::render('Admin/Users/Edit', [
             'user' => $user->load('roles'),
-            'roles' => Role::all() // Mengirim semua pilihan role ke frontend
+            'roles' => Role::all(), // Mengirim semua pilihan role ke frontend
         ]);
     }
 
@@ -62,7 +62,7 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $request->validate([
-            'role' => 'required|string|exists:roles,name'
+            'role' => 'required|string|exists:roles,name',
         ]);
 
         $this->userService->updateRole($user, $request->role);
@@ -87,6 +87,7 @@ class UserController extends Controller
     public function upgrade(User $user)
     {
         $this->userService->upgradeToGuru($user);
+
         return redirect()->back();
     }
 }

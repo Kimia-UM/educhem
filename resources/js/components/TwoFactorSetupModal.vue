@@ -111,17 +111,22 @@ watch(
 
 <template>
     <Dialog :open="isOpen" @update:open="isOpen = $event">
-        <DialogContent class="sm:max-w-md bg-white dark:bg-slate-950 border border-slate-100/80 dark:border-slate-800/50 shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-3xl">
+        <DialogContent
+            class="rounded-3xl border border-slate-100/80 bg-white shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] sm:max-w-md dark:border-slate-800/50 dark:bg-slate-950 dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
+        >
             <DialogHeader class="flex items-center justify-center">
                 <div
-                    class="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/30 text-amber-600 dark:text-amber-400 shadow-sm animate-pulse"
+                    class="mb-3 flex h-12 w-12 animate-pulse items-center justify-center rounded-2xl border border-amber-200/50 bg-amber-50 text-amber-600 shadow-sm dark:border-amber-900/30 dark:bg-amber-950/30 dark:text-amber-400"
                 >
-                    <ScanLine
-                        class="size-6"
-                    />
+                    <ScanLine class="size-6" />
                 </div>
-                <DialogTitle class="text-slate-900 dark:text-slate-100 text-lg font-bold">{{ modalConfig.title }}</DialogTitle>
-                <DialogDescription class="text-center text-slate-500 dark:text-slate-400 text-[13px] mt-1 leading-relaxed">
+                <DialogTitle
+                    class="text-lg font-bold text-slate-900 dark:text-slate-100"
+                    >{{ modalConfig.title }}</DialogTitle
+                >
+                <DialogDescription
+                    class="mt-1 text-center text-[13px] leading-relaxed text-slate-500 dark:text-slate-400"
+                >
                     {{ modalConfig.description }}
                 </DialogDescription>
             </DialogHeader>
@@ -136,7 +141,7 @@ watch(
                             class="relative mx-auto flex max-w-md items-center overflow-hidden"
                         >
                             <div
-                                class="relative mx-auto aspect-square w-64 overflow-hidden rounded-2xl border border-amber-100 dark:border-amber-900/30 p-2 bg-white"
+                                class="relative mx-auto aspect-square w-64 overflow-hidden rounded-2xl border border-amber-100 bg-white p-2 dark:border-amber-900/30"
                             >
                                 <div
                                     v-if="!qrCodeSvg"
@@ -146,7 +151,7 @@ watch(
                                 </div>
                                 <div
                                     v-else
-                                    class="relative z-10 overflow-hidden flex items-center justify-center size-full"
+                                    class="relative z-10 flex size-full items-center justify-center overflow-hidden"
                                 >
                                     <div
                                         v-html="qrCodeSvg"
@@ -155,7 +160,7 @@ watch(
                                             filter:
                                                 resolvedAppearance === 'dark'
                                                     ? 'invert(1) brightness(1.5)'
-                                                     : undefined,
+                                                    : undefined,
                                         }"
                                     />
                                 </div>
@@ -163,7 +168,10 @@ watch(
                         </div>
 
                         <div class="flex w-full items-center space-x-5">
-                            <Button class="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 font-bold text-white shadow-md shadow-indigo-100 dark:shadow-none text-[13px]" @click="handleModalNextStep">
+                            <Button
+                                class="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 text-[13px] font-bold text-white shadow-md shadow-indigo-100 hover:from-indigo-700 hover:to-indigo-800 dark:shadow-none"
+                                @click="handleModalNextStep"
+                            >
                                 {{ modalConfig.buttonText }}
                             </Button>
                         </div>
@@ -174,7 +182,8 @@ watch(
                             <div
                                 class="absolute inset-0 top-1/2 h-px w-full bg-border"
                             />
-                            <span class="relative bg-white dark:bg-slate-950 px-2 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider"
+                            <span
+                                class="relative bg-white px-2 py-1 text-[11px] font-bold tracking-wider text-slate-400 uppercase dark:bg-slate-950"
                                 >or, enter the code manually</span
                             >
                         </div>
@@ -196,7 +205,7 @@ watch(
                                         type="text"
                                         readonly
                                         :value="manualSetupKey"
-                                        class="h-full w-full bg-background p-3 text-foreground text-[13px] font-mono focus:outline-hidden"
+                                        class="h-full w-full bg-background p-3 font-mono text-[13px] text-foreground focus:outline-hidden"
                                     />
                                     <button
                                         @click="copy(manualSetupKey || '')"
@@ -206,7 +215,10 @@ watch(
                                             v-if="copied"
                                             class="w-4 text-green-500"
                                         />
-                                        <Copy v-else class="w-4 text-slate-400 hover:text-slate-600" />
+                                        <Copy
+                                            v-else
+                                            class="w-4 text-slate-400 hover:text-slate-600"
+                                        />
                                     </button>
                                 </template>
                             </div>
@@ -253,7 +265,7 @@ watch(
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    class="w-auto flex-1 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 font-bold text-[13px]"
+                                    class="w-auto flex-1 rounded-xl border border-slate-200 text-[13px] font-bold hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900"
                                     @click="showVerificationStep = false"
                                     :disabled="processing"
                                 >
@@ -261,7 +273,7 @@ watch(
                                 </Button>
                                 <Button
                                     type="submit"
-                                    class="w-auto flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 font-bold text-white shadow-md shadow-indigo-100 dark:shadow-none text-[13px]"
+                                    class="w-auto flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 text-[13px] font-bold text-white shadow-md shadow-indigo-100 hover:from-indigo-700 hover:to-indigo-800 dark:shadow-none"
                                     :disabled="processing || code.length < 6"
                                 >
                                     Confirm

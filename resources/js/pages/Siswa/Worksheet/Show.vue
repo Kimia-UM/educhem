@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import axios from 'axios';
 import { marked } from 'marked';
-import { ref, onMounted, computed } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import { route } from 'ziggy-js';
 import FloatingChatbot from '@/components/FloatingChatbot.vue';
 import RichTextEditor from '@/components/RichTextEditor.vue';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useAiEvaluationPolling } from '@/composables/useAiEvaluationPolling';
+import type {
+    AiStatus,
+    AiStatusItem,
+} from '@/composables/useAiEvaluationPolling';
 
 const page = usePage();
 const authUser = computed(() => page.props.auth?.user);
@@ -28,6 +35,7 @@ const props = defineProps<{
     };
     studentAnswers: Record<number, string>;
     aiFeedbacks: Record<number, string>;
+    aiStatuses?: Record<number, AiStatusItem>;
     discussions: Array<{
         id: number;
         user: { id: number; name: string };
@@ -49,78 +57,31 @@ const props = defineProps<{
 
 const answers = ref<Record<number, any>>({});
 const isSubmitting = ref<Record<number, boolean>>({});
+const answerSaveTimers = new Map<number, ReturnType<typeof setTimeout>>();
+const inFlightAnswerSaves = new Map<number, Promise<boolean>>();
+const resaveRequested = new Set<number>();
 
-// STATE UNTUK LOADING AI REAL-TIME
-const isWaitingForAI = ref<Record<number, boolean>>({});
-const pollIntervals: Record<number, any> = {};
-const pollAttempts: Record<number, number> = {};
-
-// STATE UNTUK BUKA TUTUP FEEDBACK AI
-const expandedAIFeedbacks = ref<Record<number, boolean>>({});
-
-const isAIFeedbackExpanded = (contentId: number) => {
-    return expandedAIFeedbacks.value[contentId] !== false;
-};
-
-const toggleAIFeedback = (contentId: number) => {
-    if (expandedAIFeedbacks.value[contentId] === undefined) {
-        expandedAIFeedbacks.value[contentId] = false;
-    } else {
-        expandedAIFeedbacks.value[contentId] = !expandedAIFeedbacks.value[contentId];
-    }
-};
-
-// FUNGSI AUTO-POLLING (Cek server setiap 3 detik di latar belakang)
-const startPollingAI = (contentId: number) => {
-    isWaitingForAI.value[contentId] = true;
-    pollAttempts[contentId] = 0;
-
-    // Bersihkan interval lama jika ada (mencegah bug double-polling)
-    if (pollIntervals[contentId]) {
-clearInterval(pollIntervals[contentId]);
-}
-
-    pollIntervals[contentId] = setInterval(() => {
-        pollAttempts[contentId]++;
-
-        router.reload({
-            only: ['aiFeedbacks'],
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: (page: any) => {
-                const updatedFeedbacks = page.props.aiFeedbacks || {};
-                // Jika AI sudah memberikan jawaban baru (berisi teks)
-                if (updatedFeedbacks[contentId]) {
-                    clearInterval(pollIntervals[contentId]);
-                    isWaitingForAI.value[contentId] = false;
-                    expandedAIFeedbacks.value[contentId] = true; // Auto-expand when AI finishes
-                    toast.success('Evaluasi AI Selesai!', { 
-                        id: `ai-finish-${contentId}`,
-                        icon: '✨' 
-                    });
-                }
-                // Jika sudah 15 kali percobaan (45 detik) tapi AI belum jawab (Timeout/Error API)
-                else if (pollAttempts[contentId] >= 15) {
-                    clearInterval(pollIntervals[contentId]);
-                    isWaitingForAI.value[contentId] = false;
-                    toast.error(
-                        'Waktu tunggu AI habis. Silakan klik "Cek Hasil AI" nanti.',
-                        { id: `ai-timeout-${contentId}` }
-                    );
-                }
-            },
-        });
-    }, 3000); // interval 3000 ms = 3 detik
-};
-
-
+const {
+    aiFeedbacks,
+    aiStatuses,
+    checkAiResult,
+    isAIFeedbackExpanded,
+    isWaitingForAI,
+    stopTrackingAiEvaluation,
+    trackAiEvaluation,
+    toggleAIFeedback,
+} = useAiEvaluationPolling({
+    phaseId: props.phase.id,
+    initialFeedbacks: props.aiFeedbacks,
+    initialStatuses: props.aiStatuses,
+});
 
 onMounted(() => {
     if (props.studentAnswers) {
         for (const [key, value] of Object.entries(props.studentAnswers)) {
             try {
                 answers.value[Number(key)] = JSON.parse(value);
-            } catch (e) {
+            } catch {
                 answers.value[Number(key)] = value;
             }
         }
@@ -138,101 +99,203 @@ onMounted(() => {
     });
 });
 
-const saveAnswer = (contentId: number) => {
+const getRequestErrorMessage = (error: unknown, fallback: string) => {
+    if (!axios.isAxiosError(error)) {
+        return fallback;
+    }
+
+    const errors = error.response?.data?.errors;
+
+    if (errors && typeof errors === 'object') {
+        const firstError = Object.values(errors).flat()[0];
+
+        if (typeof firstError === 'string') {
+            return firstError;
+        }
+    }
+
+    return error.response?.data?.message || fallback;
+};
+
+const performAnswerSave = async (contentId: number): Promise<boolean> => {
     const answerData = answers.value[contentId];
 
     if (Array.isArray(answerData) && answerData.length === 0) {
-return;
-}
+        return false;
+    }
 
     if (
         !Array.isArray(answerData) &&
-        (!answerData || answerData.trim() === '')
+        (answerData === null ||
+            answerData === undefined ||
+            String(answerData).trim() === '')
     ) {
         toast.warning('Isi jawaban terlebih dahulu!');
 
-        return;
+        return false;
     }
 
-    const answerText = Array.isArray(answerData)
-        ? JSON.stringify(answerData)
-        : answerData;
     isSubmitting.value[contentId] = true;
 
-    router.post(
-        route('siswa.answers.store', props.phase.id),
-        {
-            content_id: contentId,
-            answer_text: answerText,
-        },
-        {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => {
-                toast.success('Jawaban terkirim!', {
-                    id: `save-answer-${contentId}`,
-                    icon: '🚀',
-                });
+    try {
+        const response = await axios.post(
+            route('siswa.answers.store', props.phase.id),
+            {
+                content_id: contentId,
+                answer_text: Array.isArray(answerData)
+                    ? JSON.stringify(answerData)
+                    : answerData,
+            },
+            { headers: { Accept: 'application/json' } },
+        );
 
-                // Hapus feedback lama dari layar
-                if (props.aiFeedbacks) {
-props.aiFeedbacks[contentId] = '';
-}
+        const status = response.data.ai_status as AiStatus;
+        const answerVersion = Number(response.data.answer_version ?? 1);
+        aiFeedbacks.value[contentId] = '';
+        aiStatuses.value[contentId] = {
+            status,
+            answer_version: answerVersion,
+        };
 
-                // Mulai Auto-Polling jika fase ini mengaktifkan fitur AI
-                if (props.phase.is_ai_enabled) {
-                    startPollingAI(contentId);
-                }
-            },
-            onError: (errors: any) => {
-                toast.error(
-                    errors.message || 'Gagal menyimpan jawaban. Silakan coba lagi.',
-                    { id: `error-answer-${contentId}` }
-                );
-            },
-            onFinish: () => {
-                isSubmitting.value[contentId] = false;
-            },
-        },
+        if (status === 'queued') {
+            trackAiEvaluation(contentId, answerVersion);
+        } else {
+            stopTrackingAiEvaluation(contentId);
+        }
+
+        toast.success('Jawaban tersimpan!', {
+            id: `save-answer-${contentId}`,
+        });
+
+        return true;
+    } catch (error) {
+        toast.error(
+            getRequestErrorMessage(
+                error,
+                'Gagal menyimpan jawaban. Silakan coba lagi.',
+            ),
+            { id: `error-answer-${contentId}` },
+        );
+
+        return false;
+    } finally {
+        isSubmitting.value[contentId] = false;
+    }
+};
+
+const saveAnswer = async (contentId: number): Promise<boolean> => {
+    const activeSave = inFlightAnswerSaves.get(contentId);
+
+    if (activeSave) {
+        resaveRequested.add(contentId);
+
+        return activeSave;
+    }
+
+    const operation = performAnswerSave(contentId);
+    inFlightAnswerSaves.set(contentId, operation);
+
+    try {
+        return await operation;
+    } finally {
+        inFlightAnswerSaves.delete(contentId);
+
+        if (resaveRequested.delete(contentId)) {
+            scheduleAnswerSave(contentId, 0);
+        }
+    }
+};
+
+const scheduleAnswerSave = (contentId: number, delay = 750) => {
+    const existingTimer = answerSaveTimers.get(contentId);
+
+    if (existingTimer) {
+        clearTimeout(existingTimer);
+    }
+
+    answerSaveTimers.set(
+        contentId,
+        setTimeout(() => {
+            answerSaveTimers.delete(contentId);
+            void saveAnswer(contentId);
+        }, delay),
     );
 };
 
-const uploadFile = (contentId: number, event: Event) => {
+const flushPendingAnswerSaves = async () => {
+    const results: boolean[] = [];
+
+    // A save that was edited while in flight may schedule one final save.
+    // Loop a few times so phase completion never races that last debounce.
+    for (let pass = 0; pass < 3; pass += 1) {
+        const scheduledContentIds = Array.from(answerSaveTimers.keys());
+
+        scheduledContentIds.forEach((contentId) => {
+            const timer = answerSaveTimers.get(contentId);
+
+            if (timer) {
+                clearTimeout(timer);
+            }
+
+            answerSaveTimers.delete(contentId);
+        });
+
+        const scheduledSaves = scheduledContentIds.map((contentId) =>
+            saveAnswer(contentId),
+        );
+        const activeSaves = Array.from(inFlightAnswerSaves.values());
+
+        if (scheduledSaves.length === 0 && activeSaves.length === 0) {
+            break;
+        }
+
+        results.push(
+            ...(await Promise.all([...scheduledSaves, ...activeSaves])),
+        );
+    }
+
+    return results.every(Boolean);
+};
+
+const uploadFile = async (contentId: number, event: Event) => {
     const target = event.target as HTMLInputElement;
     const file = target.files?.[0];
 
     if (!file) {
-return;
-}
+        return;
+    }
 
     isSubmitting.value[contentId] = true;
     const formData = new FormData();
     formData.append('content_id', contentId.toString());
     formData.append('answer_file', file);
 
-    router.post(route('siswa.answers.store', props.phase.id), formData, {
-        forceFormData: true,
-        preserveScroll: true,
-        onSuccess: () => {
-            toast.success('File/Foto berhasil diunggah!', { icon: '✅' });
-            answers.value[contentId] = 'uploaded';
-        },
-        onError: () => {
-            toast.error(
+    try {
+        const response = await axios.post(
+            route('siswa.answers.store', props.phase.id),
+            formData,
+            { headers: { Accept: 'application/json' } },
+        );
+
+        answers.value[contentId] = response.data.answer_data;
+        toast.success('File/Foto berhasil diunggah!');
+    } catch (error) {
+        toast.error(
+            getRequestErrorMessage(
+                error,
                 'Gagal mengunggah file. Pastikan ukurannya di bawah 10MB.',
-            );
-        },
-        onFinish: () => {
-            isSubmitting.value[contentId] = false;
-            target.value = '';
-        },
-    });
+            ),
+        );
+    } finally {
+        isSubmitting.value[contentId] = false;
+        target.value = '';
+    }
 };
 
 const renderMarkdown = (text: string) => {
     if (!text) {
-return '';
-}
+        return '';
+    }
 
     return marked.parse(text);
 };
@@ -247,13 +310,30 @@ const handleFinish = () => {
     }
 };
 
-const executeFinish = () => {
+const executeFinish = async () => {
+    const pendingSavesCompleted = await flushPendingAnswerSaves();
+
+    if (!pendingSavesCompleted) {
+        toast.error(
+            'Masih ada jawaban yang belum berhasil disimpan. Silakan coba lagi.',
+        );
+
+        return;
+    }
+
     isConfirmFinishModalOpen.value = false;
-    router.post(route('siswa.phases.complete', { classroom: props.classroom.id, phase: props.phase.id }), {}, {
-        onSuccess: () => {
-            toast.success('Fase pembelajaran selesai!', { icon: '✅' });
-        }
-    });
+    router.post(
+        route('siswa.phases.complete', {
+            classroom: props.classroom.id,
+            phase: props.phase.id,
+        }),
+        {},
+        {
+            onSuccess: () => {
+                toast.success('Fase pembelajaran selesai!');
+            },
+        },
+    );
 };
 
 // ==========================================
@@ -270,18 +350,18 @@ const formatTime = (dateString: string) => {
     const diffMins = Math.floor(diffMs / 60000);
 
     if (diffMins < 1) {
-return 'Baru saja';
-}
+        return 'Baru saja';
+    }
 
     if (diffMins < 60) {
-return `${diffMins} menit lalu`;
-}
+        return `${diffMins} menit lalu`;
+    }
 
     const diffHours = Math.floor(diffMins / 60);
 
     if (diffHours < 24) {
-return `${diffHours} jam lalu`;
-}
+        return `${diffHours} jam lalu`;
+    }
 
     const diffDays = Math.floor(diffHours / 24);
 
@@ -300,9 +380,9 @@ const getInitials = (name: string) => {
 const startReply = (contentId: number, discussion: any) => {
     replyingTo.value[contentId] = {
         id: discussion.id,
-        name: discussion.user?.name || 'Anonim'
+        name: discussion.user?.name || 'Anonim',
     };
-    
+
     // Focus the specific input field
     const inputEl = document.getElementById(`disc-input-${contentId}`);
 
@@ -316,13 +396,15 @@ const cancelReply = (contentId: number) => {
 };
 
 const getTruncatedMessage = (contentId: number, discussionId: number) => {
-    const disc = props.discussions?.find(d => d.id === discussionId);
+    const disc = props.discussions?.find((d) => d.id === discussionId);
 
     if (!disc) {
-return '';
-}
+        return '';
+    }
 
-    return disc.message.length > 40 ? disc.message.substring(0, 40) + '...' : disc.message;
+    return disc.message.length > 40
+        ? disc.message.substring(0, 40) + '...'
+        : disc.message;
 };
 
 const postMessage = (contentId: number) => {
@@ -345,35 +427,35 @@ const postMessage = (contentId: number) => {
         payload.parent_id = replyingTo.value[contentId].id;
     }
 
-    router.post(
-        route('siswa.discussions.store', props.phase.id),
-        payload,
-        {
-            preserveScroll: true,
-            onSuccess: () => {
-                newMessage.value[contentId] = '';
-                replyingTo.value[contentId] = null;
-                toast.success('Komentar terkirim!', { icon: '💬' });
-            },
-            onError: () => {
-                toast.error('Gagal mengirim komentar.');
-            },
-            onFinish: () => {
-                isPostingMessage.value[contentId] = false;
-            },
+    router.post(route('siswa.discussions.store', props.phase.id), payload, {
+        preserveScroll: true,
+        onSuccess: () => {
+            newMessage.value[contentId] = '';
+            replyingTo.value[contentId] = null;
+            toast.success('Komentar terkirim!');
         },
-    );
+        onError: () => {
+            toast.error('Gagal mengirim komentar.');
+        },
+        onFinish: () => {
+            isPostingMessage.value[contentId] = false;
+        },
+    });
 };
 
 const refreshDiscussions = () => {
     router.reload({
         only: ['discussions'],
-        preserveScroll: true,
         onSuccess: () => {
-            toast.success('Diskusi diperbarui', { icon: '🔄' });
+            toast.success('Diskusi diperbarui');
         },
     });
 };
+
+onUnmounted(() => {
+    answerSaveTimers.forEach((timer) => clearTimeout(timer));
+    answerSaveTimers.clear();
+});
 </script>
 
 <template>
@@ -417,22 +499,51 @@ const refreshDiscussions = () => {
         </div>
 
         <!-- TOTAL SCORE CARD -->
-        <div v-if="props.isEvaluationSent && props.finalScore !== null" class="mx-auto mb-6 max-w-4xl">
-            <Card class="p-6 border-slate-200 shadow-sm bg-gradient-to-r from-indigo-50 to-emerald-50 overflow-hidden relative">
-                <div class="absolute -right-10 -top-10 opacity-10">
+        <div
+            v-if="props.isEvaluationSent && props.finalScore != null"
+            class="mx-auto mb-6 max-w-4xl"
+        >
+            <Card
+                class="relative overflow-hidden border-slate-200 bg-gradient-to-r from-indigo-50 to-emerald-50 p-6 shadow-sm"
+            >
+                <div class="absolute -top-10 -right-10 opacity-10">
                     <i class="pi pi-verified text-[150px] text-emerald-500"></i>
                 </div>
-                <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div
+                    class="relative z-10 flex flex-col justify-between gap-4 md:flex-row md:items-center"
+                >
                     <div>
-                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-black uppercase tracking-wider mb-2">
+                        <div
+                            class="mb-2 inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-black tracking-wider text-indigo-700 uppercase"
+                        >
                             <i class="pi pi-check-circle"></i> Evaluasi Selesai
                         </div>
-                        <h2 class="text-[20px] font-extrabold text-slate-800">Hasil Penilaian Guru</h2>
-                        <p class="text-[13px] text-slate-600 mt-1">Guru telah memeriksa dan memberikan nilai untuk lembar kerja ini.</p>
+                        <h2 class="text-[20px] font-extrabold text-slate-800">
+                            Hasil Penilaian Guru
+                        </h2>
+                        <p class="mt-1 text-[13px] text-slate-600">
+                            Guru telah memeriksa dan memberikan nilai untuk
+                            lembar kerja ini.
+                        </p>
                     </div>
-                    <div class="flex items-end gap-2 bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100">
-                        <span class="text-[48px] font-black leading-none" :class="props.finalScore >= 75 ? 'text-emerald-500' : (props.finalScore >= 50 ? 'text-amber-500' : 'text-rose-500')">{{ props.finalScore }}</span>
-                        <span class="text-[16px] font-bold text-slate-400 mb-1.5">Poin</span>
+                    <div
+                        class="flex items-end gap-2 rounded-2xl border border-slate-100 bg-white px-5 py-4 shadow-sm"
+                    >
+                        <span
+                            class="text-[48px] leading-none font-black"
+                            :class="
+                                props.finalScore >= 75
+                                    ? 'text-emerald-500'
+                                    : props.finalScore >= 50
+                                      ? 'text-amber-500'
+                                      : 'text-rose-500'
+                            "
+                            >{{ props.finalScore }}</span
+                        >
+                        <span
+                            class="mb-1.5 text-[16px] font-bold text-slate-400"
+                            >Poin</span
+                        >
                     </div>
                 </div>
             </Card>
@@ -442,7 +553,7 @@ const refreshDiscussions = () => {
             <div v-for="content in phase.contents" :key="content.id">
                 <div
                     v-if="content.type === 'text'"
-                    class="prose prose-slate max-w-none rounded-2xl border border-slate-100 bg-white p-6 text-[15px] leading-relaxed text-slate-700 shadow-sm rich-text-content"
+                    class="prose prose-slate rich-text-content max-w-none rounded-2xl border border-slate-100 bg-white p-6 text-[15px] leading-relaxed text-slate-700 shadow-sm"
                     v-html="content.content_data.body"
                 ></div>
 
@@ -463,29 +574,52 @@ const refreshDiscussions = () => {
                 >
                     <div class="mb-3 flex items-center justify-between">
                         <div class="flex items-center gap-2">
-                            <span class="inline-flex h-2 w-2 rounded-full bg-indigo-500"></span>
-                            <span class="text-sm font-bold text-slate-700">Materi Interaktif</span>
+                            <span
+                                class="inline-flex h-2 w-2 rounded-full bg-indigo-500"
+                            ></span>
+                            <span class="text-sm font-bold text-slate-700"
+                                >Materi Interaktif</span
+                            >
                         </div>
                         <a
                             :href="content.content_data.path"
                             target="_blank"
-                            class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition-all hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200"
+                            class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition-all hover:border-indigo-200 hover:bg-slate-50 hover:text-indigo-600"
                         >
                             <i class="pi pi-external-link"></i>
                             <span>Buka di Tab Baru</span>
                         </a>
                     </div>
                     <div
-                        class="w-full rounded-xl bg-slate-900 overflow-hidden"
-                        :class="(content.content_data.path.includes('youtube.com') || content.content_data.path.includes('youtu.be')) ? 'aspect-video relative' : ''"
+                        class="w-full overflow-hidden rounded-xl bg-slate-900"
+                        :class="
+                            content.content_data.path.includes('youtube.com') ||
+                            content.content_data.path.includes('youtu.be')
+                                ? 'relative aspect-video'
+                                : ''
+                        "
                     >
                         <iframe
                             :src="content.content_data.path"
                             class="border-0"
-                            :class="(content.content_data.path.includes('youtube.com') || content.content_data.path.includes('youtu.be')) ? 'absolute top-0 left-0 w-full h-full' : 'w-full'"
-                            :style="(content.content_data.path.includes('youtube.com') || content.content_data.path.includes('youtu.be')) ? '' : 'height: 1000px; width: 125%; transform: scale(0.8); transform-origin: top left; overflow-y: hidden;'"
+                            :class="
+                                content.content_data.path.includes(
+                                    'youtube.com',
+                                ) ||
+                                content.content_data.path.includes('youtu.be')
+                                    ? 'absolute top-0 left-0 h-full w-full'
+                                    : 'w-full'
+                            "
+                            :style="
+                                content.content_data.path.includes(
+                                    'youtube.com',
+                                ) ||
+                                content.content_data.path.includes('youtu.be')
+                                    ? ''
+                                    : 'height: 1000px; width: 125%; transform: scale(0.8); transform-origin: top left; overflow-y: hidden;'
+                            "
                             scrolling="auto"
-                            allowfullscreen="allowfullscreen"
+                            allowfullscreen
                             allow="
                                 geolocation *;
                                 microphone *;
@@ -510,8 +644,12 @@ const refreshDiscussions = () => {
                     <div class="mb-4 flex items-center gap-2">
                         <i class="pi pi-question-circle text-indigo-500"></i>
                         <h4
-                            class="font-bold text-slate-800 rich-text-content"
-                            v-html="content.content_data.question || content.content_data.label || ''"
+                            class="rich-text-content font-bold text-slate-800"
+                            v-html="
+                                content.content_data.question ||
+                                content.content_data.label ||
+                                ''
+                            "
                         ></h4>
                     </div>
                     <div class="space-y-2 pl-6">
@@ -530,31 +668,53 @@ const refreshDiscussions = () => {
                                 :name="'mcq_' + content.id"
                                 :value="option"
                                 v-model="answers[content.id]"
-                                @change="saveAnswer(content.id)"
+                                @change="scheduleAnswerSave(content.id)"
                                 :disabled="props.isLocked"
                                 class="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
                             />
                             <span
-                                class="text-[14px] text-slate-700 rich-text-content"
+                                class="rich-text-content text-[14px] text-slate-700"
                                 v-html="option"
                             ></span>
                         </label>
                     </div>
-                    <div class="mt-3 flex min-h-[20px] items-center justify-between">
+                    <div
+                        class="mt-3 flex min-h-[20px] items-center justify-between"
+                    >
                         <div v-if="props.isEvaluationSent">
-                            <span v-if="props.evaluations && props.evaluations[content.id] === 'tidak_dinilai'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[11px] font-bold border border-slate-200">
-                                <i class="pi pi-ban"></i> Tidak dimasukkan ke dalam penilaian
+                            <span
+                                v-if="
+                                    props.evaluations &&
+                                    props.evaluations[content.id] ===
+                                        'tidak_dinilai'
+                                "
+                                class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500"
+                            >
+                                <i class="pi pi-ban"></i> Tidak dimasukkan ke
+                                dalam penilaian
                             </span>
-                            <span v-else-if="props.correctAnswersList && props.correctAnswersList[content.id] && props.correctAnswersList[content.id].includes(String(answers[content.id]))" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 text-[11px] font-bold border border-emerald-100">
+                            <span
+                                v-else-if="
+                                    props.correctAnswersList &&
+                                    props.correctAnswersList[content.id] &&
+                                    props.correctAnswersList[
+                                        content.id
+                                    ].includes(String(answers[content.id]))
+                                "
+                                class="inline-flex items-center gap-1.5 rounded-md border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-600"
+                            >
                                 <i class="pi pi-check-circle"></i> Status: Benar
                             </span>
-                            <span v-else-if="answers[content.id]" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 text-rose-600 text-[11px] font-bold border border-rose-100">
+                            <span
+                                v-else-if="answers[content.id]"
+                                class="inline-flex items-center gap-1.5 rounded-md border border-rose-100 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600"
+                            >
                                 <i class="pi pi-times-circle"></i> Status: Salah
                             </span>
                         </div>
                         <span
                             v-if="isSubmitting[content.id]"
-                            class="text-[11px] font-bold text-indigo-500 ml-auto"
+                            class="ml-auto text-[11px] font-bold text-indigo-500"
                             ><i class="pi pi-spinner pi-spin mr-1"></i>
                             Menyimpan...</span
                         >
@@ -572,8 +732,12 @@ const refreshDiscussions = () => {
                     <div class="mb-4 flex flex-wrap items-center gap-2">
                         <i class="pi pi-list text-indigo-500"></i>
                         <h4
-                            class="font-bold text-slate-800 rich-text-content"
-                            v-html="content.content_data.question || content.content_data.label || ''"
+                            class="rich-text-content font-bold text-slate-800"
+                            v-html="
+                                content.content_data.question ||
+                                content.content_data.label ||
+                                ''
+                            "
                         ></h4>
                         <span
                             class="rounded bg-amber-100 px-2 py-0.5 text-[9px] font-black tracking-wider text-amber-700 uppercase shadow-sm"
@@ -595,31 +759,63 @@ const refreshDiscussions = () => {
                                 type="checkbox"
                                 :value="option"
                                 v-model="answers[content.id]"
-                                @change="saveAnswer(content.id)"
+                                @change="scheduleAnswerSave(content.id)"
                                 :disabled="props.isLocked"
                                 class="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500"
                             />
                             <span
-                                class="text-[14px] text-slate-700 rich-text-content"
+                                class="rich-text-content text-[14px] text-slate-700"
                                 v-html="option"
                             ></span>
                         </label>
                     </div>
-                    <div class="mt-3 flex min-h-[20px] items-center justify-between">
+                    <div
+                        class="mt-3 flex min-h-[20px] items-center justify-between"
+                    >
                         <div v-if="props.isEvaluationSent">
-                            <span v-if="props.evaluations && props.evaluations[content.id] === 'tidak_dinilai'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[11px] font-bold border border-slate-200">
-                                <i class="pi pi-ban"></i> Tidak dimasukkan ke dalam penilaian
+                            <span
+                                v-if="
+                                    props.evaluations &&
+                                    props.evaluations[content.id] ===
+                                        'tidak_dinilai'
+                                "
+                                class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500"
+                            >
+                                <i class="pi pi-ban"></i> Tidak dimasukkan ke
+                                dalam penilaian
                             </span>
-                            <span v-else-if="props.correctAnswersList && props.correctAnswersList[content.id] && Array.isArray(answers[content.id]) && answers[content.id].length === props.correctAnswersList[content.id].length && props.correctAnswersList[content.id].every((c: any) => answers[content.id].map(String).includes(String(c)))" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 text-[11px] font-bold border border-emerald-100">
+                            <span
+                                v-else-if="
+                                    props.correctAnswersList &&
+                                    props.correctAnswersList[content.id] &&
+                                    Array.isArray(answers[content.id]) &&
+                                    answers[content.id].length ===
+                                        props.correctAnswersList[content.id]
+                                            .length &&
+                                    props.correctAnswersList[content.id].every(
+                                        (c: any) =>
+                                            answers[content.id]
+                                                .map(String)
+                                                .includes(String(c)),
+                                    )
+                                "
+                                class="inline-flex items-center gap-1.5 rounded-md border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-600"
+                            >
                                 <i class="pi pi-check-circle"></i> Status: Benar
                             </span>
-                            <span v-else-if="Array.isArray(answers[content.id]) && answers[content.id].length > 0" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 text-rose-600 text-[11px] font-bold border border-rose-100">
+                            <span
+                                v-else-if="
+                                    Array.isArray(answers[content.id]) &&
+                                    answers[content.id].length > 0
+                                "
+                                class="inline-flex items-center gap-1.5 rounded-md border border-rose-100 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600"
+                            >
                                 <i class="pi pi-times-circle"></i> Status: Salah
                             </span>
                         </div>
                         <span
                             v-if="isSubmitting[content.id]"
-                            class="text-[11px] font-bold text-indigo-500 ml-auto"
+                            class="ml-auto text-[11px] font-bold text-indigo-500"
                             ><i class="pi pi-spinner pi-spin mr-1"></i>
                             Menyimpan...</span
                         >
@@ -638,7 +834,14 @@ const refreshDiscussions = () => {
                         class="mb-3 block flex items-center gap-2 text-[14px] font-extrabold text-slate-800"
                     >
                         <i class="pi pi-pencil text-indigo-500"></i>
-                        <span class="rich-text-content" v-html="content.content_data.question || content.content_data.label || ''"></span>
+                        <span
+                            class="rich-text-content"
+                            v-html="
+                                content.content_data.question ||
+                                content.content_data.label ||
+                                ''
+                            "
+                        ></span>
                     </label>
 
                     <!-- Kotak Input terkunci saat menunggu AI atau terkunci -->
@@ -647,48 +850,72 @@ const refreshDiscussions = () => {
                         v-model="answers[content.id]"
                         placeholder="Ketik jawaban singkat Anda..."
                         class="w-full rounded-xl border border-indigo-200 bg-white p-3.5 text-[14px] text-slate-700 shadow-inner transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-70"
-                        :disabled="
-                            isSubmitting[content.id] ||
-                            isWaitingForAI[content.id] ||
-                            props.isLocked
-                        "
+                        :disabled="isSubmitting[content.id] || props.isLocked"
                     />
 
                     <div
                         class="mt-3 flex min-h-[32px] items-center justify-between gap-3"
                     >
                         <div v-if="props.isEvaluationSent">
-                            <span v-if="props.evaluations && props.evaluations[content.id] === 'tidak_dinilai'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[11px] font-bold border border-slate-200">
-                                <i class="pi pi-ban"></i> Tidak dimasukkan ke dalam penilaian
+                            <span
+                                v-if="
+                                    props.evaluations &&
+                                    props.evaluations[content.id] ===
+                                        'tidak_dinilai'
+                                "
+                                class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500"
+                            >
+                                <i class="pi pi-ban"></i> Tidak dimasukkan ke
+                                dalam penilaian
                             </span>
-                            <span v-else-if="props.evaluations && props.evaluations[content.id] === 'benar'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 text-[11px] font-bold border border-emerald-100">
+                            <span
+                                v-else-if="
+                                    props.evaluations &&
+                                    props.evaluations[content.id] === 'benar'
+                                "
+                                class="inline-flex items-center gap-1.5 rounded-md border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-600"
+                            >
                                 <i class="pi pi-check-circle"></i> Status: Benar
                             </span>
-                            <span v-else-if="props.evaluations && props.evaluations[content.id] === 'setengah_benar'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-600 text-[11px] font-bold border border-amber-100">
-                                <i class="pi pi-minus-circle"></i> Status: Setengah Benar
+                            <span
+                                v-else-if="
+                                    props.evaluations &&
+                                    props.evaluations[content.id] ===
+                                        'setengah_benar'
+                                "
+                                class="inline-flex items-center gap-1.5 rounded-md border border-amber-100 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-600"
+                            >
+                                <i class="pi pi-minus-circle"></i> Status:
+                                Setengah Benar
                             </span>
-                            <span v-else-if="props.evaluations && props.evaluations[content.id] === 'salah'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 text-rose-600 text-[11px] font-bold border border-rose-100">
+                            <span
+                                v-else-if="
+                                    props.evaluations &&
+                                    props.evaluations[content.id] === 'salah'
+                                "
+                                class="inline-flex items-center gap-1.5 rounded-md border border-rose-100 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600"
+                            >
                                 <i class="pi pi-times-circle"></i> Status: Salah
                             </span>
                         </div>
-                        <div class="flex items-center gap-3 ml-auto">
-                        <!-- Tombol disembunyikan saat sedang proses atau terkunci -->
-                        <Button
-                            v-if="!isWaitingForAI[content.id] && !props.isLocked"
-                            @click="saveAnswer(content.id)"
-                            size="sm"
-                            class="h-9 rounded-xl bg-indigo-600 px-5 text-xs font-bold text-white shadow-sm transition-all hover:scale-105 hover:bg-indigo-700 active:scale-95"
-                            :disabled="isSubmitting[content.id]"
-                        >
-                            <i
-                                class="pi pi-send mr-1.5"
-                                :class="{
-                                    'pi-spin pi-spinner':
-                                        isSubmitting[content.id],
-                                }"
-                            ></i>
-                            Kirim Jawaban
-                        </Button>
+                        <div class="ml-auto flex items-center gap-3">
+                            <!-- Tombol disembunyikan saat sedang proses atau terkunci -->
+                            <Button
+                                v-if="!props.isLocked"
+                                @click="saveAnswer(content.id)"
+                                size="sm"
+                                class="h-9 rounded-xl bg-indigo-600 px-5 text-xs font-bold text-white shadow-sm transition-all hover:scale-105 hover:bg-indigo-700 active:scale-95"
+                                :disabled="isSubmitting[content.id]"
+                            >
+                                <i
+                                    class="pi pi-send mr-1.5"
+                                    :class="{
+                                        'pi-spin pi-spinner':
+                                            isSubmitting[content.id],
+                                    }"
+                                ></i>
+                                Kirim Jawaban
+                            </Button>
                         </div>
                     </div>
 
@@ -713,8 +940,8 @@ const refreshDiscussions = () => {
                                     jawabanmu...</span
                                 >
                                 <span class="text-[12px] text-indigo-500"
-                                    >Tunggu sebentar, sedang menyusun
-                                    feedback.</span
+                                    >Jawaban sudah aman. Proses dapat memerlukan
+                                    beberapa menit.</span
                                 >
                             </div>
                         </div>
@@ -722,8 +949,12 @@ const refreshDiscussions = () => {
                         <!-- 2. State Tampil Hasil AI -->
                         <div
                             v-else-if="aiFeedbacks && aiFeedbacks[content.id]"
-                            class="relative animate-in rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-sm duration-300 zoom-in-95 transition-all"
-                            :class="isAIFeedbackExpanded(content.id) ? 'p-6' : 'py-3.5 px-6'"
+                            class="relative animate-in rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-sm transition-all duration-300 zoom-in-95"
+                            :class="
+                                isAIFeedbackExpanded(content.id)
+                                    ? 'p-6'
+                                    : 'px-6 py-3.5'
+                            "
                         >
                             <div
                                 class="absolute -top-3 left-6 flex items-center gap-1.5 rounded-full border border-indigo-200 bg-white px-3 py-1 shadow-sm"
@@ -739,19 +970,63 @@ const refreshDiscussions = () => {
                             <button
                                 type="button"
                                 @click="toggleAIFeedback(content.id)"
-                                class="absolute -top-3 right-6 flex items-center gap-1 rounded-full border border-indigo-200 bg-white px-3 py-1 text-[10px] font-bold text-indigo-600 shadow-sm hover:bg-indigo-50 active:scale-95 transition-all"
+                                class="absolute -top-3 right-6 flex items-center gap-1 rounded-full border border-indigo-200 bg-white px-3 py-1 text-[10px] font-bold text-indigo-600 shadow-sm transition-all hover:bg-indigo-50 active:scale-95"
                             >
                                 <i
                                     class="pi text-[8px]"
-                                    :class="isAIFeedbackExpanded(content.id) ? 'pi-chevron-up' : 'pi-chevron-down'"
+                                    :class="
+                                        isAIFeedbackExpanded(content.id)
+                                            ? 'pi-chevron-up'
+                                            : 'pi-chevron-down'
+                                    "
                                 ></i>
-                                <span>{{ isAIFeedbackExpanded(content.id) ? 'Sembunyikan' : 'Lihat' }}</span>
+                                <span>{{
+                                    isAIFeedbackExpanded(content.id)
+                                        ? 'Sembunyikan'
+                                        : 'Lihat'
+                                }}</span>
                             </button>
                             <div
                                 v-show="isAIFeedbackExpanded(content.id)"
-                                class="prose prose-sm prose-slate mt-3 max-w-none leading-relaxed rich-text-content animate-in fade-in duration-200"
+                                class="prose prose-sm prose-slate rich-text-content mt-3 max-w-none animate-in leading-relaxed duration-200 fade-in"
                                 v-html="renderMarkdown(aiFeedbacks[content.id])"
                             ></div>
+                        </div>
+                        <div
+                            v-else-if="
+                                aiStatuses[content.id] &&
+                                ['queued', 'processing'].includes(
+                                    aiStatuses[content.id].status,
+                                )
+                            "
+                            class="flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4"
+                        >
+                            <div>
+                                <p class="text-[13px] font-bold text-amber-800">
+                                    Jawaban tersimpan dan sedang dalam antrean
+                                    AI.
+                                </p>
+                                <p class="mt-1 text-[11px] text-amber-700">
+                                    Anda boleh melanjutkan belajar dan memeriksa
+                                    hasilnya nanti.
+                                </p>
+                            </div>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                @click="checkAiResult(content.id)"
+                            >
+                                Cek Hasil
+                            </Button>
+                        </div>
+                        <div
+                            v-else-if="
+                                aiStatuses[content.id]?.status === 'failed'
+                            "
+                            class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-[12px] text-rose-700"
+                        >
+                            Evaluasi AI belum berhasil, tetapi jawaban Anda
+                            tetap tersimpan.
                         </div>
                     </div>
                 </div>
@@ -803,30 +1078,58 @@ const refreshDiscussions = () => {
                         v-model="answers[content.id]"
                         variant="student"
                         placeholder="Ketik uraian jawaban Anda di sini..."
-                        :disabled="isSubmitting[content.id] || isWaitingForAI[content.id]"
+                        :disabled="isSubmitting[content.id]"
                     />
 
                     <div
                         class="mt-3 flex min-h-[32px] items-center justify-between gap-3"
                     >
                         <div v-if="props.isEvaluationSent">
-                            <span v-if="props.evaluations && props.evaluations[content.id] === 'tidak_dinilai'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[11px] font-bold border border-slate-200">
-                                <i class="pi pi-ban"></i> Tidak dimasukkan ke dalam penilaian
+                            <span
+                                v-if="
+                                    props.evaluations &&
+                                    props.evaluations[content.id] ===
+                                        'tidak_dinilai'
+                                "
+                                class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500"
+                            >
+                                <i class="pi pi-ban"></i> Tidak dimasukkan ke
+                                dalam penilaian
                             </span>
-                            <span v-else-if="props.evaluations && props.evaluations[content.id] === 'benar'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 text-[11px] font-bold border border-emerald-100">
+                            <span
+                                v-else-if="
+                                    props.evaluations &&
+                                    props.evaluations[content.id] === 'benar'
+                                "
+                                class="inline-flex items-center gap-1.5 rounded-md border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-600"
+                            >
                                 <i class="pi pi-check-circle"></i> Status: Benar
                             </span>
-                            <span v-else-if="props.evaluations && props.evaluations[content.id] === 'setengah_benar'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-600 text-[11px] font-bold border border-amber-100">
-                                <i class="pi pi-minus-circle"></i> Status: Setengah Benar
+                            <span
+                                v-else-if="
+                                    props.evaluations &&
+                                    props.evaluations[content.id] ===
+                                        'setengah_benar'
+                                "
+                                class="inline-flex items-center gap-1.5 rounded-md border border-amber-100 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-600"
+                            >
+                                <i class="pi pi-minus-circle"></i> Status:
+                                Setengah Benar
                             </span>
-                            <span v-else-if="props.evaluations && props.evaluations[content.id] === 'salah'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 text-rose-600 text-[11px] font-bold border border-rose-100">
+                            <span
+                                v-else-if="
+                                    props.evaluations &&
+                                    props.evaluations[content.id] === 'salah'
+                                "
+                                class="inline-flex items-center gap-1.5 rounded-md border border-rose-100 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600"
+                            >
                                 <i class="pi pi-times-circle"></i> Status: Salah
                             </span>
                         </div>
-                        <div class="flex items-center gap-3 ml-auto">
+                        <div class="ml-auto flex items-center gap-3">
                             <!-- Tombol disembunyikan saat sedang proses atau terkunci -->
                             <Button
-                                v-if="!isWaitingForAI[content.id] && !props.isLocked"
+                                v-if="!props.isLocked"
                                 @click="saveAnswer(content.id)"
                                 size="sm"
                                 class="h-9 rounded-xl bg-indigo-600 px-5 text-xs font-bold text-white shadow-sm transition-all hover:scale-105 hover:bg-indigo-700 active:scale-95"
@@ -865,8 +1168,8 @@ const refreshDiscussions = () => {
                                     jawabanmu...</span
                                 >
                                 <span class="text-[12px] text-indigo-500"
-                                    >Tunggu sebentar, sedang menyusun
-                                    feedback.</span
+                                    >Jawaban sudah aman. Proses dapat memerlukan
+                                    beberapa menit.</span
                                 >
                             </div>
                         </div>
@@ -874,8 +1177,12 @@ const refreshDiscussions = () => {
                         <!-- 2. State Tampil Hasil AI -->
                         <div
                             v-else-if="aiFeedbacks && aiFeedbacks[content.id]"
-                            class="relative animate-in rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-sm duration-300 zoom-in-95 transition-all"
-                            :class="isAIFeedbackExpanded(content.id) ? 'p-6' : 'py-3.5 px-6'"
+                            class="relative animate-in rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-sm transition-all duration-300 zoom-in-95"
+                            :class="
+                                isAIFeedbackExpanded(content.id)
+                                    ? 'p-6'
+                                    : 'px-6 py-3.5'
+                            "
                         >
                             <div
                                 class="absolute -top-3 left-6 flex items-center gap-1.5 rounded-full border border-indigo-200 bg-white px-3 py-1 shadow-sm"
@@ -891,19 +1198,63 @@ const refreshDiscussions = () => {
                             <button
                                 type="button"
                                 @click="toggleAIFeedback(content.id)"
-                                class="absolute -top-3 right-6 flex items-center gap-1 rounded-full border border-indigo-200 bg-white px-3 py-1 text-[10px] font-bold text-indigo-600 shadow-sm hover:bg-indigo-50 active:scale-95 transition-all"
+                                class="absolute -top-3 right-6 flex items-center gap-1 rounded-full border border-indigo-200 bg-white px-3 py-1 text-[10px] font-bold text-indigo-600 shadow-sm transition-all hover:bg-indigo-50 active:scale-95"
                             >
                                 <i
                                     class="pi text-[8px]"
-                                    :class="isAIFeedbackExpanded(content.id) ? 'pi-chevron-up' : 'pi-chevron-down'"
+                                    :class="
+                                        isAIFeedbackExpanded(content.id)
+                                            ? 'pi-chevron-up'
+                                            : 'pi-chevron-down'
+                                    "
                                 ></i>
-                                <span>{{ isAIFeedbackExpanded(content.id) ? 'Sembunyikan' : 'Lihat' }}</span>
+                                <span>{{
+                                    isAIFeedbackExpanded(content.id)
+                                        ? 'Sembunyikan'
+                                        : 'Lihat'
+                                }}</span>
                             </button>
                             <div
                                 v-show="isAIFeedbackExpanded(content.id)"
-                                class="prose prose-sm prose-slate mt-3 max-w-none leading-relaxed rich-text-content animate-in fade-in duration-200"
+                                class="prose prose-sm prose-slate rich-text-content mt-3 max-w-none animate-in leading-relaxed duration-200 fade-in"
                                 v-html="renderMarkdown(aiFeedbacks[content.id])"
                             ></div>
+                        </div>
+                        <div
+                            v-else-if="
+                                aiStatuses[content.id] &&
+                                ['queued', 'processing'].includes(
+                                    aiStatuses[content.id].status,
+                                )
+                            "
+                            class="flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4"
+                        >
+                            <div>
+                                <p class="text-[13px] font-bold text-amber-800">
+                                    Jawaban tersimpan dan sedang dalam antrean
+                                    AI.
+                                </p>
+                                <p class="mt-1 text-[11px] text-amber-700">
+                                    Anda boleh melanjutkan belajar dan memeriksa
+                                    hasilnya nanti.
+                                </p>
+                            </div>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                @click="checkAiResult(content.id)"
+                            >
+                                Cek Hasil
+                            </Button>
+                        </div>
+                        <div
+                            v-else-if="
+                                aiStatuses[content.id]?.status === 'failed'
+                            "
+                            class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-[12px] text-rose-700"
+                        >
+                            Evaluasi AI belum berhasil, tetapi jawaban Anda
+                            tetap tersimpan.
                         </div>
                     </div>
                 </div>
@@ -920,7 +1271,14 @@ const refreshDiscussions = () => {
                         class="mb-3 block flex items-center gap-2 text-[14px] font-extrabold text-slate-800"
                     >
                         <i class="pi pi-camera text-pink-500"></i>
-                        <span class="rich-text-content" v-html="content.content_data.question || content.content_data.label || ''"></span>
+                        <span
+                            class="rich-text-content"
+                            v-html="
+                                content.content_data.question ||
+                                content.content_data.label ||
+                                ''
+                            "
+                        ></span>
                     </label>
                     <div
                         v-if="!props.isLocked"
@@ -950,10 +1308,18 @@ const refreshDiscussions = () => {
                         </div>
                     </div>
                     <div
-                        v-if="props.isLocked && !(answers[content.id] === 'uploaded' || (answers[content.id] && answers[content.id].includes('/storage/')))"
+                        v-if="
+                            props.isLocked &&
+                            !(
+                                answers[content.id] === 'uploaded' ||
+                                (answers[content.id] &&
+                                    answers[content.id].includes('/storage/'))
+                            )
+                        "
                         class="mt-2 inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] font-medium text-slate-500"
                     >
-                        <i class="pi pi-info-circle mr-2"></i> Tidak ada file yang diunggah.
+                        <i class="pi pi-info-circle mr-2"></i> Tidak ada file
+                        yang diunggah.
                     </div>
                     <div
                         v-if="isSubmitting[content.id]"
@@ -974,16 +1340,44 @@ const refreshDiscussions = () => {
                         berhasil diunggah dan diamankan.
                     </div>
                     <div v-if="props.isEvaluationSent" class="mt-3">
-                        <span v-if="props.evaluations && props.evaluations[content.id] === 'tidak_dinilai'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[11px] font-bold border border-slate-200">
-                            <i class="pi pi-ban"></i> Tidak dimasukkan ke dalam penilaian
+                        <span
+                            v-if="
+                                props.evaluations &&
+                                props.evaluations[content.id] ===
+                                    'tidak_dinilai'
+                            "
+                            class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500"
+                        >
+                            <i class="pi pi-ban"></i> Tidak dimasukkan ke dalam
+                            penilaian
                         </span>
-                        <span v-else-if="props.evaluations && props.evaluations[content.id] === 'benar'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 text-[11px] font-bold border border-emerald-100">
+                        <span
+                            v-else-if="
+                                props.evaluations &&
+                                props.evaluations[content.id] === 'benar'
+                            "
+                            class="inline-flex items-center gap-1.5 rounded-md border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-600"
+                        >
                             <i class="pi pi-check-circle"></i> Status: Benar
                         </span>
-                        <span v-else-if="props.evaluations && props.evaluations[content.id] === 'setengah_benar'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-600 text-[11px] font-bold border border-amber-100">
-                            <i class="pi pi-minus-circle"></i> Status: Setengah Benar
+                        <span
+                            v-else-if="
+                                props.evaluations &&
+                                props.evaluations[content.id] ===
+                                    'setengah_benar'
+                            "
+                            class="inline-flex items-center gap-1.5 rounded-md border border-amber-100 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-600"
+                        >
+                            <i class="pi pi-minus-circle"></i> Status: Setengah
+                            Benar
                         </span>
-                        <span v-else-if="props.evaluations && props.evaluations[content.id] === 'salah'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 text-rose-600 text-[11px] font-bold border border-rose-100">
+                        <span
+                            v-else-if="
+                                props.evaluations &&
+                                props.evaluations[content.id] === 'salah'
+                            "
+                            class="inline-flex items-center gap-1.5 rounded-md border border-rose-100 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-600"
+                        >
                             <i class="pi pi-times-circle"></i> Status: Salah
                         </span>
                     </div>
@@ -1002,7 +1396,10 @@ const refreshDiscussions = () => {
                             class="flex items-center gap-2 text-[14px] font-extrabold text-slate-800"
                         >
                             <i class="pi pi-comments text-sky-500"></i>
-                            <span class="rich-text-content" v-html="content.content_data.topic"></span>
+                            <span
+                                class="rich-text-content"
+                                v-html="content.content_data.topic"
+                            ></span>
                         </label>
                         <button
                             @click="refreshDiscussions"
@@ -1084,10 +1481,17 @@ const refreshDiscussions = () => {
                                             {{ discussion.message }}
                                         </p>
                                     </div>
-                                    <div class="mt-1 flex items-center gap-3 pl-1">
+                                    <div
+                                        class="mt-1 flex items-center gap-3 pl-1"
+                                    >
                                         <button
-                                            @click="startReply(content.id, discussion)"
-                                            class="text-[11px] font-bold text-slate-400 hover:text-sky-600 transition-colors"
+                                            @click="
+                                                startReply(
+                                                    content.id,
+                                                    discussion,
+                                                )
+                                            "
+                                            class="text-[11px] font-bold text-slate-400 transition-colors hover:text-sky-600"
                                         >
                                             Balas
                                         </button>
@@ -1158,17 +1562,25 @@ const refreshDiscussions = () => {
                     <!-- Info Sedang Membalas -->
                     <div
                         v-if="replyingTo[content.id]"
-                        class="mb-2 flex items-center justify-between rounded-xl bg-sky-50 px-3.5 py-2 text-[12px] text-sky-700 border border-sky-100"
+                        class="mb-2 flex items-center justify-between rounded-xl border border-sky-100 bg-sky-50 px-3.5 py-2 text-[12px] text-sky-700"
                     >
                         <div class="flex items-center gap-1.5">
                             <i class="pi pi-comments text-sky-500"></i>
                             <span>
-                                Membalas <strong>@{{ replyingTo[content.id].name }}</strong>: "{{ getTruncatedMessage(content.id, replyingTo[content.id].id) }}"
+                                Membalas
+                                <strong
+                                    >@{{ replyingTo[content.id]?.name }}</strong
+                                >: "{{
+                                    getTruncatedMessage(
+                                        content.id,
+                                        replyingTo[content.id]?.id ?? 0,
+                                    )
+                                }}"
                             </span>
                         </div>
                         <button
                             @click="cancelReply(content.id)"
-                            class="text-[11px] font-extrabold text-sky-600 hover:text-sky-800 transition-colors uppercase tracking-wider"
+                            class="text-[11px] font-extrabold tracking-wider text-sky-600 uppercase transition-colors hover:text-sky-800"
                         >
                             Batal
                         </button>
@@ -1206,25 +1618,39 @@ const refreshDiscussions = () => {
             <div class="flex justify-end pt-4">
                 <Button
                     @click="handleFinish"
-                    class="h-11 rounded-xl bg-blue-500 px-8 font-bold text-white shadow-md hover:bg-blue-600"
+                    :class="[
+                        'h-11 rounded-xl px-8 font-bold text-white shadow-md',
+                        props.isLocked
+                            ? 'bg-slate-500 hover:bg-slate-600'
+                            : 'bg-blue-500 hover:bg-blue-600',
+                    ]"
                 >
-                    Selesai <i class="pi pi-check-circle ml-2"></i>
+                    {{ props.isLocked ? 'Sudah Diselesaikan' : 'Selesai' }}
+                    <i
+                        class="pi ml-2"
+                        :class="props.isLocked ? 'pi-lock' : 'pi-check-circle'"
+                    ></i>
                 </Button>
             </div>
         </div>
     </div>
-    <FloatingChatbot v-if="phase.is_chatbot_enabled" :topicTitle="topic.title" :phaseId="phase.id" />
+    <FloatingChatbot
+        v-if="phase.is_chatbot_enabled"
+        :classroomId="classroom.id"
+        :topicTitle="topic.title"
+        :phaseId="phase.id"
+    />
 
     <Teleport to="body">
         <div
             v-if="isConfirmFinishModalOpen"
-            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 dark:bg-black/60 px-4 backdrop-blur-[6px] transition-all"
+            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 px-4 backdrop-blur-[6px] transition-all dark:bg-black/60"
         >
             <div
-                class="w-full max-w-[400px] animate-in overflow-hidden rounded-3xl bg-white dark:bg-slate-950 border border-slate-100/80 dark:border-slate-800/50 shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-6 text-center duration-200 zoom-in-95 fade-in"
+                class="w-full max-w-[400px] animate-in overflow-hidden rounded-3xl border border-slate-100/80 bg-white p-6 text-center shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] duration-200 zoom-in-95 fade-in dark:border-slate-800/50 dark:bg-slate-950 dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
             >
                 <div
-                    class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400 shadow-inner"
+                    class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full border border-amber-100 bg-amber-50 text-amber-600 shadow-inner dark:border-amber-900/30 dark:bg-amber-950/30 dark:text-amber-400"
                 >
                     <i class="pi pi-exclamation-triangle text-2xl"></i>
                 </div>
@@ -1236,7 +1662,8 @@ const refreshDiscussions = () => {
                 <p
                     class="mt-2 text-[14px] leading-relaxed font-medium text-slate-500 dark:text-slate-400"
                 >
-                    Apakah Anda yakin ingin menyelesaikan fase ini? Setelah diselesaikan, jawaban Anda tidak dapat diubah lagi.
+                    Apakah Anda yakin ingin menyelesaikan fase ini? Setelah
+                    diselesaikan, jawaban Anda tidak dapat diubah lagi.
                 </p>
                 <div
                     class="mt-8 flex flex-col-reverse justify-center gap-3 sm:flex-row"
@@ -1245,14 +1672,14 @@ const refreshDiscussions = () => {
                         type="button"
                         variant="outline"
                         @click="isConfirmFinishModalOpen = false"
-                        class="h-11 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 px-6 font-bold text-slate-600 dark:text-slate-300 text-[13px] w-full sm:w-auto"
+                        class="h-11 w-full rounded-xl border border-slate-200 px-6 text-[13px] font-bold text-slate-600 hover:bg-slate-50 sm:w-auto dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900"
                     >
                         Batalkan
                     </Button>
                     <Button
                         type="button"
                         @click="executeFinish"
-                        class="h-11 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 px-6 font-bold text-white shadow-md shadow-blue-100 dark:shadow-none text-[13px] w-full sm:w-auto"
+                        class="h-11 w-full rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-6 text-[13px] font-bold text-white shadow-md shadow-blue-100 hover:from-blue-600 hover:to-indigo-700 sm:w-auto dark:shadow-none"
                     >
                         Ya, Selesaikan
                     </Button>
@@ -1332,7 +1759,7 @@ const refreshDiscussions = () => {
     list-style-type: none !important;
 }
 .rich-text-content ol > li::before {
-    content: counter(list-0, decimal) ". ";
+    content: counter(list-0, decimal) '. ';
     position: absolute;
     left: -1.5rem;
     width: 1.25rem;
@@ -1345,7 +1772,7 @@ const refreshDiscussions = () => {
     padding-left: 1.5rem !important;
 }
 .rich-text-content ol > li.ql-indent-1::before {
-    content: counter(list-1, lower-alpha) ". ";
+    content: counter(list-1, lower-alpha) '. ';
     left: 0rem;
 }
 .rich-text-content ol > li.ql-indent-1 {
@@ -1358,7 +1785,7 @@ const refreshDiscussions = () => {
     padding-left: 3rem !important;
 }
 .rich-text-content ol > li.ql-indent-2::before {
-    content: counter(list-2, lower-roman) ". ";
+    content: counter(list-2, lower-roman) '. ';
     left: 1.5rem;
 }
 .rich-text-content ol > li.ql-indent-2 {
@@ -1371,7 +1798,7 @@ const refreshDiscussions = () => {
     padding-left: 4.5rem !important;
 }
 .rich-text-content ol > li.ql-indent-3::before {
-    content: counter(list-3, decimal) ". ";
+    content: counter(list-3, decimal) '. ';
     left: 3rem;
 }
 
@@ -1387,7 +1814,7 @@ const refreshDiscussions = () => {
     list-style-type: none !important;
 }
 .rich-text-content ul > li::before {
-    content: "•";
+    content: '•';
     position: absolute;
     left: -1.25rem;
 }
@@ -1397,7 +1824,7 @@ const refreshDiscussions = () => {
     padding-left: 1.5rem !important;
 }
 .rich-text-content ul > li.ql-indent-1::before {
-    content: "○";
+    content: '○';
     left: 0.25rem;
 }
 
@@ -1406,7 +1833,7 @@ const refreshDiscussions = () => {
     padding-left: 3rem !important;
 }
 .rich-text-content ul > li.ql-indent-2::before {
-    content: "▪";
+    content: '▪';
     left: 1.75rem;
 }
 

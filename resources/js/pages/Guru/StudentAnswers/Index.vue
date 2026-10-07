@@ -95,7 +95,7 @@ const formatAnswer = (answer: string | null, type: string): string => {
             if (Array.isArray(arr)) {
                 return arr.join(', ');
             }
-        } catch (e) {
+        } catch {
             // fallback
         }
     }
@@ -458,13 +458,19 @@ const stripHtml = (html: string | null | undefined): string => {
                                                             answer.answer_data,
                                                         )
                                                     "
-                                                    :src="answer.answer_data"
+                                                    :src="
+                                                        answer.answer_data ||
+                                                        undefined
+                                                    "
                                                     class="max-h-48 rounded-lg object-contain"
                                                     alt="Upload siswa"
                                                 />
                                                 <a
                                                     v-else
-                                                    :href="answer.answer_data"
+                                                    :href="
+                                                        answer.answer_data ||
+                                                        undefined
+                                                    "
                                                     target="_blank"
                                                     class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-[12px] font-bold text-indigo-600 transition-colors hover:bg-indigo-100"
                                                 >

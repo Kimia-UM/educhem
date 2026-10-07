@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
-use App\Models\Classroom;
 use App\Models\AiChatLog;
+use App\Models\Classroom;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class AiChatLogController extends Controller
 {
@@ -28,21 +28,22 @@ class AiChatLogController extends Controller
             },
             'students' => function ($query) {
                 $query->orderBy('name', 'asc');
-            }
+            },
         ]);
 
         // Ambil ID siswa yang terdaftar di kelas ini
         $studentIds = $classroom->students()->pluck('users.id');
 
         // Query log chat dari siswa-siswa tersebut
-        $query = AiChatLog::whereIn('user_id', $studentIds)
+        $query = AiChatLog::where('classroom_id', $classroom->id)
+            ->whereIn('user_id', $studentIds)
             ->with('user:id,name')
             ->latest();
 
         // Cari berdasarkan nama siswa jika ada query pencarian
         if ($request->filled('search')) {
             $query->whereHas('user', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%');
+                $q->where('name', 'like', '%'.$request->search.'%');
             });
         }
 
@@ -71,14 +72,15 @@ class AiChatLogController extends Controller
         $studentIds = $classroom->students()->pluck('users.id');
 
         // Query SEMUA log chat dari siswa-siswa tersebut (tanpa paginasi untuk dicetak)
-        $query = AiChatLog::whereIn('user_id', $studentIds)
+        $query = AiChatLog::where('classroom_id', $classroom->id)
+            ->whereIn('user_id', $studentIds)
             ->with('user:id,name')
             ->latest();
 
         // Cari berdasarkan nama siswa jika ada query pencarian
         if ($request->filled('search')) {
             $query->whereHas('user', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%');
+                $q->where('name', 'like', '%'.$request->search.'%');
             });
         }
 
@@ -90,6 +92,6 @@ class AiChatLogController extends Controller
             'search' => $request->query('search'),
         ]);
 
-        return $pdf->stream('chat-logs-' . $classroom->class_name . '.pdf');
+        return $pdf->stream('chat-logs-'.$classroom->class_name.'.pdf');
     }
 }

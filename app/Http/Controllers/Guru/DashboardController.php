@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
 use App\Models\Classroom;
+use App\Models\StudentAnswer;
+use App\Models\User;
 use App\Services\ClassroomService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,7 +24,7 @@ class DashboardController extends Controller
         // LOGIKA PENENTU HALAMAN
         if ($request->routeIs('guru.classes.index')) {
             return Inertia::render('Guru/Classes/Index', [
-                'classes' => $classes
+                'classes' => $classes,
             ]);
         }
 
@@ -62,7 +64,7 @@ class DashboardController extends Controller
     {
         $validated = $request->validate([
             'class_name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000'
+            'description' => 'nullable|string|max:1000',
         ]);
 
         $this->classroomService->createClass($validated, $request->user()->id);
@@ -74,7 +76,7 @@ class DashboardController extends Controller
     {
         $validated = $request->validate([
             'class_name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000'
+            'description' => 'nullable|string|max:1000',
         ]);
 
         // 1. Cari kelas berdasarkan ID
@@ -107,7 +109,6 @@ class DashboardController extends Controller
         return back()->with('success');
     }
 
-
     public function show(Request $request, string $id)
     {
         // 1. Ambil detail kelas dengan pengecekan kepemilikan
@@ -120,7 +121,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function kickStudent(Request $request, Classroom $classroom, \App\Models\User $student)
+    public function kickStudent(Request $request, Classroom $classroom, User $student)
     {
         if ($classroom->teacher_id !== $request->user()->id) {
             abort(403, 'Akses ditolak.');
@@ -129,7 +130,7 @@ class DashboardController extends Controller
         $classroom->students()->detach($student->id);
 
         $phaseIds = $classroom->topics()->with('phases')->get()->flatMap->phases->pluck('id');
-        \App\Models\StudentAnswer::where('user_id', $student->id)
+        StudentAnswer::where('user_id', $student->id)
             ->whereIn('phase_id', $phaseIds)
             ->delete();
 

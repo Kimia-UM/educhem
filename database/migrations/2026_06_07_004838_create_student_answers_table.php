@@ -13,13 +13,13 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('phase_id')->constrained('topic_phases')->cascadeOnDelete();
             $table->foreignId('content_id')->constrained('phase_contents')->cascadeOnDelete();
-            
+
             // Menggunakan longText/JSON untuk menampung teks, array (checkbox), atau path gambar
-            $table->longText('answer_data')->nullable(); 
-            
+            $table->longText('answer_data')->nullable();
+
             // Ini tempat AI memberikan nilai/feedback atas jawaban di atas
-            $table->text('ai_feedback')->nullable(); 
-            
+            $table->text('ai_feedback')->nullable();
+
             $table->timestamps();
 
             // Constraint: Satu siswa hanya boleh punya 1 record jawaban per 1 blok pertanyaan

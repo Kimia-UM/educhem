@@ -5,7 +5,14 @@ import { onUnmounted, ref } from 'vue';
 import TwoFactorRecoveryCodes from '@/components/TwoFactorRecoveryCodes.vue';
 import TwoFactorSetupModal from '@/components/TwoFactorSetupModal.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { useTwoFactorAuth } from '@/composables/useTwoFactorAuth';
 import { disable, enable } from '@/routes/two-factor';
 
@@ -32,7 +39,8 @@ onUnmounted(() => clearTwoFactorAuthData());
         <CardHeader>
             <CardTitle>Two-Factor Authentication</CardTitle>
             <CardDescription>
-                Add additional security to your account using two-factor authentication.
+                Add additional security to your account using two-factor
+                authentication.
             </CardDescription>
         </CardHeader>
 
@@ -41,25 +49,30 @@ onUnmounted(() => clearTwoFactorAuthData());
                 v-if="!twoFactorEnabled"
                 class="flex flex-col items-start justify-start space-y-4"
             >
-                <p class="text-sm text-muted-foreground leading-relaxed">
-                    When you enable two-factor authentication, you will be prompted
-                    for a secure pin during login. This pin can be retrieved from a
-                    TOTP-supported application on your phone.
+                <p class="text-sm leading-relaxed text-muted-foreground">
+                    When you enable two-factor authentication, you will be
+                    prompted for a secure pin during login. This pin can be
+                    retrieved from a TOTP-supported application on your phone.
                 </p>
             </div>
 
-            <div v-else class="flex flex-col items-start justify-start space-y-4">
-                <p class="text-sm text-muted-foreground leading-relaxed">
+            <div
+                v-else
+                class="flex flex-col items-start justify-start space-y-4"
+            >
+                <p class="text-sm leading-relaxed text-muted-foreground">
                     You will be prompted for a secure, random pin during login,
-                    which you can retrieve from the TOTP-supported application on
-                    your phone.
+                    which you can retrieve from the TOTP-supported application
+                    on your phone.
                 </p>
 
                 <TwoFactorRecoveryCodes />
             </div>
         </CardContent>
 
-        <CardFooter class="border-t bg-muted/10 px-6 py-4 flex items-center justify-end">
+        <CardFooter
+            class="flex items-center justify-end border-t bg-muted/10 px-6 py-4"
+        >
             <div v-if="!twoFactorEnabled">
                 <Button v-if="hasSetupData" @click="showSetupModal = true">
                     <ShieldCheck class="mr-2 h-4 w-4" />Continue setup

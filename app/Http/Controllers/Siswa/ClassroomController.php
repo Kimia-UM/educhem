@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Siswa;
 
 use App\Http\Controllers\Controller;
 use App\Models\Classroom;
-use Illuminate\Http\Request;
+use App\Models\StudentAnswer;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ClassroomController extends Controller
@@ -24,7 +25,7 @@ class ClassroomController extends Controller
 
         // Merender komponen Vue di resources/js/pages/Siswa/Classes/Index.vue
         return Inertia::render('Siswa/Classes/Index', [
-            'classrooms' => $classrooms
+            'classrooms' => $classrooms,
         ]);
     }
 
@@ -45,7 +46,7 @@ class ClassroomController extends Controller
         $classroom = Classroom::where('class_code', strtoupper($request->class_code))->first();
 
         // 3. Jika kelas tidak ditemukan
-        if (!$classroom) {
+        if (! $classroom) {
             return back()->withErrors(['class_code' => 'Kelas tidak ditemukan. Periksa kembali kode Anda.']);
         }
 
@@ -66,36 +67,36 @@ class ClassroomController extends Controller
     public function show(Request $request, Classroom $classroom)
     {
         $user = $request->user();
-        
+
         // Pastikan siswa member kelas dan ambil pivot
         $classroomMember = $user->joinedClasses()->where('class_id', $classroom->id)->first();
-        if (!$classroomMember) {
+        if (! $classroomMember) {
             abort(403, 'Akses ditolak.');
         }
-        
+
         $isEvaluationSent = $classroomMember->pivot->is_evaluation_sent ?? false;
 
         // Memuat topik yang sudah dipublish di kelas ini (cek pivot, bukan master)
         $classroom->load(['teacher', 'topics' => function ($query) {
             $query->where('topics.is_published', true)
-                  ->with(['phases' => function($q) {
-                      $q->orderBy('order', 'asc');
-                  }]);
+                ->with(['phases' => function ($q) {
+                    $q->orderBy('order', 'asc');
+                }]);
         }]);
 
         return inertia('Siswa/Classes/Show', [
             'classroom' => $classroom,
-            'isEvaluationSent' => $isEvaluationSent
+            'isEvaluationSent' => $isEvaluationSent,
         ]);
     }
 
     public function evaluationResult(Request $request, Classroom $classroom)
     {
         $user = $request->user();
-        
+
         // Pastikan siswa member kelas
         $classroomMember = $user->joinedClasses()->where('class_id', $classroom->id)->first();
-        if (!$classroomMember) {
+        if (! $classroomMember) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -109,7 +110,7 @@ class ClassroomController extends Controller
         $phaseIds = $topics->flatMap->phases->pluck('id');
 
         // Ambil semua jawaban siswa
-        $answers = \App\Models\StudentAnswer::where('user_id', $user->id)
+        $answers = StudentAnswer::where('user_id', $user->id)
             ->whereIn('phase_id', $phaseIds)
             ->with(['content' => function ($query) {
                 $query->select('id', 'topic_phase_id', 'type', 'content_data', 'correct_answers', 'order');
@@ -124,7 +125,7 @@ class ClassroomController extends Controller
             'classroom' => $classroom->load('teacher'),
             'topics' => $topics,
             'answers' => $answers,
-            'isEvaluationSent' => $isEvaluationSent
+            'isEvaluationSent' => $isEvaluationSent,
         ]);
     }
 }

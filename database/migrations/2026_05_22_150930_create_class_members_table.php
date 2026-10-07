@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('class_members', function (Blueprint $table) {
             $table->id();
-            
+
             $table->foreignId('class_id')->constrained('classes')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            
+
             $table->timestamps();
 
             // Mencegah duplikasi data jika siswa mencoba join kelas yang sama dua kali

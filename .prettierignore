@@ -1,2 +1,13 @@
 resources/js/components/ui/*
+resources/js/components/tiptap-*/**
+resources/js/hooks/**
+resources/js/lib/tiptap-utils.ts
+resources/js/pages/simple.tsx
+resources/js/actions/**
+resources/js/routes/**
+resources/js/wayfinder/**
+resources/js/ziggy.js
 resources/views/mail/*
+.agents/**
+.user_guides/**
+public/**

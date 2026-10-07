@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\PasswordResetRequest;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -29,39 +30,40 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
-        $sidebarClasses = [];
-        $pendingPasswordResetsCount = 0;
-
-        if ($user) {
-            // Eager load class beserta topic dan phase-nya
-            if ($user->hasRole(['SISWA', 'siswa', 'Siswa'])) {
-                $sidebarClasses = $user->joinedClasses()
-                                       ->with([
-                                           'topics' => function ($query) {
-                                               $query->where('topics.is_published', true);
-                                           },
-                                           'topics.phases'
-                                       ])
-                                       ->get();
-            } elseif ($user->hasRole(['GURU', 'guru', 'Guru'])) {
-                $sidebarClasses = $user->taughtClasses()
-                                       ->with('topics.phases')
-                                       ->get();
-            } elseif ($user->hasRole('ADMIN')) {
-                $pendingPasswordResetsCount = \App\Models\PasswordResetRequest::where('status', 'pending')->count();
-            }
-        }
 
         return [
             ...parent::share($request),
-            'auth' => [
+            'auth' => fn () => [
                 'user' => $user ? [
                     ...$user->toArray(),
-                    'roles' => $user->getRoleNames()->map(fn($role) => ['name' => $role])
+                    'roles' => $user->getRoleNames()->map(fn ($role) => ['name' => $role]),
                 ] : null,
             ],
-            'sidebarClasses' => $sidebarClasses,
-            'pendingPasswordResetsCount' => $pendingPasswordResetsCount,
+            'sidebarClasses' => function () use ($user) {
+                if (! $user) {
+                    return [];
+                }
+
+                if ($user->hasRole(['SISWA', 'siswa', 'Siswa'])) {
+                    return $user->joinedClasses()
+                        ->with([
+                            'topics' => fn ($query) => $query->where('topics.is_published', true),
+                            'topics.phases',
+                        ])
+                        ->get();
+                }
+
+                if ($user->hasRole(['GURU', 'guru', 'Guru'])) {
+                    return $user->taughtClasses()
+                        ->with('topics.phases')
+                        ->get();
+                }
+
+                return [];
+            },
+            'pendingPasswordResetsCount' => fn () => $user?->hasRole('ADMIN')
+                ? PasswordResetRequest::where('status', 'pending')->count()
+                : 0,
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),

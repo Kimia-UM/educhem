@@ -16,8 +16,7 @@ return new class extends Migration
 
             $table->foreignId('topic_id')->constrained('topics')->cascadeOnDelete();
 
-            $table->string('type',50); // Contoh: 'multiple_choice', 'true_false', 'short_answer'
-            
+            $table->string('type', 50); // Contoh: 'multiple_choice', 'true_false', 'short_answer'
 
             $table->jsonb('content'); // Menyimpan pertanyaan dan opsi dalam format JSON
             $table->jsonb('answer'); // Menyimpan jawaban yang benar dalam format JSON

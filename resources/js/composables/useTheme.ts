@@ -7,6 +7,7 @@ const theme = ref<Theme>('elegan');
 export function useTheme() {
     onMounted(() => {
         const savedTheme = localStorage.getItem('app-theme') as Theme | null;
+
         if (savedTheme) {
             theme.value = savedTheme;
             document.documentElement.setAttribute('data-theme', savedTheme);

@@ -13,13 +13,13 @@ return new class extends Migration
     {
         Schema::create('class_topic_accesses', function (Blueprint $table) {
             $table->id();
-            
+
             $table->foreignId('class_id')->constrained('classes')->cascadeOnDelete();
             $table->foreignId('topic_id')->constrained('topics')->cascadeOnDelete();
-            
+
             // Status akses topik, default false (ditutup) saat kelas baru dibuat
             $table->boolean('is_open')->default(false);
-            
+
             $table->timestamps();
 
             // Memastikan satu kelas hanya memiliki satu pengaturan akses per topik

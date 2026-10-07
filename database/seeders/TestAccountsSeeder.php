@@ -4,8 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class TestAccountsSeeder extends Seeder
 {
@@ -15,19 +16,19 @@ class TestAccountsSeeder extends Seeder
     public function run(): void
     {
         // Reset cached roles
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Pastikan roles sudah ada (idempotent)
-        $roleGuru  = Role::firstOrCreate(['name' => 'GURU']);
+        $roleGuru = Role::firstOrCreate(['name' => 'GURU']);
         $roleSiswa = Role::firstOrCreate(['name' => 'SISWA']);
 
         // --- 1 akun GURU ---
         $guru = User::firstOrCreate(
             ['email' => 'guru@test.com'],
             [
-                'name'     => 'Guru Kimia',
+                'name' => 'Guru Kimia',
                 'password' => Hash::make('Password123_'),
-                'status'   => true,
+                'status' => true,
             ]
         );
         $guru->syncRoles([$roleGuru]);
@@ -36,9 +37,9 @@ class TestAccountsSeeder extends Seeder
         $siswa1 = User::firstOrCreate(
             ['email' => 'siswa1@test.com'],
             [
-                'name'     => 'Siswa Satu',
+                'name' => 'Siswa Satu',
                 'password' => Hash::make('Password123_'),
-                'status'   => true,
+                'status' => true,
             ]
         );
         $siswa1->syncRoles([$roleSiswa]);
@@ -46,9 +47,9 @@ class TestAccountsSeeder extends Seeder
         $siswa2 = User::firstOrCreate(
             ['email' => 'siswa2@test.com'],
             [
-                'name'     => 'Siswa Dua',
+                'name' => 'Siswa Dua',
                 'password' => Hash::make('Password123_'),
-                'status'   => true,
+                'status' => true,
             ]
         );
         $siswa2->syncRoles([$roleSiswa]);

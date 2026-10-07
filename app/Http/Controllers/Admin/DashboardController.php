@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Services\UserService;
 use Inertia\Inertia;
-use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -20,7 +19,7 @@ class DashboardController extends Controller
         // 2. Mengembalikan response Inertia ke frontend Vue (Dashboard.vue)
         // Pastikan huruf besar/kecil 'Admin/Dashboard' sesuai dengan nama folder/file Anda
         return Inertia::render('Admin/Dashboard', [
-            'stats' => $stats
+            'stats' => $stats,
         ]);
     }
 }

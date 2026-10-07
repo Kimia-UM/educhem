@@ -13,6 +13,7 @@ class TopicService
         return DB::transaction(function () use ($classroom, $data) {
             $topic = Topic::create($data);
             $classroom->topics()->attach($topic->id);
+
             return $topic;
         });
     }
@@ -20,6 +21,7 @@ class TopicService
     public function updateTopic(Topic $topic, array $data)
     {
         $topic->update($data);
+
         return $topic;
     }
 
@@ -37,7 +39,7 @@ class TopicService
 
         abort_unless($access, 404, 'Topik tidak ditemukan di kelas ini.');
 
-        $newValue = !$topic->is_published;
+        $newValue = ! $topic->is_published;
 
         $topic->update([
             'is_published' => $newValue,

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Sparkles } from 'lucide-vue-next';
 import { ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Spinner } from '@/components/ui/spinner';
-import { Sparkles } from 'lucide-vue-next';
 
 defineOptions({
     layout: {
@@ -49,13 +49,31 @@ const submit = () => {
             <div
                 class="border border-gray-100 bg-white px-6 py-8 shadow-sm sm:rounded-xl sm:px-10"
             >
-                <div class="mb-7 text-center flex flex-col items-center">
-                    <Link :href="route('home')" class="hover:opacity-85 transition-opacity duration-200">
-                        <img src="/assets/images/Logo_only.png" alt="EduChem Logo" class="w-20 h-20 mb-4 object-contain cursor-pointer" />
+                <div class="mb-7 flex flex-col items-center text-center">
+                    <Link
+                        :href="route('home')"
+                        class="transition-opacity duration-200 hover:opacity-85"
+                    >
+                        <img
+                            src="/assets/images/Logo_only.png"
+                            alt="EduChem Logo"
+                            class="mb-4 h-20 w-20 cursor-pointer object-contain"
+                        />
                     </Link>
-                    <div class="mb-3 text-lg font-extrabold tracking-tight select-none flex items-center justify-center">
-                        <span class="bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 bg-clip-text text-transparent">Educhem_</span><span class="text-yellow-500">Gen</span><span class="bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 bg-clip-text text-transparent">AI</span>
-                        <Sparkles class="inline-block w-5 h-5 text-yellow-400 animate-pulse ml-1 align-middle relative -top-0.5" />
+                    <div
+                        class="mb-3 flex items-center justify-center text-lg font-extrabold tracking-tight select-none"
+                    >
+                        <span
+                            class="bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 bg-clip-text text-transparent"
+                            >Educhem_</span
+                        ><span class="text-yellow-500">Gen</span
+                        ><span
+                            class="bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 bg-clip-text text-transparent"
+                            >AI</span
+                        >
+                        <Sparkles
+                            class="relative -top-0.5 ml-1 inline-block h-5 w-5 animate-pulse align-middle text-yellow-400"
+                        />
                     </div>
                     <h1
                         class="mb-2 text-[28px] font-bold tracking-tight text-gray-900"

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Classroom extends Model
 {
     use HasFactory;
-    
+
     // Memastikan model ini terhubung ke tabel 'classes' sesuai PRD
     protected $table = 'classes';
 
@@ -36,8 +36,8 @@ class Classroom extends Model
     public function students(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'class_members', 'class_id', 'user_id')
-                    ->withPivot('is_evaluation_sent', 'is_evaluation_finished', 'pre_test_score', 'post_test_score')
-                    ->withTimestamps();
+            ->withPivot('is_evaluation_sent', 'is_evaluation_finished', 'pre_test_score', 'post_test_score')
+            ->withTimestamps();
     }
 
     /**
@@ -47,7 +47,7 @@ class Classroom extends Model
     public function topics(): BelongsToMany
     {
         return $this->belongsToMany(Topic::class, 'class_topic_accesses', 'class_id', 'topic_id')
-                    ->withPivot('is_open')
-                    ->withTimestamps();
+            ->withPivot('is_open')
+            ->withTimestamps();
     }
 }

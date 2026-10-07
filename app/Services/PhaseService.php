@@ -2,21 +2,23 @@
 
 namespace App\Services;
 
+use App\Models\PhaseContent;
 use App\Models\Topic;
 use App\Models\TopicPhase;
-use App\Models\PhaseContent;
 
 class PhaseService
 {
     public function createPhase(Topic $topic, array $data)
     {
         $data['order'] = $topic->phases()->count() + 1;
+
         return $topic->phases()->create($data);
     }
 
     public function updatePhase(TopicPhase $phase, array $data)
     {
         $phase->update($data);
+
         return $phase;
     }
 
@@ -30,18 +32,20 @@ class PhaseService
     {
         $data['order'] = $phase->contents()->count() + 1;
         // Default content_data jika tidak ada
-        if (!isset($data['content_data'])) {
+        if (! isset($data['content_data'])) {
             $data['content_data'] = [];
         }
-        if (!isset($data['correct_answers'])) {
+        if (! isset($data['correct_answers'])) {
             $data['correct_answers'] = [];
         }
+
         return $phase->contents()->create($data);
     }
 
     public function updateContent(PhaseContent $content, array $data)
     {
         $content->update($data);
+
         return $content;
     }
 
@@ -58,7 +62,7 @@ class PhaseService
         }
 
         $contents = $phase->contents()->orderBy('order', 'asc')->get();
-        $currentIndex = $contents->search(fn($c) => $c->id === $content->id);
+        $currentIndex = $contents->search(fn ($c) => $c->id === $content->id);
 
         if ($currentIndex === false) {
             return false;
@@ -85,7 +89,7 @@ class PhaseService
         }
 
         $phases = $topic->phases()->orderBy('order', 'asc')->get();
-        $currentIndex = $phases->search(fn($p) => $p->id === $phase->id);
+        $currentIndex = $phases->search(fn ($p) => $p->id === $phase->id);
 
         if ($currentIndex === false) {
             return false;

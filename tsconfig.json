@@ -121,5 +121,14 @@
         "resources/js/**/*.d.ts",
         "resources/js/**/*.tsx", 
         "resources/js/**/*.vue"
+    ],
+    "exclude": [
+        "resources/js/actions/**",
+        "resources/js/components/tiptap-*/**",
+        "resources/js/hooks/**",
+        "resources/js/lib/tiptap-utils.ts",
+        "resources/js/pages/simple.tsx",
+        "resources/js/routes/**",
+        "resources/js/wayfinder/**"
     ]
 }

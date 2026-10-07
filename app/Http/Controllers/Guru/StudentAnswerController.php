@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
 use App\Models\Classroom;
+use App\Models\StudentAnswer;
 use App\Models\Topic;
 use App\Models\TopicPhase;
-use App\Models\StudentAnswer;
+use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class StudentAnswerController extends Controller
@@ -46,7 +49,8 @@ class StudentAnswerController extends Controller
             'totalStudents' => $totalStudents,
         ]);
     }
-    public function showStudentAnswers(Classroom $classroom, \App\Models\User $student)
+
+    public function showStudentAnswers(Classroom $classroom, User $student)
     {
         // Pastikan guru yang login adalah pemilik kelas
         if ($classroom->teacher_id !== request()->user()->id) {
@@ -54,7 +58,7 @@ class StudentAnswerController extends Controller
         }
 
         // Pastikan siswa terdaftar di kelas ini
-        if (!$classroom->students()->where('user_id', $student->id)->exists()) {
+        if (! $classroom->students()->where('user_id', $student->id)->exists()) {
             abort(404, 'Siswa tidak terdaftar di kelas ini.');
         }
 
@@ -84,6 +88,21 @@ class StudentAnswerController extends Controller
         $isEvaluationSent = $pivot ? $pivot->is_evaluation_sent : false;
         $isEvaluationFinished = $pivot ? $pivot->is_evaluation_finished : false;
 
+        $phaseSubmissionStatuses = $phaseIds->mapWithKeys(function ($phaseId) use ($answers) {
+            $phaseAnswers = $answers->where('phase_id', $phaseId);
+
+            return [
+                $phaseId => [
+                    'isSubmitted' => $phaseAnswers->contains(
+                        fn (StudentAnswer $answer) => $answer->is_locked,
+                    ),
+                    'hasAnswers' => $phaseAnswers->contains(
+                        fn (StudentAnswer $answer) => filled($answer->answer_data),
+                    ),
+                ],
+            ];
+        });
+
         return Inertia::render('Guru/StudentAnswers/StudentShow', [
             'classroom' => $classroom,
             'student' => $student->only(['id', 'name', 'email']),
@@ -91,6 +110,7 @@ class StudentAnswerController extends Controller
             'answers' => $answers,
             'isEvaluationSent' => $isEvaluationSent,
             'isEvaluationFinished' => $isEvaluationFinished,
+            'phaseSubmissionStatuses' => (object) $phaseSubmissionStatuses->all(),
         ]);
     }
 
@@ -106,7 +126,7 @@ class StudentAnswerController extends Controller
         ]);
 
         // Validasi keamanan: Pastikan guru yang menilai adalah pengajar di kelas jawaban ini
-        $phase = \App\Models\TopicPhase::find($answer->phase_id);
+        $phase = TopicPhase::find($answer->phase_id);
         if ($phase && $phase->topic && $phase->topic->classroom) {
             $classroom = $phase->topic->classroom;
             if ($classroom->teacher_id !== $request->user()->id) {
@@ -130,7 +150,7 @@ class StudentAnswerController extends Controller
     /**
      * Menandai evaluasi siswa selesai (mengunci penilaian).
      */
-    public function finishEvaluation(Request $request, Classroom $classroom, \App\Models\User $student)
+    public function finishEvaluation(Request $request, Classroom $classroom, User $student)
     {
         // Pastikan guru yang login adalah pemilik kelas
         if ($classroom->teacher_id !== $request->user()->id) {
@@ -147,7 +167,7 @@ class StudentAnswerController extends Controller
     /**
      * Membuka kembali kunci evaluasi siswa untuk diedit.
      */
-    public function editEvaluation(Request $request, Classroom $classroom, \App\Models\User $student)
+    public function editEvaluation(Request $request, Classroom $classroom, User $student)
     {
         // Pastikan guru yang login adalah pemilik kelas
         if ($classroom->teacher_id !== $request->user()->id) {
@@ -164,9 +184,71 @@ class StudentAnswerController extends Controller
     }
 
     /**
+     * Membuka kembali submit jawaban siswa untuk satu fase.
+     */
+    public function reopenPhaseSubmission(
+        Request $request,
+        Classroom $classroom,
+        User $student,
+        TopicPhase $phase,
+    ) {
+        if ($classroom->teacher_id !== $request->user()->id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if (! $classroom->students()->where('users.id', $student->id)->exists()) {
+            abort(404, 'Siswa tidak terdaftar di kelas ini.');
+        }
+
+        $phaseBelongsToClass = $classroom->topics()
+            ->where('topics.id', $phase->topic_id)
+            ->exists();
+
+        if (! $phaseBelongsToClass) {
+            abort(404, 'Fase tidak tersedia di kelas ini.');
+        }
+
+        $unlockedAnswers = DB::transaction(function () use ($classroom, $student, $phase) {
+            DB::table('class_members')
+                ->where('class_id', $classroom->id)
+                ->where('user_id', $student->id)
+                ->lockForUpdate()
+                ->first();
+
+            $unlockedAnswers = StudentAnswer::query()
+                ->where('user_id', $student->id)
+                ->where('phase_id', $phase->id)
+                ->where('is_locked', true)
+                ->update(['is_locked' => false]);
+
+            if ($unlockedAnswers > 0) {
+                DB::table('class_members')
+                    ->where('class_id', $classroom->id)
+                    ->where('user_id', $student->id)
+                    ->update([
+                        'is_evaluation_finished' => false,
+                        'is_evaluation_sent' => false,
+                        'updated_at' => now(),
+                    ]);
+            }
+
+            return $unlockedAnswers;
+        });
+
+        if ($unlockedAnswers === 0) {
+            return back()->with('info', 'Jawaban fase ini sudah dapat diedit.');
+        }
+
+        return back()->with(
+            'success',
+            'Submit dibatalkan. Siswa dapat mengedit dan mengumpulkan ulang jawaban fase ini.',
+        );
+    }
+
+    /**
      * Mengirimkan hasil evaluasi ke siswa (update pivot class_members).
      */
-    public function sendEvaluation(Request $request, Classroom $classroom, \App\Models\User $student)
+    public function sendEvaluation(Request $request, Classroom $classroom, User $student)
     {
         // Pastikan guru yang login adalah pemilik kelas
         if ($classroom->teacher_id !== $request->user()->id) {
@@ -184,7 +266,7 @@ class StudentAnswerController extends Controller
     /**
      * Memperbarui nilai Pre-test dan Post-test siswa.
      */
-    public function updateScores(Request $request, Classroom $classroom, \App\Models\User $student)
+    public function updateScores(Request $request, Classroom $classroom, User $student)
     {
         // Pastikan guru yang login adalah pemilik kelas
         if ($classroom->teacher_id !== $request->user()->id) {
@@ -212,32 +294,32 @@ class StudentAnswerController extends Controller
         }
 
         $headers = [
-            "Content-type"        => "text/csv; charset=UTF-8",
-            "Content-Disposition" => "attachment; filename=Rekap_Nilai_" . str_replace(' ', '_', $classroom->class_name) . ".csv",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+            'Content-type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename=Rekap_Nilai_'.str_replace(' ', '_', $classroom->class_name).'.csv',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
         ];
 
-        $callback = function() use ($classroom) {
+        $callback = function () use ($classroom) {
             $file = fopen('php://output', 'w');
-            
+
             // Tambahkan UTF-8 BOM untuk kompatibilitas Excel
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
-            
+
             // Header kolom
             fputcsv($file, ['No', 'Nama Siswa', 'Email', 'Nilai Awal (Pre-test)', 'Nilai Akhir (Post-test)']);
 
             // Ambil semua siswa terdaftar
             $students = $classroom->students()->orderBy('name', 'asc')->get();
-            
+
             foreach ($students as $idx => $student) {
                 fputcsv($file, [
                     $idx + 1,
                     $student->name,
                     $student->email,
                     $student->pivot->pre_test_score ?? '-',
-                    $student->pivot->post_test_score ?? '-'
+                    $student->pivot->post_test_score ?? '-',
                 ]);
             }
 
@@ -250,7 +332,7 @@ class StudentAnswerController extends Controller
     /**
      * Menampilkan halaman cetak hasil evaluasi dan jawaban siswa (PDF/Print).
      */
-    public function printStudentAnswers(Classroom $classroom, \App\Models\User $student)
+    public function printStudentAnswers(Classroom $classroom, User $student)
     {
         // Keamanan: Pastikan guru yang login adalah pemilik kelas
         if ($classroom->teacher_id !== auth()->user()->id) {
@@ -258,7 +340,7 @@ class StudentAnswerController extends Controller
         }
 
         // Pastikan siswa terdaftar
-        if (!$classroom->students()->where('user_id', $student->id)->exists()) {
+        if (! $classroom->students()->where('user_id', $student->id)->exists()) {
             abort(404, 'Siswa tidak ditemukan di kelas ini.');
         }
 
@@ -284,7 +366,7 @@ class StudentAnswerController extends Controller
         // Ambil status evaluasi dari pivot
         $pivot = $classroom->students()->where('user_id', $student->id)->first()?->pivot;
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('print.student-answers', [
+        $pdf = Pdf::loadView('print.student-answers', [
             'classroom' => $classroom,
             'student' => $student,
             'topics' => $topics,
@@ -292,6 +374,6 @@ class StudentAnswerController extends Controller
             'pivot' => $pivot,
         ]);
 
-        return $pdf->stream('evaluasi-' . $student->name . '-' . $classroom->class_name . '.pdf');
+        return $pdf->stream('evaluasi-'.$student->name.'-'.$classroom->class_name.'.pdf');
     }
 }

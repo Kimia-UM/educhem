@@ -10,6 +10,17 @@ class PhaseContent extends Model
 {
     use HasFactory;
 
+    public const AI_EVALUATED_TYPES = ['eval_essay', 'eval_short'];
+
+    public const ANSWERABLE_TYPES = [
+        'eval_mcq',
+        'eval_cmcq',
+        'eval_short',
+        'eval_essay',
+        'input_text',
+        'eval_file',
+    ];
+
     protected $fillable = [
         'topic_phase_id',
         'type',
@@ -29,5 +40,9 @@ class PhaseContent extends Model
     {
         return $this->belongsTo(TopicPhase::class, 'topic_phase_id');
     }
-    
+
+    public function supportsAiEvaluation(): bool
+    {
+        return in_array($this->type, self::AI_EVALUATED_TYPES, true);
+    }
 }

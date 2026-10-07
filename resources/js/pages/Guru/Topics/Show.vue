@@ -2,11 +2,10 @@
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
+import RichTextEditor from '@/components/RichTextEditor.vue';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import RichTextEditor from '@/components/RichTextEditor.vue';
 
 const props = defineProps<{
     classroom: {
@@ -70,7 +69,6 @@ const togglePublish = () => {
                     {
                         description:
                             'Status publikasi topik berhasil diperbarui ke siswa.',
-                        icon: localIsPublished.value ? '🚀' : '🔒',
                     },
                 );
             },
@@ -121,7 +119,6 @@ const submitEdit = () => {
                 toast.error('Gagal Memperbarui Topik', {
                     description:
                         'Mohon periksa kembali isian form Anda. Judul topik wajib diisi.',
-                    icon: '⚠️',
                 });
             },
         },
@@ -190,7 +187,6 @@ const submitCreatePhase = () => {
                 closeCreatePhaseModal();
                 toast.success('Fase Berhasil Dibuat', {
                     description: 'Fase baru telah ditambahkan ke dalam topik.',
-                    icon: '✨',
                 });
             },
         },
@@ -232,6 +228,10 @@ const closeDeletePhaseModal = () => {
     phaseIdToDelete.value = null;
 };
 
+const blurEventTarget = (event: KeyboardEvent) => {
+    (event.target as HTMLInputElement).blur();
+};
+
 const executeDeletePhase = () => {
     if (phaseIdToDelete.value) {
         router.delete(
@@ -259,20 +259,18 @@ const movePhase = (phase: any, direction: 'up' | 'down') => {
             classroom: props.classroom.id,
             topic: props.topic.id,
             phase: phase.id,
-            direction: direction
+            direction: direction,
         }),
         {},
         {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success('Urutan fase berhasil diperbarui', {
-                    icon: '↕️'
-                });
+                toast.success('Urutan fase berhasil diperbarui');
             },
             onError: () => {
                 toast.error('Gagal memperbarui urutan fase');
-            }
-        }
+            },
+        },
     );
 };
 </script>
@@ -477,24 +475,28 @@ const movePhase = (phase: any, direction: 'up' | 'down') => {
                     >
                         <div class="flex flex-1 items-center gap-4">
                             <!-- Arrow Reorder Buttons -->
-                            <div class="flex flex-col gap-1 shrink-0">
+                            <div class="flex shrink-0 flex-col gap-1">
                                 <button
                                     type="button"
                                     @click="movePhase(phase, 'up')"
                                     :disabled="pIdx === 0"
-                                    class="flex h-5 w-5 items-center justify-center rounded bg-slate-50 border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-slate-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                    class="flex h-5 w-5 cursor-pointer items-center justify-center rounded border border-slate-200 bg-slate-50 text-slate-500 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-slate-50"
                                     title="Geser ke Atas"
                                 >
-                                    <i class="pi pi-chevron-up text-[9px] font-bold"></i>
+                                    <i
+                                        class="pi pi-chevron-up text-[9px] font-bold"
+                                    ></i>
                                 </button>
                                 <button
                                     type="button"
                                     @click="movePhase(phase, 'down')"
                                     :disabled="pIdx === topic.phases.length - 1"
-                                    class="flex h-5 w-5 items-center justify-center rounded bg-slate-50 border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-slate-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                    class="flex h-5 w-5 cursor-pointer items-center justify-center rounded border border-slate-200 bg-slate-50 text-slate-500 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-slate-50"
                                     title="Geser ke Bawah"
                                 >
-                                    <i class="pi pi-chevron-down text-[9px] font-bold"></i>
+                                    <i
+                                        class="pi pi-chevron-down text-[9px] font-bold"
+                                    ></i>
                                 </button>
                             </div>
 
@@ -507,7 +509,7 @@ const movePhase = (phase: any, direction: 'up' | 'down') => {
                                 <input
                                     v-model="phase.name"
                                     @blur="updatePhase(phase)"
-                                    @keyup.enter="$event.target.blur()"
+                                    @keyup.enter="blurEventTarget"
                                     class="w-full border-none bg-transparent p-0 text-[16px] font-extrabold text-slate-900 placeholder:text-slate-400 focus:ring-0 focus:outline-none"
                                     placeholder="Ketik Nama Fase... (contoh: Tahap Engage)"
                                 />

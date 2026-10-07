@@ -14,18 +14,18 @@ return new class extends Migration
         Schema::create('LC5E_worksheets', function (Blueprint $table) {
             $table->id();
 
-                $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();    
-                $table->foreignId('topic_id')->constrained('topics')->cascadeOnDelete();    
-            
-                $table->text('predict_text')->nullable();
-                $table->text('observe_text')->nullable();
-                $table->text('explain_text')->nullable();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('topic_id')->constrained('topics')->cascadeOnDelete();
 
-                // Enum : Draft, Submitted
-                $table->enum('status', ['Draft', 'Submitted'])->default('Draft');
-                $table->timestamps();
+            $table->text('predict_text')->nullable();
+            $table->text('observe_text')->nullable();
+            $table->text('explain_text')->nullable();
 
-                $table->unique(['user_id', 'topic_id']);
+            // Enum : Draft, Submitted
+            $table->enum('status', ['Draft', 'Submitted'])->default('Draft');
+            $table->timestamps();
+
+            $table->unique(['user_id', 'topic_id']);
         });
     }
 

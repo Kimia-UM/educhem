@@ -6,7 +6,6 @@ import RichTextEditor from '@/components/RichTextEditor.vue';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 // PASTIKAN FILE INI SUDAH ADA DI FOLDER COMPONENTS
 
 const props = defineProps<{
@@ -54,18 +53,18 @@ const formatTime = (dateString: string) => {
     const diffMins = Math.floor(diffMs / 60000);
 
     if (diffMins < 1) {
-return 'Baru saja';
-}
+        return 'Baru saja';
+    }
 
     if (diffMins < 60) {
-return `${diffMins} menit lalu`;
-}
+        return `${diffMins} menit lalu`;
+    }
 
     const diffHours = Math.floor(diffMins / 60);
 
     if (diffHours < 24) {
-return `${diffHours} jam lalu`;
-}
+        return `${diffHours} jam lalu`;
+    }
 
     const diffDays = Math.floor(diffHours / 24);
 
@@ -84,8 +83,7 @@ const getInitials = (name: string) => {
 const refreshDiscussions = () => {
     router.reload({
         only: ['discussions'],
-        preserveScroll: true,
-        onSuccess: () => toast.success('Diskusi diperbarui', { icon: '🔄' }),
+        onSuccess: () => toast.success('Diskusi diperbarui'),
     });
 };
 
@@ -94,6 +92,8 @@ const refreshDiscussions = () => {
 // ==========================================
 const isTogglingAI = ref(false);
 const localAisEnabled = ref(!!props.phase.is_ai_enabled);
+const localAiPromptSetting = ref(props.phase.ai_prompt_setting ?? '');
+const localChatbotPromptSetting = ref(props.phase.chatbot_prompt_setting ?? '');
 
 watch(
     () => props.phase.is_ai_enabled,
@@ -102,10 +102,24 @@ watch(
     },
 );
 
+watch(
+    () => props.phase.ai_prompt_setting,
+    (newVal) => {
+        localAiPromptSetting.value = newVal ?? '';
+    },
+);
+
+watch(
+    () => props.phase.chatbot_prompt_setting,
+    (newVal) => {
+        localChatbotPromptSetting.value = newVal ?? '';
+    },
+);
+
 const toggleAI = () => {
     if (isTogglingAI.value) {
-return;
-}
+        return;
+    }
 
     isTogglingAI.value = true;
     localAisEnabled.value = !localAisEnabled.value;
@@ -116,8 +130,8 @@ return;
             name: props.phase.name,
             is_ai_enabled: localAisEnabled.value,
             is_chatbot_enabled: localChatbotEnabled.value,
-            ai_prompt_setting: props.phase.ai_prompt_setting,
-            chatbot_prompt_setting: props.phase.chatbot_prompt_setting,
+            ai_prompt_setting: localAiPromptSetting.value,
+            chatbot_prompt_setting: localChatbotPromptSetting.value,
         },
         {
             preserveScroll: true,
@@ -127,7 +141,6 @@ return;
                     localAisEnabled.value
                         ? 'AI Assistant Aktif'
                         : 'AI Assistant Nonaktif',
-                    { icon: '🤖' },
                 ),
             onError: () => {
                 localAisEnabled.value = !localAisEnabled.value;
@@ -150,8 +163,8 @@ watch(
 
 const toggleChatbot = () => {
     if (isTogglingChatbot.value) {
-return;
-}
+        return;
+    }
 
     isTogglingChatbot.value = true;
     localChatbotEnabled.value = !localChatbotEnabled.value;
@@ -162,8 +175,8 @@ return;
             name: props.phase.name,
             is_ai_enabled: localAisEnabled.value,
             is_chatbot_enabled: localChatbotEnabled.value,
-            ai_prompt_setting: props.phase.ai_prompt_setting,
-            chatbot_prompt_setting: props.phase.chatbot_prompt_setting,
+            ai_prompt_setting: localAiPromptSetting.value,
+            chatbot_prompt_setting: localChatbotPromptSetting.value,
         },
         {
             preserveScroll: true,
@@ -173,7 +186,6 @@ return;
                     localChatbotEnabled.value
                         ? 'Chatbot AI Aktif'
                         : 'Chatbot AI Nonaktif',
-                    { icon: '💬' },
                 ),
             onError: () => {
                 localChatbotEnabled.value = !localChatbotEnabled.value;
@@ -191,13 +203,12 @@ const saveAIPrompt = () => {
             name: props.phase.name,
             is_ai_enabled: localAisEnabled.value,
             is_chatbot_enabled: localChatbotEnabled.value,
-            ai_prompt_setting: props.phase.ai_prompt_setting,
-            chatbot_prompt_setting: props.phase.chatbot_prompt_setting,
+            ai_prompt_setting: localAiPromptSetting.value,
+            chatbot_prompt_setting: localChatbotPromptSetting.value,
         },
         {
             preserveScroll: true,
-            onSuccess: () =>
-                toast.success('Instruksi AI Disimpan', { icon: '✨' }),
+            onSuccess: () => toast.success('Instruksi AI Disimpan'),
         },
     );
 };
@@ -221,15 +232,27 @@ watch(
             }
 
             // Inisialisasi struktur JSON sesuai Tipe Komponen
-            if (c.type === 'text' && (c.content_data.body === undefined || c.content_data.body === null)) {
+            if (
+                c.type === 'text' &&
+                (c.content_data.body === undefined ||
+                    c.content_data.body === null)
+            ) {
                 c.content_data.body = '';
             }
 
-            if (c.type === 'image' && (c.content_data.url === undefined || c.content_data.url === null)) {
+            if (
+                c.type === 'image' &&
+                (c.content_data.url === undefined ||
+                    c.content_data.url === null)
+            ) {
                 c.content_data.url = '';
             }
 
-            if (c.type === 'h5p' && (c.content_data.path === undefined || c.content_data.path === null)) {
+            if (
+                c.type === 'h5p' &&
+                (c.content_data.path === undefined ||
+                    c.content_data.path === null)
+            ) {
                 c.content_data.path = '';
             }
 
@@ -240,13 +263,17 @@ watch(
 
             if (
                 ['eval_essay', 'eval_short', 'eval_file'].includes(c.type) &&
-                (c.content_data.question === undefined || c.content_data.question === null)
+                (c.content_data.question === undefined ||
+                    c.content_data.question === null)
             ) {
                 c.content_data.question = c.content_data.label || ''; // Support legacy label
             }
 
             if (['eval_mcq', 'eval_cmcq'].includes(c.type)) {
-                if (c.content_data.question === undefined || c.content_data.question === null) {
+                if (
+                    c.content_data.question === undefined ||
+                    c.content_data.question === null
+                ) {
                     c.content_data.question = c.content_data.label || '';
                 }
 
@@ -258,7 +285,8 @@ watch(
             // Inisialisasi untuk Forum Diskusi
             if (
                 c.type === 'discussion' &&
-                (c.content_data.topic === undefined || c.content_data.topic === null)
+                (c.content_data.topic === undefined ||
+                    c.content_data.topic === null)
             ) {
                 c.content_data.topic = '';
             }
@@ -319,7 +347,7 @@ const saveContent = (content: any) => {
         },
         {
             preserveScroll: true,
-            onSuccess: () => toast.success('Tersimpan', { icon: '💾' }),
+            onSuccess: () => toast.success('Tersimpan'),
         },
     );
 };
@@ -339,19 +367,24 @@ const closeDeleteContentModal = () => {
 
 const executeDeleteContent = () => {
     if (contentIdToDelete.value) {
-        router.delete(route('guru.contents.destroy', { content: contentIdToDelete.value }), {
-            preserveScroll: true,
-            onSuccess: () => {
-                closeDeleteContentModal();
-                toast.success('Blok dihapus.');
+        router.delete(
+            route('guru.contents.destroy', {
+                content: contentIdToDelete.value,
+            }),
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    closeDeleteContentModal();
+                    toast.success('Blok dihapus.');
+                },
+                onError: () => {
+                    closeDeleteContentModal();
+                    toast.error('Gagal Menghapus', {
+                        description: 'Terjadi kesalahan saat menghapus blok.',
+                    });
+                },
             },
-            onError: () => {
-                closeDeleteContentModal();
-                toast.error('Gagal Menghapus', {
-                    description: 'Terjadi kesalahan saat menghapus blok.',
-                });
-            }
-        });
+        );
     }
 };
 
@@ -360,20 +393,18 @@ const moveContent = (content: any, direction: 'up' | 'down') => {
         route('guru.contents.reorder', {
             phase: props.phase.id,
             content: content.id,
-            direction: direction
+            direction: direction,
         }),
         {},
         {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success('Urutan blok berhasil diperbarui', {
-                    icon: '↕️'
-                });
+                toast.success('Urutan blok berhasil diperbarui');
             },
             onError: () => {
                 toast.error('Gagal memperbarui urutan blok');
-            }
-        }
+            },
+        },
     );
 };
 
@@ -384,11 +415,18 @@ const addOption = (content: any) => {
 
 const removeOption = (content: any, index: number) => {
     content.content_data.options.splice(index, 1);
+
     if (content.correct_answers && Array.isArray(content.correct_answers)) {
         content.correct_answers = content.correct_answers
             .map((val: number) => {
-                if (val === index) return null;
-                if (val > index) return val - 1;
+                if (val === index) {
+                    return null;
+                }
+
+                if (val > index) {
+                    return val - 1;
+                }
+
                 return val;
             })
             .filter((val: any) => val !== null);
@@ -399,7 +437,9 @@ const toggleCorrectAnswer = (content: any, index: number) => {
     if (!content.correct_answers) {
         content.correct_answers = [];
     }
+
     const idx = content.correct_answers.indexOf(index);
+
     if (idx > -1) {
         content.correct_answers.splice(idx, 1);
     } else {
@@ -469,12 +509,20 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                                 type="button"
                                 :disabled="isTogglingAI"
                                 @click="toggleAI"
-                                class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ml-2"
-                                :class="localAisEnabled ? 'bg-indigo-500' : 'bg-slate-600'"
+                                class="relative ml-2 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                :class="
+                                    localAisEnabled
+                                        ? 'bg-indigo-500'
+                                        : 'bg-slate-600'
+                                "
                             >
                                 <span
                                     class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200"
-                                    :class="localAisEnabled ? 'translate-x-6' : 'translate-x-1'"
+                                    :class="
+                                        localAisEnabled
+                                            ? 'translate-x-6'
+                                            : 'translate-x-1'
+                                    "
                                 />
                             </button>
                         </div>
@@ -496,12 +544,20 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                                 type="button"
                                 :disabled="isTogglingChatbot"
                                 @click="toggleChatbot"
-                                class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ml-2"
-                                :class="localChatbotEnabled ? 'bg-sky-500' : 'bg-slate-600'"
+                                class="relative ml-2 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                :class="
+                                    localChatbotEnabled
+                                        ? 'bg-sky-500'
+                                        : 'bg-slate-600'
+                                "
                             >
                                 <span
                                     class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200"
-                                    :class="localChatbotEnabled ? 'translate-x-6' : 'translate-x-1'"
+                                    :class="
+                                        localChatbotEnabled
+                                            ? 'translate-x-6'
+                                            : 'translate-x-1'
+                                    "
                                 />
                             </button>
                         </div>
@@ -510,7 +566,7 @@ const toggleCorrectAnswer = (content: any, index: number) => {
 
                 <div
                     v-if="localAisEnabled"
-                    class="animate-in border-b border-indigo-50 bg-indigo-50/50 p-4 md:p-8 duration-300 fade-in"
+                    class="animate-in border-b border-indigo-50 bg-indigo-50/50 p-4 duration-300 fade-in md:p-8"
                 >
                     <label
                         class="mb-2 flex items-center gap-2 text-[12px] font-black tracking-widest text-indigo-600 uppercase"
@@ -527,7 +583,7 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                         >
                     </p>
                     <textarea
-                        v-model="phase.ai_prompt_setting"
+                        v-model="localAiPromptSetting"
                         @blur="saveAIPrompt"
                         placeholder="Ketik instruksi evaluator AI di sini..."
                         class="min-h-[100px] w-full resize-y rounded-xl border border-indigo-200 bg-white p-4 text-[14px] text-slate-700 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
@@ -537,21 +593,25 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                 <!-- Prompt Instruksi Chatbot AI -->
                 <div
                     v-if="localChatbotEnabled"
-                    class="animate-in border-b border-indigo-50 bg-sky-50/20 p-4 md:p-8 duration-300 fade-in"
+                    class="animate-in border-b border-indigo-50 bg-sky-50/20 p-4 duration-300 fade-in md:p-8"
                 >
                     <label
                         class="mb-2 flex items-center gap-2 text-[12px] font-black tracking-widest text-sky-600 uppercase"
                     >
-                        <i class="pi pi-comments"></i> Prompt Instruksi Chatbot AI (Opsional)
+                        <i class="pi pi-comments"></i> Prompt Instruksi Chatbot
+                        AI (Opsional)
                     </label>
                     <p class="mb-4 text-[12px] text-slate-500">
-                        Atur kepribadian, gaya bahasa, atau materi khusus untuk Chatbot AI siswa pada fase ini. Contoh:
+                        Atur kepribadian, gaya bahasa, atau materi khusus untuk
+                        Chatbot AI siswa pada fase ini. Contoh:
                         <i
-                            >"Bantu siswa memahami konsep grafik laju reaksi dengan memberikan contoh analogi kendaraan bermotor, jangan berikan jawaban langsung."</i
+                            >"Bantu siswa memahami konsep grafik laju reaksi
+                            dengan memberikan contoh analogi kendaraan bermotor,
+                            jangan berikan jawaban langsung."</i
                         >
                     </p>
                     <textarea
-                        v-model="phase.chatbot_prompt_setting"
+                        v-model="localChatbotPromptSetting"
                         @blur="saveAIPrompt"
                         placeholder="Ketik instruksi khusus chatbot AI di sini..."
                         class="min-h-[100px] w-full resize-y rounded-xl border border-sky-200 bg-white p-4 text-[14px] text-slate-700 shadow-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
@@ -582,24 +642,30 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                         >
                             <div class="flex items-center gap-3">
                                 <!-- Reorder Buttons for Content -->
-                                <div class="flex flex-col gap-0.5 shrink-0">
+                                <div class="flex shrink-0 flex-col gap-0.5">
                                     <button
                                         type="button"
                                         @click="moveContent(content, 'up')"
                                         :disabled="index === 0"
-                                        class="flex h-4 w-4 items-center justify-center rounded bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                        class="flex h-4 w-4 cursor-pointer items-center justify-center rounded border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-white"
                                         title="Geser ke Atas"
                                     >
-                                        <i class="pi pi-chevron-up text-[7px] font-bold"></i>
+                                        <i
+                                            class="pi pi-chevron-up text-[7px] font-bold"
+                                        ></i>
                                     </button>
                                     <button
                                         type="button"
                                         @click="moveContent(content, 'down')"
-                                        :disabled="index === localContents.length - 1"
-                                        class="flex h-4 w-4 items-center justify-center rounded bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                        :disabled="
+                                            index === localContents.length - 1
+                                        "
+                                        class="flex h-4 w-4 cursor-pointer items-center justify-center rounded border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-white"
                                         title="Geser ke Bawah"
                                     >
-                                        <i class="pi pi-chevron-down text-[7px] font-bold"></i>
+                                        <i
+                                            class="pi pi-chevron-down text-[7px] font-bold"
+                                        ></i>
                                     </button>
                                 </div>
 
@@ -706,13 +772,40 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                                 <div
                                     v-if="content.content_data.path"
                                     class="w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-900"
-                                    :class="(content.content_data.path.includes('youtube.com') || content.content_data.path.includes('youtu.be')) ? 'aspect-video relative' : ''"
+                                    :class="
+                                        content.content_data.path.includes(
+                                            'youtube.com',
+                                        ) ||
+                                        content.content_data.path.includes(
+                                            'youtu.be',
+                                        )
+                                            ? 'relative aspect-video'
+                                            : ''
+                                    "
                                 >
                                     <iframe
                                         :src="content.content_data.path"
                                         class="border-0"
-                                        :class="(content.content_data.path.includes('youtube.com') || content.content_data.path.includes('youtu.be')) ? 'absolute top-0 left-0 w-full h-full' : 'w-full'"
-                                        :style="(content.content_data.path.includes('youtube.com') || content.content_data.path.includes('youtu.be')) ? '' : 'height: 1000px; width: 125%; transform: scale(0.8); transform-origin: top left; overflow-y: hidden;'"
+                                        :class="
+                                            content.content_data.path.includes(
+                                                'youtube.com',
+                                            ) ||
+                                            content.content_data.path.includes(
+                                                'youtu.be',
+                                            )
+                                                ? 'absolute top-0 left-0 h-full w-full'
+                                                : 'w-full'
+                                        "
+                                        :style="
+                                            content.content_data.path.includes(
+                                                'youtube.com',
+                                            ) ||
+                                            content.content_data.path.includes(
+                                                'youtu.be',
+                                            )
+                                                ? ''
+                                                : 'height: 1000px; width: 125%; transform: scale(0.8); transform-origin: top left; overflow-y: hidden;'
+                                        "
                                     ></iframe>
                                 </div>
                             </div>
@@ -738,9 +831,10 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                                 <div
                                     class="rounded-xl border border-slate-200 bg-slate-50 p-5"
                                 >
-                                                      <label
+                                    <label
                                         class="mb-3 block text-[12px] font-bold text-slate-700"
-                                        >Pilihan Jawaban (Tandai Jawaban yang Benar)</label
+                                        >Pilihan Jawaban (Tandai Jawaban yang
+                                        Benar)</label
                                     >
                                     <div class="mb-4 space-y-3">
                                         <div
@@ -749,24 +843,53 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                                             :key="oIdx"
                                             class="flex items-center gap-3"
                                         >
-                                            <div class="flex items-center justify-center">
+                                            <div
+                                                class="flex items-center justify-center"
+                                            >
                                                 <!-- PG Biasa (Radio) -->
                                                 <input
-                                                    v-if="content.type === 'eval_mcq'"
+                                                    v-if="
+                                                        content.type ===
+                                                        'eval_mcq'
+                                                    "
                                                     type="radio"
-                                                    :name="'correct_answer_' + content.id"
-                                                    :checked="content.correct_answers && content.correct_answers.includes(oIdx)"
-                                                    @change="content.correct_answers = [oIdx]"
-                                                    class="h-4 w-4 border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                                    :name="
+                                                        'correct_answer_' +
+                                                        content.id
+                                                    "
+                                                    :checked="
+                                                        content.correct_answers &&
+                                                        content.correct_answers.includes(
+                                                            oIdx,
+                                                        )
+                                                    "
+                                                    @change="
+                                                        content.correct_answers =
+                                                            [oIdx]
+                                                    "
+                                                    class="h-4 w-4 cursor-pointer border-slate-300 text-indigo-600 focus:ring-indigo-500"
                                                     title="Tandai sebagai jawaban benar"
                                                 />
                                                 <!-- PG Kompleks (Checkbox) -->
                                                 <input
-                                                    v-if="content.type === 'eval_cmcq'"
+                                                    v-if="
+                                                        content.type ===
+                                                        'eval_cmcq'
+                                                    "
                                                     type="checkbox"
-                                                    :checked="content.correct_answers && content.correct_answers.includes(oIdx)"
-                                                    @change="toggleCorrectAnswer(content, oIdx)"
-                                                    class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                                    :checked="
+                                                        content.correct_answers &&
+                                                        content.correct_answers.includes(
+                                                            oIdx,
+                                                        )
+                                                    "
+                                                    @change="
+                                                        toggleCorrectAnswer(
+                                                            content,
+                                                            oIdx,
+                                                        )
+                                                    "
+                                                    class="h-4 w-4 cursor-pointer rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                                                     title="Tandai sebagai jawaban benar"
                                                 />
                                             </div>
@@ -775,7 +898,7 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                                                 >{{
                                                     String.fromCharCode(
                                                         65 + oIdx,
-                                                     )
+                                                    )
                                                 }}</span
                                             >
                                             <Input
@@ -892,52 +1015,177 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                                 />
 
                                 <!-- Live Discussion Feed -->
-                                <div class="mt-4 rounded-xl border border-slate-200 bg-white">
-                                    <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                                <div
+                                    class="mt-4 rounded-xl border border-slate-200 bg-white"
+                                >
+                                    <div
+                                        class="flex items-center justify-between border-b border-slate-100 px-4 py-3"
+                                    >
                                         <div class="flex items-center gap-2">
-                                            <i class="pi pi-comments text-sky-500"></i>
-                                            <span class="text-[12px] font-bold text-slate-700">Forum Diskusi Kelas (Live)</span>
-                                            <span v-if="discussions && discussions.length > 0" class="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-black text-sky-600">
-                                                {{ discussions.length }} komentar
+                                            <i
+                                                class="pi pi-comments text-sky-500"
+                                            ></i>
+                                            <span
+                                                class="text-[12px] font-bold text-slate-700"
+                                                >Forum Diskusi Kelas
+                                                (Live)</span
+                                            >
+                                            <span
+                                                v-if="
+                                                    discussions &&
+                                                    discussions.length > 0
+                                                "
+                                                class="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-black text-sky-600"
+                                            >
+                                                {{ discussions.length }}
+                                                komentar
                                             </span>
                                         </div>
-                                        <button @click="refreshDiscussions" class="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-500 transition-colors hover:bg-sky-50 hover:text-sky-600">
-                                            <i class="pi pi-refresh text-[10px]"></i> Refresh
+                                        <button
+                                            @click="refreshDiscussions"
+                                            class="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-500 transition-colors hover:bg-sky-50 hover:text-sky-600"
+                                        >
+                                            <i
+                                                class="pi pi-refresh text-[10px]"
+                                            ></i>
+                                            Refresh
                                         </button>
                                     </div>
 
-                                    <div class="max-h-72 min-h-[120px] overflow-y-auto p-4">
+                                    <div
+                                        class="max-h-72 min-h-[120px] overflow-y-auto p-4"
+                                    >
                                         <!-- Kosong -->
-                                        <div v-if="!discussions || discussions.length === 0" class="flex flex-col items-center justify-center py-8 text-center">
-                                            <i class="pi pi-inbox mb-2 text-2xl text-slate-300"></i>
-                                            <p class="text-[12px] font-bold text-slate-400">Belum ada komentar dari siswa.</p>
-                                            <p class="text-[10px] text-slate-400">Komentar akan muncul di sini setelah siswa berdiskusi.</p>
+                                        <div
+                                            v-if="
+                                                !discussions ||
+                                                discussions.length === 0
+                                            "
+                                            class="flex flex-col items-center justify-center py-8 text-center"
+                                        >
+                                            <i
+                                                class="pi pi-inbox mb-2 text-2xl text-slate-300"
+                                            ></i>
+                                            <p
+                                                class="text-[12px] font-bold text-slate-400"
+                                            >
+                                                Belum ada komentar dari siswa.
+                                            </p>
+                                            <p
+                                                class="text-[10px] text-slate-400"
+                                            >
+                                                Komentar akan muncul di sini
+                                                setelah siswa berdiskusi.
+                                            </p>
                                         </div>
 
                                         <!-- Daftar Komentar -->
                                         <div v-else class="space-y-3">
-                                            <div v-for="discussion in discussions" :key="discussion.id" class="flex gap-2.5">
-                                                <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-400 text-[9px] font-black text-white">
-                                                    {{ discussion.user ? getInitials(discussion.user.name) : '??' }}
+                                            <div
+                                                v-for="discussion in discussions"
+                                                :key="discussion.id"
+                                                class="flex gap-2.5"
+                                            >
+                                                <div
+                                                    class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-400 text-[9px] font-black text-white"
+                                                >
+                                                    {{
+                                                        discussion.user
+                                                            ? getInitials(
+                                                                  discussion
+                                                                      .user
+                                                                      .name,
+                                                              )
+                                                            : '??'
+                                                    }}
                                                 </div>
                                                 <div class="flex-1">
-                                                    <div class="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-                                                        <div class="mb-0.5 flex items-center gap-2">
-                                                            <span class="text-[11px] font-bold text-slate-800">{{ discussion.user?.name || 'Anonim' }}</span>
-                                                            <span class="text-[9px] text-slate-400">{{ formatTime(discussion.created_at) }}</span>
+                                                    <div
+                                                        class="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2"
+                                                    >
+                                                        <div
+                                                            class="mb-0.5 flex items-center gap-2"
+                                                        >
+                                                            <span
+                                                                class="text-[11px] font-bold text-slate-800"
+                                                                >{{
+                                                                    discussion
+                                                                        .user
+                                                                        ?.name ||
+                                                                    'Anonim'
+                                                                }}</span
+                                                            >
+                                                            <span
+                                                                class="text-[9px] text-slate-400"
+                                                                >{{
+                                                                    formatTime(
+                                                                        discussion.created_at,
+                                                                    )
+                                                                }}</span
+                                                            >
                                                         </div>
-                                                        <p class="text-[12px] leading-relaxed text-slate-600">{{ discussion.message }}</p>
+                                                        <p
+                                                            class="text-[12px] leading-relaxed text-slate-600"
+                                                        >
+                                                            {{
+                                                                discussion.message
+                                                            }}
+                                                        </p>
                                                     </div>
                                                     <!-- Replies -->
-                                                    <div v-if="discussion.replies && discussion.replies.length > 0" class="mt-1.5 space-y-1.5 border-l-2 border-sky-100 pl-3">
-                                                        <div v-for="reply in discussion.replies" :key="reply.id" class="flex gap-2">
-                                                            <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-400 text-[7px] font-black text-white">
-                                                                {{ reply.user ? getInitials(reply.user.name) : '??' }}
+                                                    <div
+                                                        v-if="
+                                                            discussion.replies &&
+                                                            discussion.replies
+                                                                .length > 0
+                                                        "
+                                                        class="mt-1.5 space-y-1.5 border-l-2 border-sky-100 pl-3"
+                                                    >
+                                                        <div
+                                                            v-for="reply in discussion.replies"
+                                                            :key="reply.id"
+                                                            class="flex gap-2"
+                                                        >
+                                                            <div
+                                                                class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-400 text-[7px] font-black text-white"
+                                                            >
+                                                                {{
+                                                                    reply.user
+                                                                        ? getInitials(
+                                                                              reply
+                                                                                  .user
+                                                                                  .name,
+                                                                          )
+                                                                        : '??'
+                                                                }}
                                                             </div>
-                                                            <div class="rounded-md bg-white px-2.5 py-1.5">
-                                                                <span class="text-[10px] font-bold text-slate-700">{{ reply.user?.name || 'Anonim' }}</span>
-                                                                <span class="ml-1 text-[8px] text-slate-400">{{ formatTime(reply.created_at) }}</span>
-                                                                <p class="text-[11px] text-slate-600">{{ reply.message }}</p>
+                                                            <div
+                                                                class="rounded-md bg-white px-2.5 py-1.5"
+                                                            >
+                                                                <span
+                                                                    class="text-[10px] font-bold text-slate-700"
+                                                                    >{{
+                                                                        reply
+                                                                            .user
+                                                                            ?.name ||
+                                                                        'Anonim'
+                                                                    }}</span
+                                                                >
+                                                                <span
+                                                                    class="ml-1 text-[8px] text-slate-400"
+                                                                    >{{
+                                                                        formatTime(
+                                                                            reply.created_at,
+                                                                        )
+                                                                    }}</span
+                                                                >
+                                                                <p
+                                                                    class="text-[11px] text-slate-600"
+                                                                >
+                                                                    {{
+                                                                        reply.message
+                                                                    }}
+                                                                </p>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -978,7 +1226,7 @@ const toggleCorrectAnswer = (content: any, index: number) => {
             </div>
 
             <div
-                class="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 md:p-6 text-center shadow-sm"
+                class="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 text-center shadow-sm md:p-6"
             >
                 <h3 class="mb-4 text-[13px] font-bold text-indigo-900">
                     <i class="pi pi-plus-circle mr-1 text-indigo-500"></i>
@@ -1061,17 +1309,15 @@ const toggleCorrectAnswer = (content: any, index: number) => {
     <Teleport to="body">
         <div
             v-if="isDeleteContentModalOpen"
-            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 dark:bg-black/60 px-4 backdrop-blur-[6px] transition-all"
+            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 px-4 backdrop-blur-[6px] transition-all dark:bg-black/60"
         >
             <div
-                class="w-full max-w-[400px] animate-in overflow-hidden rounded-3xl bg-white dark:bg-slate-950 border border-slate-100/80 dark:border-slate-800/50 shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-6 text-center duration-200 zoom-in-95 fade-in"
+                class="w-full max-w-[400px] animate-in overflow-hidden rounded-3xl border border-slate-100/80 bg-white p-6 text-center shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] duration-200 zoom-in-95 fade-in dark:border-slate-800/50 dark:bg-slate-950 dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
             >
                 <div
-                    class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400 shadow-inner"
+                    class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full border border-amber-100 bg-amber-50 text-amber-600 shadow-inner dark:border-amber-900/30 dark:bg-amber-950/30 dark:text-amber-400"
                 >
-                    <i
-                        class="pi pi-exclamation-triangle text-2xl"
-                    ></i>
+                    <i class="pi pi-exclamation-triangle text-2xl"></i>
                 </div>
                 <h3
                     class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100"
@@ -1090,14 +1336,14 @@ const toggleCorrectAnswer = (content: any, index: number) => {
                         type="button"
                         variant="outline"
                         @click="closeDeleteContentModal"
-                        class="h-11 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 px-6 font-bold text-slate-600 dark:text-slate-300 text-[13px] w-full sm:w-auto"
+                        class="h-11 w-full rounded-xl border border-slate-200 px-6 text-[13px] font-bold text-slate-600 hover:bg-slate-50 sm:w-auto dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900"
                     >
                         Batalkan
                     </Button>
                     <Button
                         type="button"
                         @click="executeDeleteContent"
-                        class="h-11 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 px-6 font-bold text-white shadow-md shadow-rose-100 dark:shadow-none text-[13px] w-full sm:w-auto"
+                        class="h-11 w-full rounded-xl bg-gradient-to-r from-rose-500 to-red-600 px-6 text-[13px] font-bold text-white shadow-md shadow-rose-100 hover:from-rose-600 hover:to-red-700 sm:w-auto dark:shadow-none"
                     >
                         Ya, Hapus Blok
                     </Button>

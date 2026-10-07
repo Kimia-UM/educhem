@@ -1,16 +1,22 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { toast } from 'vue-sonner';
 
 const stripHtml = (html: string | null | undefined): string => {
-    if (!html) return '';
-    return html.replace(/<\/?[^>]+(>|$)/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!html) {
+        return '';
+    }
+
+    return html
+        .replace(/<\/?[^>]+(>|$)/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 };
 
-const props = defineProps<{
+defineProps<{
     classrooms: Array<{
         id: number;
         class_name: string;
@@ -47,7 +53,7 @@ const submitJoinClass = () => {
                     position: 'bottom-right',
                 });
             }
-        }
+        },
     });
 };
 </script>
@@ -58,7 +64,9 @@ const submitJoinClass = () => {
     <main
         class="relative flex min-h-screen w-full flex-1 flex-col bg-[#F8FAFC] font-sans"
     >
-        <div class="border-b border-slate-200 bg-white px-4 py-6 md:px-8 md:py-8">
+        <div
+            class="border-b border-slate-200 bg-white px-4 py-6 md:px-8 md:py-8"
+        >
             <div
                 class="mx-auto flex max-w-7xl flex-col justify-between gap-6 md:flex-row md:items-center"
             >

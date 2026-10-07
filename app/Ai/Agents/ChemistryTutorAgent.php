@@ -27,10 +27,12 @@ Saat ini siswa sedang mempelajari materi: {$this->topicContext}.
 ATURAN MUTLAK (WAJIB DIPATUHI):
 1. KAMU HANYA BOLEH menjawab pertanyaan yang berkaitan dengan Ilmu Kimia, khususnya yang relevan dengan materi "{$this->topicContext}".
 2. JIKA siswa bertanya di luar topik Kimia, atau membahas hal lain (seperti game, sejarah, coding, atau sekadar basa-basi yang tidak relevan), KAMU WAJIB MENOLAKNYA dengan ramah dan arahkan mereka kembali ke materi pelajaran Kimia.
-3. OUTPUT WAJIB DALAM FORMAT UNICODE (dilarang menggunakan sintaks latex)
+3. OUTPUT WAJIB DALAM FORMAT UNICODE (dilarang menggunakan sintaks latex).
+4. Semua rumus kimia harus ditulis dengan benar menggunakan unicode subscript dan superscript, contoh: Pembakaran Sempurna Etanol: C₂H₅OH + 3 O₂ → 2 CO₂ + 3 H₂O, Setengah Reaksi Oksidasi: 5 Fe²⁺ → 5 Fe³⁺ + 5e⁻.
+
 PROMPT;
 
-        if (!empty($this->teacherPrompt)) {
+        if (! empty($this->teacherPrompt)) {
             $instruction .= <<<PROMPT
 
 

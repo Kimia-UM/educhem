@@ -1,17 +1,24 @@
 <script setup lang="ts">
-import { h } from 'vue';
 import { Form, Head } from '@inertiajs/vue3';
+import { h } from 'vue';
 import { toast } from 'vue-sonner';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import InputError from '@/components/InputError.vue';
 import type { Props as ManageTwoFactorProps } from '@/components/ManageTwoFactor.vue';
 import ManageTwoFactor from '@/components/ManageTwoFactor.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/security';
 
 type Props = {
@@ -21,7 +28,7 @@ type Props = {
 const props = defineProps<Props>();
 
 defineOptions({
-    layout: (h, page) => {
+    layout: (_h, page) => {
         return h(
             AppLayout,
             {
@@ -32,7 +39,7 @@ defineOptions({
                     },
                 ],
             },
-            () => h(SettingsLayout, null, () => page)
+            () => h(SettingsLayout, null, () => page),
         );
     },
 });
@@ -48,7 +55,8 @@ defineOptions({
             <CardHeader>
                 <CardTitle>Update Password</CardTitle>
                 <CardDescription>
-                    Ensure your account is using a long, random password to stay secure.
+                    Ensure your account is using a long, random password to stay
+                    secure.
                 </CardDescription>
             </CardHeader>
 
@@ -63,7 +71,12 @@ defineOptions({
                     'password_confirmation',
                     'current_password',
                 ]"
-                @success="toast.success('Kata Sandi Diperbarui', { description: 'Kata sandi Anda berhasil diperbarui.', position: 'bottom-right' })"
+                @success="
+                    toast.success('Kata Sandi Diperbarui', {
+                        description: 'Kata sandi Anda berhasil diperbarui.',
+                        position: 'bottom-right',
+                    })
+                "
                 @error="toast.error('Gagal memperbarui kata sandi')"
                 v-slot="{ errors, processing }"
             >
@@ -94,7 +107,9 @@ defineOptions({
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="password_confirmation">Confirm password</Label>
+                        <Label for="password_confirmation"
+                            >Confirm password</Label
+                        >
                         <PasswordInput
                             id="password_confirmation"
                             name="password_confirmation"
@@ -107,7 +122,9 @@ defineOptions({
                     </div>
                 </CardContent>
 
-                <CardFooter class="border-t bg-muted/10 px-6 py-4 flex items-center justify-end">
+                <CardFooter
+                    class="flex items-center justify-end border-t bg-muted/10 px-6 py-4"
+                >
                     <Button
                         :disabled="processing"
                         data-test="update-password-button"

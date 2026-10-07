@@ -2,7 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { Card } from '@/components/ui/card';
 
-const props = defineProps<{
+defineProps<{
     classroom: {
         id: number;
         class_name: string;
@@ -68,13 +68,14 @@ const props = defineProps<{
                     <div
                         v-if="classroom.description"
                         v-html="classroom.description"
-                        class="max-w-2xl text-[14px] leading-relaxed text-blue-100/80 rich-text-content"
+                        class="rich-text-content max-w-2xl text-[14px] leading-relaxed text-blue-100/80"
                     ></div>
                     <p
                         v-else
                         class="max-w-2xl text-[14px] leading-relaxed text-blue-100/80"
                     >
-                        Selamat datang di kelas ini. Mari belajar kimia dengan pendekatan LC5E!
+                        Selamat datang di kelas ini. Mari belajar kimia dengan
+                        pendekatan LC5E!
                     </p>
                 </div>
                 <div
@@ -103,17 +104,25 @@ const props = defineProps<{
             <div class="mx-auto flex w-full max-w-5xl gap-6">
                 <Link
                     :href="route('siswa.classes.show', classroom.id)"
-                    class="relative pb-3 pt-4 text-[14px] font-bold text-indigo-600"
+                    class="relative pt-4 pb-3 text-[14px] font-bold text-indigo-600"
                 >
                     <i class="pi pi-book mr-1.5 text-[12px]"></i> Modul Materi
-                    <div class="absolute bottom-0 left-0 h-0.5 w-full rounded-t-full bg-indigo-600"></div>
+                    <div
+                        class="absolute bottom-0 left-0 h-0.5 w-full rounded-t-full bg-indigo-600"
+                    ></div>
                 </Link>
                 <Link
-                    :href="route('siswa.classes.evaluation-result', classroom.id)"
-                    class="relative pb-3 pt-4 text-[14px] font-bold text-slate-500 transition-colors hover:text-slate-700"
+                    :href="
+                        route('siswa.classes.evaluation-result', classroom.id)
+                    "
+                    class="relative pt-4 pb-3 text-[14px] font-bold text-slate-500 transition-colors hover:text-slate-700"
                 >
-                    <i class="pi pi-chart-line mr-1.5 text-[12px]"></i> Hasil Penilaian
-                    <span v-if="isEvaluationSent" class="ml-2 inline-flex items-center rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                    <i class="pi pi-chart-line mr-1.5 text-[12px]"></i> Hasil
+                    Penilaian
+                    <span
+                        v-if="isEvaluationSent"
+                        class="ml-2 inline-flex items-center rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700"
+                    >
                         Baru
                     </span>
                 </Link>
@@ -152,7 +161,7 @@ const props = defineProps<{
                                 <div
                                     v-if="topic.description"
                                     v-html="topic.description"
-                                    class="mt-1 text-[13px] text-slate-500 rich-text-content"
+                                    class="rich-text-content mt-1 text-[13px] text-slate-500"
                                 ></div>
                                 <p
                                     v-else
@@ -215,7 +224,8 @@ const props = defineProps<{
                             >
                                 <i class="pi pi-info-circle mr-1"></i> Guru
                                 belum menambahkan fase pembelajaran
-                                (Engage/Explore/Explain/Elaborate/Evaluate) ke dalam topik ini.
+                                (Engage/Explore/Explain/Elaborate/Evaluate) ke
+                                dalam topik ini.
                             </div>
                         </div>
                     </Card>

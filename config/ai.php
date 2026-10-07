@@ -38,6 +38,12 @@ return [
         ],
     ],
 
+    'chatbot' => [
+        'direct_slots' => (int) env('AI_CHAT_DIRECT_SLOTS', 4),
+        'direct_timeout' => (int) env('AI_CHAT_DIRECT_TIMEOUT', 12),
+        'queue_timeout' => (int) env('AI_CHAT_QUEUE_TIMEOUT', 60),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | AI Providers

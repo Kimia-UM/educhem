@@ -5,13 +5,7 @@ import { onMounted, onUnmounted, computed } from 'vue';
 // --- IMPORT KOMPONEN SHADCN-VUE ---
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import {
     Table,
@@ -75,7 +69,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-    if (pollInterval) clearInterval(pollInterval);
+    if (pollInterval) {
+        clearInterval(pollInterval);
+    }
 });
 </script>
 
@@ -114,7 +110,8 @@ onUnmounted(() => {
                         <i class="pi pi-shield text-[10px]"></i>
                     </div>
                     <div class="flex flex-col">
-                        <span class="text-[13px] leading-none font-bold text-slate-800"
+                        <span
+                            class="text-[13px] leading-none font-bold text-slate-800"
                             >{{ authUser?.name || 'Admin' }}</span
                         >
                         <span
@@ -152,12 +149,14 @@ onUnmounted(() => {
                         <span
                             class="flex items-center gap-1 rounded bg-indigo-50 px-1.5 py-0.5 font-semibold text-indigo-600"
                         >
-                            <i class="pi pi-user text-[9px]"></i> {{ stats.total_guru }} Guru
+                            <i class="pi pi-user text-[9px]"></i>
+                            {{ stats.total_guru }} Guru
                         </span>
                         <span
                             class="flex items-center gap-1 rounded bg-sky-50 px-1.5 py-0.5 font-semibold text-sky-600"
                         >
-                            <i class="pi pi-id-card text-[9px]"></i> {{ stats.total_siswa }} Siswa
+                            <i class="pi pi-id-card text-[9px]"></i>
+                            {{ stats.total_siswa }} Siswa
                         </span>
                     </div>
                 </CardContent>
@@ -186,7 +185,8 @@ onUnmounted(() => {
                         <span
                             class="flex items-center gap-1 rounded bg-amber-50 px-1.5 py-0.5 font-semibold text-amber-600"
                         >
-                            <i class="pi pi-book text-[9px]"></i> {{ stats.total_topik }} Topik
+                            <i class="pi pi-book text-[9px]"></i>
+                            {{ stats.total_topik }} Topik
                         </span>
                     </div>
                 </CardContent>
@@ -207,7 +207,11 @@ onUnmounted(() => {
                                 AI LC5E Requests
                             </p>
                             <h2 class="text-3xl font-extrabold text-white">
-                                {{ stats.total_ai_requests.toLocaleString('id-ID') }}
+                                {{
+                                    stats.total_ai_requests.toLocaleString(
+                                        'id-ID',
+                                    )
+                                }}
                             </h2>
                         </div>
                         <div
@@ -301,8 +305,8 @@ onUnmounted(() => {
                                             user.role === 'GURU'
                                                 ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
                                                 : user.role === 'ADMIN'
-                                                    ? 'border-rose-200 bg-rose-50 text-rose-700'
-                                                    : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                                  ? 'border-rose-200 bg-rose-50 text-rose-700'
+                                                  : 'border-emerald-200 bg-emerald-50 text-emerald-700'
                                         "
                                         class="px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase"
                                     >
@@ -329,8 +333,16 @@ onUnmounted(() => {
                                     >{{ user.created_at }}</TableCell
                                 >
                             </TableRow>
-                            <TableRow v-if="!stats.recent_users || stats.recent_users.length === 0">
-                                <TableCell colspan="5" class="py-8 text-center text-sm text-slate-400">
+                            <TableRow
+                                v-if="
+                                    !stats.recent_users ||
+                                    stats.recent_users.length === 0
+                                "
+                            >
+                                <TableCell
+                                    colspan="5"
+                                    class="py-8 text-center text-sm text-slate-400"
+                                >
                                     Belum ada pengguna terdaftar.
                                 </TableCell>
                             </TableRow>
@@ -351,7 +363,11 @@ onUnmounted(() => {
                             <div class="flex items-center gap-3">
                                 <div
                                     class="flex h-8 w-8 items-center justify-center rounded-lg"
-                                    :class="stats.system_health.db === 'online' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'"
+                                    :class="
+                                        stats.system_health.db === 'online'
+                                            ? 'bg-emerald-50 text-emerald-600'
+                                            : 'bg-rose-50 text-rose-600'
+                                    "
                                 >
                                     <i class="pi pi-database text-[14px]"></i>
                                 </div>
@@ -362,17 +378,31 @@ onUnmounted(() => {
                             </div>
                             <Badge
                                 variant="outline"
-                                :class="stats.system_health.db === 'online'
-                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                    : 'border-rose-200 bg-rose-50 text-rose-700'"
+                                :class="
+                                    stats.system_health.db === 'online'
+                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                        : 'border-rose-200 bg-rose-50 text-rose-700'
+                                "
                                 class="text-[9px] font-bold tracking-wider uppercase"
-                            >{{ stats.system_health.db === 'online' ? 'Online' : 'Offline' }}</Badge>
+                                >{{
+                                    stats.system_health.db === 'online'
+                                        ? 'Online'
+                                        : 'Offline'
+                                }}</Badge
+                            >
                         </div>
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
                                 <div
                                     class="flex h-8 w-8 items-center justify-center rounded-lg"
-                                    :class="stats.system_health.queue === 'online' ? 'bg-emerald-50 text-emerald-600' : stats.system_health.queue === 'warning' ? 'bg-orange-50 text-orange-600' : 'bg-rose-50 text-rose-600'"
+                                    :class="
+                                        stats.system_health.queue === 'online'
+                                            ? 'bg-emerald-50 text-emerald-600'
+                                            : stats.system_health.queue ===
+                                                'warning'
+                                              ? 'bg-orange-50 text-orange-600'
+                                              : 'bg-rose-50 text-rose-600'
+                                    "
                                 >
                                     <i class="pi pi-bolt text-[14px]"></i>
                                 </div>
@@ -383,13 +413,24 @@ onUnmounted(() => {
                             </div>
                             <Badge
                                 variant="outline"
-                                :class="stats.system_health.queue === 'online'
-                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                    : stats.system_health.queue === 'warning'
-                                        ? 'border-orange-200 bg-orange-50 text-orange-700'
-                                        : 'border-rose-200 bg-rose-50 text-rose-700'"
+                                :class="
+                                    stats.system_health.queue === 'online'
+                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                        : stats.system_health.queue ===
+                                            'warning'
+                                          ? 'border-orange-200 bg-orange-50 text-orange-700'
+                                          : 'border-rose-200 bg-rose-50 text-rose-700'
+                                "
                                 class="text-[9px] font-bold tracking-wider uppercase"
-                            >{{ stats.system_health.queue === 'online' ? 'Online' : stats.system_health.queue === 'warning' ? 'Warning' : 'Offline' }}</Badge>
+                                >{{
+                                    stats.system_health.queue === 'online'
+                                        ? 'Online'
+                                        : stats.system_health.queue ===
+                                            'warning'
+                                          ? 'Warning'
+                                          : 'Offline'
+                                }}</Badge
+                            >
                         </div>
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
@@ -407,11 +448,18 @@ onUnmounted(() => {
                             </div>
                             <Badge
                                 variant="outline"
-                                :class="stats.total_ai_requests > 0
-                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                    : 'border-slate-200 bg-slate-50 text-slate-500'"
+                                :class="
+                                    stats.total_ai_requests > 0
+                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                        : 'border-slate-200 bg-slate-50 text-slate-500'
+                                "
                                 class="text-[9px] font-bold tracking-wider uppercase"
-                            >{{ stats.total_ai_requests > 0 ? 'Connected' : 'No Data' }}</Badge>
+                                >{{
+                                    stats.total_ai_requests > 0
+                                        ? 'Connected'
+                                        : 'No Data'
+                                }}</Badge
+                            >
                         </div>
                     </CardContent>
                 </Card>
@@ -440,8 +488,12 @@ onUnmounted(() => {
                             indicator-class="bg-indigo-500"
                         />
                         <p class="mt-4 text-[12px] font-medium text-slate-400">
-                            {{ (100 - stats.ai_success_rate).toFixed(1) }}% failed dari
-                            {{ stats.total_ai_requests.toLocaleString('id-ID') }} total requests
+                            {{ (100 - stats.ai_success_rate).toFixed(1) }}%
+                            failed dari
+                            {{
+                                stats.total_ai_requests.toLocaleString('id-ID')
+                            }}
+                            total requests
                         </p>
                     </CardContent>
                 </Card>
@@ -481,27 +533,39 @@ onUnmounted(() => {
                                 <Badge
                                     variant="outline"
                                     class="border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-bold tracking-wider text-indigo-700 uppercase"
-                                >{{ cls.code }}</Badge>
+                                    >{{ cls.code }}</Badge
+                                >
                             </div>
                             <div
                                 class="flex gap-4 text-[12px] font-medium text-slate-600"
                             >
                                 <span class="flex items-center gap-1.5">
-                                    <i class="pi pi-users text-[10px] text-emerald-500"></i>
+                                    <i
+                                        class="pi pi-users text-[10px] text-emerald-500"
+                                    ></i>
                                     {{ cls.students }} Siswa
                                 </span>
                                 <span class="flex items-center gap-1.5">
-                                    <i class="pi pi-book text-[10px] text-amber-500"></i>
+                                    <i
+                                        class="pi pi-book text-[10px] text-amber-500"
+                                    ></i>
                                     {{ cls.topics }} Topik
                                 </span>
                             </div>
                         </div>
                         <div
-                            v-if="!stats.active_classes || stats.active_classes.length === 0"
+                            v-if="
+                                !stats.active_classes ||
+                                stats.active_classes.length === 0
+                            "
                             class="col-span-2 flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 p-8 text-center"
                         >
-                            <i class="pi pi-inbox mb-3 text-3xl text-slate-300"></i>
-                            <p class="text-sm font-medium text-slate-400">Belum ada kelas yang dibuat.</p>
+                            <i
+                                class="pi pi-inbox mb-3 text-3xl text-slate-300"
+                            ></i>
+                            <p class="text-sm font-medium text-slate-400">
+                                Belum ada kelas yang dibuat.
+                            </p>
                         </div>
                     </div>
                 </CardContent>

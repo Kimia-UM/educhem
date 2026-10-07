@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Siswa;
 
 use App\Http\Controllers\Controller;
+use App\Models\PhaseContent;
 use App\Models\StudentAnswer;
 use App\Models\TopicPhase;
-use App\Models\PhaseContent;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -19,7 +20,7 @@ class DashboardController extends Controller
 
         // 1. Mengambil HANYA data kelas yang sudah DIIKUTI oleh siswa yang sedang login
         $classrooms = $user->joinedClasses()
-            ->withCount(['topics' => function($query) {
+            ->withCount(['topics' => function ($query) {
                 $query->where('class_topic_accesses.is_open', true);
             }])
             ->orderByPivot('created_at', 'desc')
@@ -37,7 +38,7 @@ class DashboardController extends Controller
         $phaseIds = TopicPhase::whereIn('topic_id', $topicIds)->pluck('id');
 
         // 4. Hitung jumlah total komponen evaluasi (soal)
-        $totalContentsCount = PhaseContent::whereIn('phase_id', $phaseIds)
+        $totalContentsCount = PhaseContent::whereIn('topic_phase_id', $phaseIds)
             ->whereIn('type', ['eval_mcq', 'eval_cmcq', 'eval_short', 'eval_essay', 'eval_file', 'input_text'])
             ->count();
 
@@ -53,15 +54,15 @@ class DashboardController extends Controller
             ->count('phase_id');
 
         // 7. Hitung persentase progress
-        $progressPercent = $totalContentsCount > 0 
-            ? round(($answeredCount / $totalContentsCount) * 100) 
+        $progressPercent = $totalContentsCount > 0
+            ? round(($answeredCount / $totalContentsCount) * 100)
             : 0;
 
         // 8. Hitung rata-rata nilai (heuristik realistis)
-        $rataRataTesNumeric = $answeredCount > 0 
-            ? min(75 + ($completedPhasesCount * 5) + ($answeredCount * 1.5), 98.5) 
+        $rataRataTesNumeric = $answeredCount > 0
+            ? min(75 + ($completedPhasesCount * 5) + ($answeredCount * 1.5), 98.5)
             : 0;
-        
+
         $rataRataTes = $rataRataTesNumeric > 0 ? number_format($rataRataTesNumeric, 1) : '-';
 
         // 8.1. Hitung Subtitles / Trend Indicator sesuai mockup
@@ -70,21 +71,21 @@ class DashboardController extends Controller
             ->where('user_id', $user->id)
             ->where('created_at', '>=', now()->subDays(30))
             ->count();
-        $kelasAktifSub = '+' . max($classrooms->count() > 0 ? 1 : 0, $kelasBulanIni);
+        $kelasAktifSub = '+'.max($classrooms->count() > 0 ? 1 : 0, $kelasBulanIni);
 
         // Progress Rata-rata Subtitle
         $answeredCountLastWeek = StudentAnswer::where('user_id', $user->id)
             ->whereIn('phase_id', $phaseIds)
             ->where('created_at', '<', now()->subDays(7))
             ->count();
-        $progressLastWeek = $totalContentsCount > 0 
-            ? round(($answeredCountLastWeek / $totalContentsCount) * 100) 
+        $progressLastWeek = $totalContentsCount > 0
+            ? round(($answeredCountLastWeek / $totalContentsCount) * 100)
             : 0;
         $progressDiff = $progressPercent - $progressLastWeek;
         if ($progressPercent > 0 && $progressDiff == 0) {
             $progressRataRataSub = '+12%'; // Fallback realistis sesuai tampilan
         } else {
-            $progressRataRataSub = ($progressDiff >= 0 ? '+' : '') . $progressDiff . '%';
+            $progressRataRataSub = ($progressDiff >= 0 ? '+' : '').$progressDiff.'%';
         }
 
         // Modul Selesai Subtitle
@@ -93,7 +94,7 @@ class DashboardController extends Controller
             ->where('is_open', true)
             ->where('created_at', '>=', now()->subDays(30))
             ->count();
-        $modulSelesaiSub = '+' . max($classrooms->count() > 0 ? 2 : 0, $newTopics);
+        $modulSelesaiSub = '+'.max($classrooms->count() > 0 ? 2 : 0, $newTopics);
 
         // Rata-rata Tes Subtitle
         $prevAnsweredCount = StudentAnswer::where('user_id', $user->id)
@@ -105,14 +106,14 @@ class DashboardController extends Controller
             ->where('created_at', '<', now()->subDays(7))
             ->distinct('phase_id')
             ->count('phase_id');
-        $prevRataRataTesNumeric = $prevAnsweredCount > 0 
-            ? min(75 + ($prevCompletedPhasesCount * 5) + ($prevAnsweredCount * 1.5), 98.5) 
+        $prevRataRataTesNumeric = $prevAnsweredCount > 0
+            ? min(75 + ($prevCompletedPhasesCount * 5) + ($prevAnsweredCount * 1.5), 98.5)
             : 0;
         $diffRataRata = $rataRataTesNumeric - $prevRataRataTesNumeric;
         if ($prevRataRataTesNumeric == 0 && $rataRataTesNumeric > 0) {
             $rataRataTesSub = '+5.0'; // Fallback realistis sesuai tampilan
         } else {
-            $rataRataTesSub = ($diffRataRata >= 0 ? '+' : '') . number_format($diffRataRata, 1);
+            $rataRataTesSub = ($diffRataRata >= 0 ? '+' : '').number_format($diffRataRata, 1);
         }
 
         // 9. Ambil riwayat jawaban siswa & penggabungan aktivitas join kelas
@@ -126,10 +127,11 @@ class DashboardController extends Controller
         $recentActivities = $latestAnswers->map(function ($answer) {
             $typeLabel = str_replace('eval_', '', $answer->content->type);
             $typeLabel = $typeLabel === 'mcq' ? 'Pilihan Ganda' : ($typeLabel === 'cmcq' ? 'Pilihan Kompleks' : ($typeLabel === 'essay' ? 'Esai' : ($typeLabel === 'short' ? 'Jawaban Singkat' : ($typeLabel === 'file' ? 'Upload File' : 'Teks'))));
+
             return [
-                'id' => 'answer_' . $answer->id,
-                'title' => 'Mengirim jawaban: ' . $typeLabel,
-                'subject' => $answer->phase->name . ' - ' . $answer->phase->topic->title,
+                'id' => 'answer_'.$answer->id,
+                'title' => 'Mengirim jawaban: '.$typeLabel,
+                'subject' => $answer->phase->name.' - '.$answer->phase->topic->title,
                 'time' => $answer->updated_at->diffForHumans(),
                 'icon' => $answer->content->type === 'eval_file' ? 'pi-camera' : 'pi-check-circle',
                 'color' => $answer->content->type === 'eval_file' ? 'text-pink-500' : 'text-emerald-500',
@@ -145,9 +147,9 @@ class DashboardController extends Controller
             ->get();
 
         foreach ($classMemberships as $membership) {
-            $createdAt = \Carbon\Carbon::parse($membership->created_at);
+            $createdAt = Carbon::parse($membership->created_at);
             $recentActivities[] = [
-                'id' => 'join_' . Str::random(5),
+                'id' => 'join_'.Str::random(5),
                 'title' => 'Bergabung dengan kelas baru',
                 'subject' => $membership->class_name,
                 'time' => $createdAt->diffForHumans(),
@@ -158,7 +160,7 @@ class DashboardController extends Controller
         }
 
         // Urutkan aktivitas berdasarkan waktu (terbaru pertama)
-        usort($recentActivities, function($a, $b) {
+        usort($recentActivities, function ($a, $b) {
             return $b['timestamp'] <=> $a['timestamp'];
         });
 
@@ -167,7 +169,7 @@ class DashboardController extends Controller
 
         // 10. Hitung grafik Jam Belajar berdasarkan data jawaban (Week & Month)
         $days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-        
+
         $chartDataWeek = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i);
@@ -177,7 +179,7 @@ class DashboardController extends Controller
                 ->count();
             $chartDataWeek[] = [
                 'name' => $dayName,
-                'Jam Belajar' => $count > 0 ? 0.5 + ($count * 0.5) : 0
+                'Jam Belajar' => $count > 0 ? 0.5 + ($count * 0.5) : 0,
             ];
         }
 
@@ -190,7 +192,7 @@ class DashboardController extends Controller
                 ->count();
             $chartDataMonth[] = [
                 'name' => $dayLabel,
-                'Jam Belajar' => $count > 0 ? 0.5 + ($count * 0.5) : 0
+                'Jam Belajar' => $count > 0 ? 0.5 + ($count * 0.5) : 0,
             ];
         }
 
@@ -207,22 +209,22 @@ class DashboardController extends Controller
             foreach ($latestFeedbacks as $fb) {
                 $cleanText = strip_tags(preg_replace('/\<[^>]*\>/', '', $fb->ai_feedback));
                 $cleanText = trim(preg_replace('/\s+/', ' ', $cleanText));
-                $aiInsights[] = "Insight Fase " . $fb->phase->name . ": " . Str::limit($cleanText, 120);
+                $aiInsights[] = 'Insight Fase '.$fb->phase->name.': '.Str::limit($cleanText, 120);
             }
         } else {
             $aiInsights = [
-                "Belum ada masukan AI. Selesaikan latihan esai atau jawaban singkat di Worksheet untuk mendapatkan feedback AI!",
-                "Gunakan AI Tutor di pojok kanan bawah untuk bertanya kapan pun kamu bingung tentang konsep Kimia.",
+                'Belum ada masukan AI. Selesaikan latihan esai atau jawaban singkat di Worksheet untuk mendapatkan feedback AI!',
+                'Gunakan AI Tutor di pojok kanan bawah untuk bertanya kapan pun kamu bingung tentang konsep Kimia.',
             ];
         }
 
         // 12. Notifikasi dinamis untuk header bell
         $notifications = [];
         foreach ($classMemberships as $membership) {
-            $createdAt = \Carbon\Carbon::parse($membership->created_at);
+            $createdAt = Carbon::parse($membership->created_at);
             if ($createdAt->gt(now()->subDays(7))) {
                 $notifications[] = [
-                    'text' => 'Anda berhasil bergabung dengan kelas: ' . $membership->class_name,
+                    'text' => 'Anda berhasil bergabung dengan kelas: '.$membership->class_name,
                     'time' => $createdAt->diffForHumans(),
                 ];
             }
@@ -230,7 +232,7 @@ class DashboardController extends Controller
         foreach ($latestFeedbacks as $fb) {
             if ($fb->updated_at->gt(now()->subDays(7))) {
                 $notifications[] = [
-                    'text' => 'Feedback AI baru untuk fase ' . $fb->phase->name . ' (' . $fb->phase->topic->title . ')',
+                    'text' => 'Feedback AI baru untuk fase '.$fb->phase->name.' ('.$fb->phase->topic->title.')',
                     'time' => $fb->updated_at->diffForHumans(),
                 ];
             }
@@ -250,18 +252,18 @@ class DashboardController extends Controller
             ->where('user_id', $user->id)
             ->get(['pre_test_score', 'post_test_score']);
 
-        $preTestScores = $classPivotData->pluck('pre_test_score')->filter(fn($v) => !is_null($v));
-        $postTestScores = $classPivotData->pluck('post_test_score')->filter(fn($v) => !is_null($v));
+        $preTestScores = $classPivotData->pluck('pre_test_score')->filter(fn ($v) => ! is_null($v));
+        $postTestScores = $classPivotData->pluck('post_test_score')->filter(fn ($v) => ! is_null($v));
 
         $avgPreTest = $preTestScores->count() > 0 ? $preTestScores->avg() : null;
-        $nilaiAwalFormatted = !is_null($avgPreTest) ? number_format($avgPreTest, 1) : '-';
+        $nilaiAwalFormatted = ! is_null($avgPreTest) ? number_format($avgPreTest, 1) : '-';
 
         $avgPostTest = $postTestScores->count() > 0 ? $postTestScores->avg() : null;
-        $nilaiAkhirFormatted = !is_null($avgPostTest) ? number_format($avgPostTest, 1) : '-';
+        $nilaiAkhirFormatted = ! is_null($avgPostTest) ? number_format($avgPostTest, 1) : '-';
 
-        if (!is_null($avgPreTest) && !is_null($avgPostTest)) {
+        if (! is_null($avgPreTest) && ! is_null($avgPostTest)) {
             $improvement = $avgPostTest - $avgPreTest;
-            $peningkatanFormatted = ($improvement >= 0 ? '+' : '') . number_format($improvement, 1);
+            $peningkatanFormatted = ($improvement >= 0 ? '+' : '').number_format($improvement, 1);
         } else {
             $peningkatanFormatted = '-';
         }

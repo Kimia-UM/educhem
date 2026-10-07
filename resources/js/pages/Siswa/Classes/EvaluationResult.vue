@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { computed } from 'vue';
-import { Card } from '@/components/ui/card';
-import { marked } from 'marked';
 import katex from 'katex';
+import { marked } from 'marked';
+import { Card } from '@/components/ui/card';
 import 'katex/dist/katex.min.css';
 
 const props = defineProps<{
@@ -25,7 +24,8 @@ const props = defineProps<{
         id: number;
         phase_id: number;
         answer_data: any;
-        evaluation: 'benar' | 'setengah_benar' | 'salah' | null;
+        evaluation:
+            'benar' | 'setengah_benar' | 'salah' | 'tidak_dinilai' | null;
         content: {
             id: number;
             type: string;
@@ -37,14 +37,20 @@ const props = defineProps<{
 }>();
 
 const renderMarkdown = (text: string | null) => {
-    if (!text) return '';
+    if (!text) {
+        return '';
+    }
+
     const mathBlocks: string[] = [];
     let processedText = text.replace(/\$\$(.+?)\$\$/gs, (match, math) => {
         try {
             const rendered = katex.renderToString(math, { displayMode: true });
-            mathBlocks.push(`<div class="my-3 overflow-x-auto">${rendered}</div>`);
+            mathBlocks.push(
+                `<div class="my-3 overflow-x-auto">${rendered}</div>`,
+            );
+
             return `%%MATH_BLOCK_TOKEN_${mathBlocks.length - 1}%%`;
-        } catch (e) {
+        } catch {
             return match;
         }
     });
@@ -52,48 +58,66 @@ const renderMarkdown = (text: string | null) => {
         try {
             const rendered = katex.renderToString(math, { displayMode: false });
             mathBlocks.push(rendered);
+
             return `%%MATH_BLOCK_TOKEN_${mathBlocks.length - 1}%%`;
-        } catch (e) {
+        } catch {
             return match;
         }
     });
     let finalHtml = marked.parse(processedText, { breaks: true }) as string;
     mathBlocks.forEach((renderedMath, index) => {
-        finalHtml = finalHtml.split(`%%MATH_BLOCK_TOKEN_${index}%%`).join(renderedMath);
+        finalHtml = finalHtml
+            .split(`%%MATH_BLOCK_TOKEN_${index}%%`)
+            .join(renderedMath);
     });
+
     return finalHtml;
 };
 
 // Fungsi helper untuk status warna evaluasi
 const getEvaluationColor = (evaluation: string | null) => {
     switch (evaluation) {
-        case 'benar': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-        case 'setengah_benar': return 'bg-amber-100 text-amber-700 border-amber-200';
-        case 'salah': return 'bg-rose-100 text-rose-700 border-rose-200';
-        case 'tidak_dinilai': return 'bg-slate-50 text-slate-400 border-slate-200';
-        default: return 'bg-slate-100 text-slate-700 border-slate-200';
+        case 'benar':
+            return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+        case 'setengah_benar':
+            return 'bg-amber-100 text-amber-700 border-amber-200';
+        case 'salah':
+            return 'bg-rose-100 text-rose-700 border-rose-200';
+        case 'tidak_dinilai':
+            return 'bg-slate-50 text-slate-400 border-slate-200';
+        default:
+            return 'bg-slate-100 text-slate-700 border-slate-200';
     }
 };
 
 const getEvaluationLabel = (evaluation: string | null) => {
     switch (evaluation) {
-        case 'benar': return 'Jawaban Benar';
-        case 'setengah_benar': return 'Kurang Tepat';
-        case 'salah': return 'Jawaban Salah';
-        case 'tidak_dinilai': return 'Tidak Masuk Penilaian';
-        default: return 'Belum Dinilai';
+        case 'benar':
+            return 'Jawaban Benar';
+        case 'setengah_benar':
+            return 'Kurang Tepat';
+        case 'salah':
+            return 'Jawaban Salah';
+        case 'tidak_dinilai':
+            return 'Tidak Masuk Penilaian';
+        default:
+            return 'Belum Dinilai';
     }
 };
 
 // Filter answers per phase
 const getPhaseAnswers = (phaseId: number) => {
-    return props.answers.filter(a => a.phase_id === phaseId);
+    return props.answers.filter((a) => a.phase_id === phaseId);
 };
 
 // Mengecek kebenaran auto-grading untuk PG dan PG Kompleks
 const checkAutoGrade = (answer: any) => {
     const content = answer.content;
-    if (!content) return null;
+
+    if (!content) {
+        return null;
+    }
+
     const correctIndices = content.correct_answers || [];
     const options = content.content_data?.options || [];
     const studentAns = answer.answer_data;
@@ -107,55 +131,85 @@ const checkAutoGrade = (answer: any) => {
         return correctTexts.includes(String(studentAns));
     } else if (content.type === 'eval_cmcq') {
         let studentAnsArray = studentAns;
+
         if (typeof studentAns === 'string') {
-            try { studentAnsArray = JSON.parse(studentAns); } catch(e) { return false; }
+            try {
+                studentAnsArray = JSON.parse(studentAns);
+            } catch {
+                return false;
+            }
         }
-        if (!Array.isArray(studentAnsArray)) return false;
+
+        if (!Array.isArray(studentAnsArray)) {
+            return false;
+        }
+
         const isSameLength = studentAnsArray.length === correctTexts.length;
-        const hasAllCorrect = correctTexts.every((c: any) => studentAnsArray.map(String).includes(String(c)));
+        const hasAllCorrect = correctTexts.every((c: any) =>
+            studentAnsArray.map(String).includes(String(c)),
+        );
+
         return isSameLength && hasAllCorrect;
     }
+
     return null;
 };
 
 const getScoreText = (evaluation: string | null) => {
     switch (evaluation) {
-        case 'benar': return '2';
-        case 'setengah_benar': return '1';
-        case 'salah': return '0';
-        default: return '-';
+        case 'benar':
+            return '2';
+        case 'setengah_benar':
+            return '1';
+        case 'salah':
+            return '0';
+        default:
+            return '-';
     }
 };
 
 const getTopicScore = (topic: any) => {
     const phaseIds = topic.phases.map((p: any) => p.id);
-    const topicAnswers = props.answers.filter((a: any) => phaseIds.includes(a.phase_id) && a.evaluation !== 'tidak_dinilai');
-    
+    const topicAnswers = props.answers.filter(
+        (a: any) =>
+            phaseIds.includes(a.phase_id) && a.evaluation !== 'tidak_dinilai',
+    );
+
     let score = 0;
     let mScore = 0;
-    
-    topicAnswers.forEach(a => {
+
+    topicAnswers.forEach((a) => {
         if (['eval_mcq', 'eval_cmcq'].includes(a.content.type)) {
-            if (checkAutoGrade(a)) score += 1;
+            if (checkAutoGrade(a)) {
+                score += 1;
+            }
+
             mScore += 1;
         } else {
-            if (a.evaluation === 'benar') score += 2;
-            else if (a.evaluation === 'setengah_benar') score += 1;
+            if (a.evaluation === 'benar') {
+                score += 2;
+            } else if (a.evaluation === 'setengah_benar') {
+                score += 1;
+            }
+
             mScore += 2;
         }
     });
-    
+
     const final = mScore === 0 ? 0 : Math.round((score / mScore) * 100);
-    
+
     return {
         total: score,
         max: mScore,
-        final: final
+        final: final,
     };
 };
 
 const isImage = (url: string | null) => {
-    if (!url) return false;
+    if (!url) {
+        return false;
+    }
+
     return /\.(jpeg|jpg|gif|png|webp)/i.test(url);
 };
 </script>
@@ -203,13 +257,14 @@ const isImage = (url: string | null) => {
                     <div
                         v-if="classroom.description"
                         v-html="classroom.description"
-                        class="max-w-2xl text-[14px] leading-relaxed text-blue-100/80 rich-text-content"
+                        class="rich-text-content max-w-2xl text-[14px] leading-relaxed text-blue-100/80"
                     ></div>
                     <p
                         v-else
                         class="max-w-2xl text-[14px] leading-relaxed text-blue-100/80"
                     >
-                        Selamat datang di kelas ini. Mari belajar kimia dengan pendekatan LC5E!
+                        Selamat datang di kelas ini. Mari belajar kimia dengan
+                        pendekatan LC5E!
                     </p>
                 </div>
                 <div
@@ -238,16 +293,21 @@ const isImage = (url: string | null) => {
             <div class="mx-auto flex w-full max-w-5xl gap-6">
                 <Link
                     :href="route('siswa.classes.show', classroom.id)"
-                    class="relative pb-3 pt-4 text-[14px] font-bold text-slate-500 transition-colors hover:text-slate-700"
+                    class="relative pt-4 pb-3 text-[14px] font-bold text-slate-500 transition-colors hover:text-slate-700"
                 >
                     <i class="pi pi-book mr-1.5 text-[12px]"></i> Modul Materi
                 </Link>
                 <Link
-                    :href="route('siswa.classes.evaluation-result', classroom.id)"
-                    class="relative pb-3 pt-4 text-[14px] font-bold text-indigo-600"
+                    :href="
+                        route('siswa.classes.evaluation-result', classroom.id)
+                    "
+                    class="relative pt-4 pb-3 text-[14px] font-bold text-indigo-600"
                 >
-                    <i class="pi pi-chart-line mr-1.5 text-[12px]"></i> Hasil Penilaian
-                    <div class="absolute bottom-0 left-0 h-0.5 w-full rounded-t-full bg-indigo-600"></div>
+                    <i class="pi pi-chart-line mr-1.5 text-[12px]"></i> Hasil
+                    Penilaian
+                    <div
+                        class="absolute bottom-0 left-0 h-0.5 w-full rounded-t-full bg-indigo-600"
+                    ></div>
                 </Link>
             </div>
         </div>
@@ -255,19 +315,25 @@ const isImage = (url: string | null) => {
         <div class="flex-1 overflow-y-auto p-4 md:p-8">
             <div class="mx-auto max-w-5xl">
                 <div v-if="!isEvaluationSent">
-                    <div class="rounded-3xl border border-dashed border-slate-200 bg-white py-16 text-center">
-                        <div class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-50">
+                    <div
+                        class="rounded-3xl border border-dashed border-slate-200 bg-white py-16 text-center"
+                    >
+                        <div
+                            class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-50"
+                        >
                             <i class="pi pi-lock text-3xl text-slate-300"></i>
                         </div>
                         <h3 class="text-lg font-bold text-slate-800">
                             Hasil Belum Tersedia
                         </h3>
                         <p class="mt-1 text-[13px] text-slate-500">
-                            Guru belum mengirimkan hasil penilaian evaluasi untuk Anda. Harap tunggu info selanjutnya dari guru Anda.
+                            Guru belum mengirimkan hasil penilaian evaluasi
+                            untuk Anda. Harap tunggu info selanjutnya dari guru
+                            Anda.
                         </p>
                     </div>
                 </div>
-                
+
                 <div v-else>
                     <div class="mb-6 flex items-center justify-between">
                         <h2 class="text-xl font-extrabold text-slate-800">
@@ -275,34 +341,64 @@ const isImage = (url: string | null) => {
                         </h2>
                     </div>
 
-
                     <div v-if="topics.length > 0" class="space-y-6">
                         <Card
                             v-for="(topic, index) in topics"
                             :key="topic.id"
-                            class="flex flex-col gap-5 rounded-2xl border-slate-200 bg-white p-6 transition-all shadow-sm"
+                            class="flex flex-col gap-5 rounded-2xl border-slate-200 bg-white p-6 shadow-sm transition-all"
                         >
-                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div
+                                class="flex flex-col justify-between gap-4 md:flex-row md:items-center"
+                            >
                                 <div class="flex items-start gap-4">
-                                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50 text-xl font-black text-indigo-600">
+                                    <div
+                                        class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50 text-xl font-black text-indigo-600"
+                                    >
                                         {{ index + 1 }}
                                     </div>
                                     <div class="flex-1">
-                                        <h3 class="text-lg font-bold text-slate-900">
+                                        <h3
+                                            class="text-lg font-bold text-slate-900"
+                                        >
                                             {{ topic.title }}
                                         </h3>
-                                        <p class="mt-1 text-[13px] text-slate-500">
-                                            Berikut adalah hasil pengerjaan Anda untuk topik ini.
+                                        <p
+                                            class="mt-1 text-[13px] text-slate-500"
+                                        >
+                                            Berikut adalah hasil pengerjaan Anda
+                                            untuk topik ini.
                                         </p>
                                     </div>
                                 </div>
-                                <div v-if="props.isEvaluationSent" class="flex items-center gap-4 bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
+                                <div
+                                    v-if="props.isEvaluationSent"
+                                    class="flex items-center gap-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
+                                >
                                     <div>
-                                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Nilai Topik</p>
-                                        <p class="text-[12px] font-bold text-slate-500">{{ getTopicScore(topic).total }} / {{ getTopicScore(topic).max }} Poin</p>
+                                        <p
+                                            class="mb-0.5 text-[11px] font-bold tracking-wider text-slate-400 uppercase"
+                                        >
+                                            Nilai Topik
+                                        </p>
+                                        <p
+                                            class="text-[12px] font-bold text-slate-500"
+                                        >
+                                            {{ getTopicScore(topic).total }} /
+                                            {{ getTopicScore(topic).max }} Poin
+                                        </p>
                                     </div>
                                     <div class="h-8 w-px bg-slate-200"></div>
-                                    <span class="text-[28px] font-black leading-none" :class="getTopicScore(topic).final >= 75 ? 'text-emerald-500' : (getTopicScore(topic).final >= 50 ? 'text-amber-500' : 'text-rose-500')">
+                                    <span
+                                        class="text-[28px] leading-none font-black"
+                                        :class="
+                                            getTopicScore(topic).final >= 75
+                                                ? 'text-emerald-500'
+                                                : getTopicScore(topic).final >=
+                                                    50
+                                                  ? 'text-amber-500'
+                                                  : 'text-rose-500'
+                                        "
+                                    >
                                         {{ getTopicScore(topic).final }}
                                     </span>
                                 </div>
@@ -311,78 +407,294 @@ const isImage = (url: string | null) => {
                             <div class="h-px w-full bg-slate-100"></div>
 
                             <div class="space-y-6">
-                                <template v-for="phase in topic.phases" :key="phase.id">
-                                    <div v-if="getPhaseAnswers(phase.id).length > 0" class="rounded-xl border border-slate-200 p-5 bg-slate-50/50">
+                                <template
+                                    v-for="phase in topic.phases"
+                                    :key="phase.id"
+                                >
+                                    <div
+                                        v-if="
+                                            getPhaseAnswers(phase.id).length > 0
+                                        "
+                                        class="rounded-xl border border-slate-200 bg-slate-50/50 p-5"
+                                    >
                                         <!-- Judul Fase -->
-                                        <div class="text-center mb-6 pb-4 border-b border-slate-200">
-                                            <h4 class="text-[16px] font-extrabold text-slate-900">{{ phase.name }}</h4>
+                                        <div
+                                            class="mb-6 border-b border-slate-200 pb-4 text-center"
+                                        >
+                                            <h4
+                                                class="text-[16px] font-extrabold text-slate-900"
+                                            >
+                                                {{ phase.name }}
+                                            </h4>
                                         </div>
-                                        
+
                                         <!-- Jawaban di fase ini -->
                                         <div class="space-y-4">
-                                            <div v-for="(answer, aIdx) in getPhaseAnswers(phase.id)" :key="answer.id" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm relative overflow-hidden">
+                                            <div
+                                                v-for="answer in getPhaseAnswers(
+                                                    phase.id,
+                                                )"
+                                                :key="answer.id"
+                                                class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+                                            >
                                                 <!-- Evaluasi Badge (Auto-grade / Manual) -->
-                                                <div class="mb-3 sm:mb-0 sm:absolute sm:top-5 sm:right-5 z-10">
+                                                <div
+                                                    class="z-10 mb-3 sm:absolute sm:top-5 sm:right-5 sm:mb-0"
+                                                >
                                                     <!-- Tidak dinilai (berlaku untuk semua tipe soal) -->
-                                                    <template v-if="answer.evaluation === 'tidak_dinilai'">
-                                                        <span class="px-3 py-1 rounded-full text-[11px] font-bold border inline-flex items-center gap-1 bg-slate-50 text-slate-400 border-slate-200">
-                                                            <i class="pi pi-ban"></i> Tidak Masuk Penilaian
+                                                    <template
+                                                        v-if="
+                                                            answer.evaluation ===
+                                                            'tidak_dinilai'
+                                                        "
+                                                    >
+                                                        <span
+                                                            class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-bold text-slate-400"
+                                                        >
+                                                            <i
+                                                                class="pi pi-ban"
+                                                            ></i>
+                                                            Tidak Masuk
+                                                            Penilaian
                                                         </span>
                                                     </template>
-                                                    <template v-else-if="['eval_mcq', 'eval_cmcq'].includes(answer.content.type)">
-                                                        <span v-if="checkAutoGrade(answer)" class="px-3 py-1 rounded-full text-[11px] font-bold border bg-emerald-100 text-emerald-700 border-emerald-200 inline-flex items-center gap-1">
-                                                            <i class="pi pi-check-circle"></i> Jawaban Benar
+                                                    <template
+                                                        v-else-if="
+                                                            [
+                                                                'eval_mcq',
+                                                                'eval_cmcq',
+                                                            ].includes(
+                                                                answer.content
+                                                                    .type,
+                                                            )
+                                                        "
+                                                    >
+                                                        <span
+                                                            v-if="
+                                                                checkAutoGrade(
+                                                                    answer,
+                                                                )
+                                                            "
+                                                            class="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-100 px-3 py-1 text-[11px] font-bold text-emerald-700"
+                                                        >
+                                                            <i
+                                                                class="pi pi-check-circle"
+                                                            ></i>
+                                                            Jawaban Benar
                                                         </span>
-                                                        <span v-else class="px-3 py-1 rounded-full text-[11px] font-bold border bg-rose-100 text-rose-700 border-rose-200 inline-flex items-center gap-1">
-                                                            <i class="pi pi-times-circle"></i> Jawaban Salah
+                                                        <span
+                                                            v-else
+                                                            class="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-100 px-3 py-1 text-[11px] font-bold text-rose-700"
+                                                        >
+                                                            <i
+                                                                class="pi pi-times-circle"
+                                                            ></i>
+                                                            Jawaban Salah
                                                         </span>
                                                     </template>
-                                                     <template v-else-if="answer.evaluation">
-                                                        <span class="px-3 py-1 rounded-full text-[11px] font-bold border inline-flex items-center gap-1" :class="getEvaluationColor(answer.evaluation)">
-                                                            {{ getEvaluationLabel(answer.evaluation) }} (Skor: {{ getScoreText(answer.evaluation) }} / 2)
+                                                    <template
+                                                        v-else-if="
+                                                            answer.evaluation
+                                                        "
+                                                    >
+                                                        <span
+                                                            class="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-bold"
+                                                            :class="
+                                                                getEvaluationColor(
+                                                                    answer.evaluation,
+                                                                )
+                                                            "
+                                                        >
+                                                            {{
+                                                                getEvaluationLabel(
+                                                                    answer.evaluation,
+                                                                )
+                                                            }}
+                                                            (Skor:
+                                                            {{
+                                                                getScoreText(
+                                                                    answer.evaluation,
+                                                                )
+                                                            }}
+                                                            / 2)
                                                         </span>
-                                                     </template>
+                                                    </template>
                                                 </div>
 
                                                 <div class="pr-0 sm:pr-36">
                                                     <!-- Pertanyaan/Konten -->
                                                     <div class="mb-4">
-                                                        <h5 class="text-[11px] font-bold text-indigo-600 mb-1 uppercase tracking-wider">Pertanyaan / Soal</h5>
-                                                        <div class="text-[14px] text-slate-800 font-medium leading-relaxed" v-html="renderMarkdown(answer.content.content_data?.question || answer.content.content_data?.label || answer.content.content_data?.content || '')"></div>
+                                                        <h5
+                                                            class="mb-1 text-[11px] font-bold tracking-wider text-indigo-600 uppercase"
+                                                        >
+                                                            Pertanyaan / Soal
+                                                        </h5>
+                                                        <div
+                                                            class="text-[14px] leading-relaxed font-medium text-slate-800"
+                                                            v-html="
+                                                                renderMarkdown(
+                                                                    answer
+                                                                        .content
+                                                                        .content_data
+                                                                        ?.question ||
+                                                                        answer
+                                                                            .content
+                                                                            .content_data
+                                                                            ?.label ||
+                                                                        answer
+                                                                            .content
+                                                                            .content_data
+                                                                            ?.content ||
+                                                                        '',
+                                                                )
+                                                            "
+                                                        ></div>
                                                     </div>
 
-                                                    <div class="h-px w-full bg-slate-100 my-4"></div>
+                                                    <div
+                                                        class="my-4 h-px w-full bg-slate-100"
+                                                    ></div>
 
                                                     <!-- Jawaban Siswa -->
                                                     <div>
-                                                        <h5 class="text-[11px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Jawaban Anda</h5>
-                                                        <div class="text-[14px] text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100 leading-relaxed">
-                                                            <template v-if="answer.content.type === 'eval_mcq'">
-                                                                {{ Array.isArray(answer.content.content_data?.options) ? answer.content.content_data.options[answer.answer_data] : answer.answer_data }}
+                                                        <h5
+                                                            class="mb-1 text-[11px] font-bold tracking-wider text-slate-400 uppercase"
+                                                        >
+                                                            Jawaban Anda
+                                                        </h5>
+                                                        <div
+                                                            class="rounded-xl border border-slate-100 bg-slate-50 p-4 text-[14px] leading-relaxed text-slate-700"
+                                                        >
+                                                            <template
+                                                                v-if="
+                                                                    answer
+                                                                        .content
+                                                                        .type ===
+                                                                    'eval_mcq'
+                                                                "
+                                                            >
+                                                                {{
+                                                                    Array.isArray(
+                                                                        answer
+                                                                            .content
+                                                                            .content_data
+                                                                            ?.options,
+                                                                    )
+                                                                        ? answer
+                                                                              .content
+                                                                              .content_data
+                                                                              .options[
+                                                                              answer
+                                                                                  .answer_data
+                                                                          ]
+                                                                        : answer.answer_data
+                                                                }}
                                                             </template>
-                                                            <template v-else-if="answer.content.type === 'eval_cmcq'">
-                                                                <ul class="list-disc pl-5">
-                                                                    <li v-for="ans in (Array.isArray(answer.answer_data) ? answer.answer_data : [])" :key="ans">
-                                                                        {{ Array.isArray(answer.content.content_data?.options) ? answer.content.content_data.options[ans] : ans }}
+                                                            <template
+                                                                v-else-if="
+                                                                    answer
+                                                                        .content
+                                                                        .type ===
+                                                                    'eval_cmcq'
+                                                                "
+                                                            >
+                                                                <ul
+                                                                    class="list-disc pl-5"
+                                                                >
+                                                                    <li
+                                                                        v-for="ans in Array.isArray(
+                                                                            answer.answer_data,
+                                                                        )
+                                                                            ? answer.answer_data
+                                                                            : []"
+                                                                        :key="
+                                                                            ans
+                                                                        "
+                                                                    >
+                                                                        {{
+                                                                            Array.isArray(
+                                                                                answer
+                                                                                    .content
+                                                                                    .content_data
+                                                                                    ?.options,
+                                                                            )
+                                                                                ? answer
+                                                                                      .content
+                                                                                      .content_data
+                                                                                      .options[
+                                                                                      ans
+                                                                                  ]
+                                                                                : ans
+                                                                        }}
                                                                     </li>
                                                                 </ul>
                                                             </template>
-                                                            <template v-else-if="answer.content.type === 'eval_file'">
-                                                                <div v-if="isImage(answer.answer_data)" class="mt-2">
-                                                                    <img :src="answer.answer_data" alt="Uploaded Image" class="max-h-48 rounded-lg border border-slate-200 shadow-sm mb-2" />
-                                                                    <a :href="answer.answer_data" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800">
-                                                                        <i class="pi pi-external-link"></i> Lihat Gambar Ukuran Penuh
+                                                            <template
+                                                                v-else-if="
+                                                                    answer
+                                                                        .content
+                                                                        .type ===
+                                                                    'eval_file'
+                                                                "
+                                                            >
+                                                                <div
+                                                                    v-if="
+                                                                        isImage(
+                                                                            answer.answer_data,
+                                                                        )
+                                                                    "
+                                                                    class="mt-2"
+                                                                >
+                                                                    <img
+                                                                        :src="
+                                                                            answer.answer_data
+                                                                        "
+                                                                        alt="Uploaded Image"
+                                                                        class="mb-2 max-h-48 rounded-lg border border-slate-200 shadow-sm"
+                                                                    />
+                                                                    <a
+                                                                        :href="
+                                                                            answer.answer_data
+                                                                        "
+                                                                        target="_blank"
+                                                                        class="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800"
+                                                                    >
+                                                                        <i
+                                                                            class="pi pi-external-link"
+                                                                        ></i>
+                                                                        Lihat
+                                                                        Gambar
+                                                                        Ukuran
+                                                                        Penuh
                                                                     </a>
                                                                 </div>
-                                                                <div v-else class="flex items-center gap-2">
-                                                                    <i class="pi pi-file text-lg text-slate-400"></i>
-                                                                    <a :href="answer.answer_data" target="_blank" class="font-bold text-indigo-600 hover:underline">
-                                                                        Lihat File Terunggah
+                                                                <div
+                                                                    v-else
+                                                                    class="flex items-center gap-2"
+                                                                >
+                                                                    <i
+                                                                        class="pi pi-file text-lg text-slate-400"
+                                                                    ></i>
+                                                                    <a
+                                                                        :href="
+                                                                            answer.answer_data
+                                                                        "
+                                                                        target="_blank"
+                                                                        class="font-bold text-indigo-600 hover:underline"
+                                                                    >
+                                                                        Lihat
+                                                                        File
+                                                                        Terunggah
                                                                     </a>
                                                                 </div>
                                                             </template>
                                                             <template v-else>
-                                                                <div class="rich-text-content break-words" v-html="answer.answer_data"></div>
+                                                                <div
+                                                                    class="rich-text-content break-words"
+                                                                    v-html="
+                                                                        answer.answer_data
+                                                                    "
+                                                                ></div>
                                                             </template>
                                                         </div>
                                                     </div>
@@ -395,8 +707,13 @@ const isImage = (url: string | null) => {
                         </Card>
                     </div>
 
-                    <div v-else class="rounded-3xl border border-dashed border-slate-200 bg-white py-16 text-center">
-                        <div class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-50">
+                    <div
+                        v-else
+                        class="rounded-3xl border border-dashed border-slate-200 bg-white py-16 text-center"
+                    >
+                        <div
+                            class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-50"
+                        >
                             <i class="pi pi-inbox text-3xl text-slate-300"></i>
                         </div>
                         <h3 class="text-lg font-bold text-slate-800">

@@ -5,7 +5,14 @@ import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileCo
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import {
     Dialog,
     DialogClose,
@@ -31,21 +38,28 @@ const passwordInput = useTemplateRef('passwordInput');
         </CardHeader>
         <CardContent class="space-y-4">
             <div
-                class="space-y-2 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-950/30 dark:bg-red-950/20 text-red-600 dark:text-red-400 text-sm"
+                class="space-y-2 rounded-lg border border-red-100 bg-red-50 p-4 text-sm text-red-600 dark:border-red-950/30 dark:bg-red-950/20 dark:text-red-400"
             >
                 <p class="font-medium">Warning</p>
                 <p class="leading-relaxed">
-                    Please proceed with caution, this cannot be undone. Once your account is deleted, all of its resources and data will be permanently deleted.
+                    Please proceed with caution, this cannot be undone. Once
+                    your account is deleted, all of its resources and data will
+                    be permanently deleted.
                 </p>
             </div>
         </CardContent>
-        <CardFooter class="border-t border-destructive/10 bg-destructive/5 dark:bg-destructive/10 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <CardFooter
+            class="flex flex-col items-start justify-between gap-4 border-t border-destructive/10 bg-destructive/5 px-6 py-4 sm:flex-row sm:items-center dark:bg-destructive/10"
+        >
             <span class="text-sm text-muted-foreground">
                 This action requires password confirmation.
             </span>
             <Dialog>
                 <DialogTrigger as-child>
-                    <Button variant="destructive" data-test="delete-user-button">
+                    <Button
+                        variant="destructive"
+                        data-test="delete-user-button"
+                    >
                         Delete account
                     </Button>
                 </DialogTrigger>
@@ -74,7 +88,9 @@ const passwordInput = useTemplateRef('passwordInput');
                         </DialogHeader>
 
                         <div class="grid gap-2">
-                            <Label for="password" class="sr-only">Password</Label>
+                            <Label for="password" class="sr-only"
+                                >Password</Label
+                            >
                             <PasswordInput
                                 id="password"
                                 name="password"
@@ -94,7 +110,7 @@ const passwordInput = useTemplateRef('passwordInput');
                                             reset();
                                         }
                                     "
-                                    class="rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 font-bold text-[13px]"
+                                    class="rounded-xl border border-slate-200 text-[13px] font-bold hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900"
                                 >
                                     Cancel
                                 </Button>
@@ -105,7 +121,7 @@ const passwordInput = useTemplateRef('passwordInput');
                                 variant="destructive"
                                 :disabled="processing"
                                 data-test="confirm-delete-user-button"
-                                class="rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 font-bold text-white shadow-md shadow-rose-100 dark:shadow-none text-[13px]"
+                                class="rounded-xl bg-gradient-to-r from-rose-500 to-red-600 text-[13px] font-bold text-white shadow-md shadow-rose-100 hover:from-rose-600 hover:to-red-700 dark:shadow-none"
                             >
                                 Delete account
                             </Button>

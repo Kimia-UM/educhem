@@ -46,6 +46,7 @@ class AdminPasswordResetManagementController extends Controller
 
         if ($resetRequest->created_at->addMinutes(30)->isPast()) {
             $resetRequest->update(['status' => 'rejected']);
+
             return redirect()->back()->with('error', 'Request ini sudah kedaluwarsa (lebih dari 30 menit).');
         }
 

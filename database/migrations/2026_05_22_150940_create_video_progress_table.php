@@ -18,7 +18,7 @@ return new class extends Migration
 
             $table->boolean('is_completed')->default(false);
             $table->timestamps();
-                // Memastikan satu pengguna hanya memiliki satu catatan kemajuan per topik
+            // Memastikan satu pengguna hanya memiliki satu catatan kemajuan per topik
             $table->unique(['user_id', 'topic_id']);
         });
     }

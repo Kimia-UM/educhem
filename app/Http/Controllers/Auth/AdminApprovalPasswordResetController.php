@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\PasswordResetRequest;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
@@ -81,7 +81,7 @@ class AdminApprovalPasswordResetController extends Controller
     {
         $resetRequest = PasswordResetRequest::where('token', $token)->first();
 
-        if (!$resetRequest) {
+        if (! $resetRequest) {
             return response()->json(['status' => 'not_found']);
         }
 
@@ -109,6 +109,7 @@ class AdminApprovalPasswordResetController extends Controller
         // Cek kedaluwarsa (30 menit)
         if ($resetRequest->created_at->addMinutes(30)->isPast()) {
             $resetRequest->update(['status' => 'rejected']);
+
             return back()->withErrors([
                 'password' => 'Sesi reset password Anda telah kedaluwarsa (lebih dari 30 menit). Silakan ajukan ulang.',
             ]);

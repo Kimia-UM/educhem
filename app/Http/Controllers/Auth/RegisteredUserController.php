@@ -40,7 +40,7 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'status' => true, 
+            'status' => true,
         ]);
 
         // 3. SPATIE: Assign role 'SISWA' secara eksplisit

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasColumn('student_answers', 'is_locked')) {
+        if (! Schema::hasColumn('student_answers', 'is_locked')) {
             Schema::table('student_answers', function (Blueprint $table) {
                 $table->boolean('is_locked')->default(false)->after('ai_feedback');
             });

@@ -4,15 +4,21 @@ import katex from 'katex';
 import { marked } from 'marked';
 import { ref, watch, computed } from 'vue';
 import { toast } from 'vue-sonner';
+import RichTextEditor from '@/components/RichTextEditor.vue';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import 'katex/dist/katex.min.css';
-import RichTextEditor from '@/components/RichTextEditor.vue';
 
 const stripHtml = (html: string | null | undefined): string => {
-    if (!html) return '';
-    return html.replace(/<\/?[^>]+(>|$)/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!html) {
+        return '';
+    }
+
+    return html
+        .replace(/<\/?[^>]+(>|$)/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 };
 
 const props = defineProps<{
@@ -27,6 +33,7 @@ const props = defineProps<{
             id: number;
             title: string;
             description: string | null;
+            is_published: boolean;
             pivot?: { is_open: boolean; is_published: boolean };
         }>;
         // Data Siswa (Peserta Kelas)
@@ -34,7 +41,12 @@ const props = defineProps<{
             id: number;
             name: string;
             email: string;
-            pivot?: { created_at: string, is_evaluation_sent?: boolean }; // Tanggal bergabung dan status evaluasi
+            pivot?: {
+                created_at: string;
+                is_evaluation_sent?: boolean;
+                pre_test_score?: number | null;
+                post_test_score?: number | null;
+            }; // Tanggal bergabung dan status evaluasi
         }>;
     };
     chatLogs?: {
@@ -65,23 +77,29 @@ const props = defineProps<{
 }>();
 
 const activeTab = ref<'topik' | 'siswa' | 'chatLogs' | 'rekapNilai'>(
-    (props.defaultTab as any) || 'topik'
+    (props.defaultTab as any) || 'topik',
 );
 
 // Sinkronisasi perubahan prop ketika pengguna klik navigasi di sidebar (Inertia Visit)
-watch(() => props.defaultTab, (newTab) => {
-    if (newTab && ['topik', 'siswa', 'chatLogs', 'rekapNilai'].includes(newTab)) {
-        activeTab.value = newTab as any;
-    }
-});
+watch(
+    () => props.defaultTab,
+    (newTab) => {
+        if (
+            newTab &&
+            ['topik', 'siswa', 'chatLogs', 'rekapNilai'].includes(newTab)
+        ) {
+            activeTab.value = newTab as any;
+        }
+    },
+);
 
 const searchQuery = ref(props.filters?.search || '');
 
 let searchTimeout: any = null;
 watch(searchQuery, (newVal) => {
     if (searchTimeout) {
-clearTimeout(searchTimeout);
-}
+        clearTimeout(searchTimeout);
+    }
 
     searchTimeout = setTimeout(() => {
         router.get(
@@ -91,7 +109,7 @@ clearTimeout(searchTimeout);
                 preserveState: true,
                 preserveScroll: true,
                 replace: true,
-            }
+            },
         );
     }, 400);
 });
@@ -107,26 +125,28 @@ const formatDate = (dateString: string) => {
             hour: '2-digit',
             minute: '2-digit',
         });
-    } catch (e) {
+    } catch {
         return dateString;
     }
 };
 
 const renderMarkdown = (text: string | null) => {
     if (!text) {
-return '';
-}
+        return '';
+    }
 
     const mathBlocks: string[] = [];
-    
+
     // 1. Amankan Block Math ($$ rumus baris baru $$)
     let processedText = text.replace(/\$\$(.+?)\$\$/gs, (match, math) => {
         try {
             const rendered = katex.renderToString(math, { displayMode: true });
-            mathBlocks.push(`<div class="my-3 overflow-x-auto">${rendered}</div>`);
+            mathBlocks.push(
+                `<div class="my-3 overflow-x-auto">${rendered}</div>`,
+            );
 
             return `%%MATH_BLOCK_TOKEN_${mathBlocks.length - 1}%%`;
-        } catch (e) {
+        } catch {
             return match;
         }
     });
@@ -138,7 +158,7 @@ return '';
             mathBlocks.push(rendered);
 
             return `%%MATH_BLOCK_TOKEN_${mathBlocks.length - 1}%%`;
-        } catch (e) {
+        } catch {
             return match;
         }
     });
@@ -148,28 +168,46 @@ return '';
 
     // 4. Kembalikan kode HTML KaTeX yang sudah matang ke posisinya masing-masing
     mathBlocks.forEach((renderedMath, index) => {
-        finalHtml = finalHtml.split(`%%MATH_BLOCK_TOKEN_${index}%%`).join(renderedMath);
+        finalHtml = finalHtml
+            .split(`%%MATH_BLOCK_TOKEN_${index}%%`)
+            .join(renderedMath);
     });
 
     return finalHtml;
 };
 
-const handleTabChange = (tab: 'topik' | 'siswa' | 'chatLogs' | 'rekapNilai') => {
+const handleTabChange = (
+    tab: 'topik' | 'siswa' | 'chatLogs' | 'rekapNilai',
+) => {
     if (tab === 'chatLogs') {
         if (route().current('guru.classes.show')) {
-            router.get(route('guru.classes.ai-chat-logs.index', props.classroom.id));
+            router.get(
+                route('guru.classes.ai-chat-logs.index', props.classroom.id),
+            );
         } else {
             activeTab.value = 'chatLogs';
         }
     } else {
         if (route().current('guru.classes.ai-chat-logs.index')) {
             // Kembali ke halaman kelas jika sedang berada di log chat AI
-            router.get(route('guru.classes.show', { class: props.classroom.id, tab: tab }));
+            router.get(
+                route('guru.classes.show', {
+                    class: props.classroom.id,
+                    tab: tab,
+                }),
+            );
         } else {
             // Berada di halaman kelas, langsung ganti tab state
             activeTab.value = tab;
             // Update URL query string secara senyap (tanpa reload Inertia)
-            window.history.replaceState({}, '', route('guru.classes.show', { class: props.classroom.id, tab: tab }));
+            window.history.replaceState(
+                {},
+                '',
+                route('guru.classes.show', {
+                    class: props.classroom.id,
+                    tab: tab,
+                }),
+            );
         }
     }
 };
@@ -177,16 +215,17 @@ const handleTabChange = (tab: 'topik' | 'siswa' | 'chatLogs' | 'rekapNilai') => 
 const isLogTimedOut = (dateString: string) => {
     try {
         const createdTimeStr = dateString;
-        const utcTimeStr = (createdTimeStr.endsWith('Z') || createdTimeStr.includes('+')) 
-            ? createdTimeStr 
-            : createdTimeStr.replace(' ', 'T') + 'Z';
-        
+        const utcTimeStr =
+            createdTimeStr.endsWith('Z') || createdTimeStr.includes('+')
+                ? createdTimeStr
+                : createdTimeStr.replace(' ', 'T') + 'Z';
+
         const createdTime = new Date(utcTimeStr).getTime();
         const nowTime = new Date().getTime();
         const diffSeconds = (nowTime - createdTime) / 1000;
 
         return diffSeconds > 90;
-    } catch (e) {
+    } catch {
         return false;
     }
 };
@@ -198,7 +237,6 @@ const copyCode = () => {
     navigator.clipboard.writeText(props.classroom.class_code);
     toast.success('Kode Disalin!', {
         description: `Kode kelas ${props.classroom.class_code} berhasil disalin ke clipboard.`,
-        icon: '📋',
     });
 };
 
@@ -227,13 +265,11 @@ const submitTopic = () => {
             closeTopicModal();
             toast.success('Topik Berhasil Dibuat', {
                 description: `Topik "${topicForm.title}" siap digunakan.`,
-                icon: '📚',
             });
         },
         onError: () => {
             toast.error('Gagal Menyimpan', {
                 description: `Mohon periksa kembali form pengisian topik Anda.`,
-                icon: '⚠️',
             });
         },
     });
@@ -242,8 +278,14 @@ const submitTopic = () => {
 const studentSearchQuery = ref('');
 const filteredStudents = computed(() => {
     const students = props.classroom.students || [];
-    if (!studentSearchQuery.value) return students;
-    return students.filter(s => s.name.toLowerCase().includes(studentSearchQuery.value.toLowerCase()));
+
+    if (!studentSearchQuery.value) {
+        return students;
+    }
+
+    return students.filter((s) =>
+        s.name.toLowerCase().includes(studentSearchQuery.value.toLowerCase()),
+    );
 });
 
 const currentPage = ref(1);
@@ -260,6 +302,7 @@ watch(itemsPerPage, () => {
 const paginatedStudents = computed(() => {
     const start = (currentPage.value - 1) * itemsPerPage.value;
     const end = start + itemsPerPage.value;
+
     return filteredStudents.value.slice(start, end);
 });
 
@@ -298,57 +341,87 @@ const executeKickStudent = () => {
                 onError: () => {
                     closeKickModal();
                     toast.error('Gagal', {
-                        description: 'Terjadi kesalahan saat mengeluarkan siswa.',
+                        description:
+                            'Terjadi kesalahan saat mengeluarkan siswa.',
                     });
                 },
-            }
+            },
         );
     }
 };
 
-const scoresForm = ref<Record<number, { pre_test_score: number | null, post_test_score: number | null, loading: boolean }>>({});
+const scoresForm = ref<
+    Record<
+        number,
+        {
+            pre_test_score: number | null;
+            post_test_score: number | null;
+            loading: boolean;
+        }
+    >
+>({});
 
-watch(() => props.classroom.students, (students) => {
-    if (!students) return;
-    students.forEach(s => {
-        scoresForm.value[s.id] = {
-            pre_test_score: s.pivot?.pre_test_score !== undefined ? s.pivot.pre_test_score : null,
-            post_test_score: s.pivot?.post_test_score !== undefined ? s.pivot.post_test_score : null,
-            loading: false
-        };
-    });
-}, { immediate: true });
+watch(
+    () => props.classroom.students,
+    (students) => {
+        if (!students) {
+            return;
+        }
+
+        students.forEach((s) => {
+            scoresForm.value[s.id] = {
+                pre_test_score:
+                    s.pivot?.pre_test_score !== undefined
+                        ? s.pivot.pre_test_score
+                        : null,
+                post_test_score:
+                    s.pivot?.post_test_score !== undefined
+                        ? s.pivot.post_test_score
+                        : null,
+                loading: false,
+            };
+        });
+    },
+    { immediate: true },
+);
 
 const saveScores = (studentId: number) => {
     const scoreData = scoresForm.value[studentId];
-    if (!scoreData) return;
-    
+
+    if (!scoreData) {
+        return;
+    }
+
     scoreData.loading = true;
-    router.post(route('guru.classes.students.scores.update', {
-        classroom: props.classroom.id,
-        student: studentId
-    }), {
-        pre_test_score: scoreData.pre_test_score,
-        post_test_score: scoreData.post_test_score
-    }, {
-        preserveScroll: true,
-        onFinish: () => {
-            scoreData.loading = false;
+    router.post(
+        route('guru.classes.students.scores.update', {
+            classroom: props.classroom.id,
+            student: studentId,
+        }),
+        {
+            pre_test_score: scoreData.pre_test_score,
+            post_test_score: scoreData.post_test_score,
         },
-        onSuccess: () => {
-            toast.success('Berhasil', {
-                description: 'Nilai berhasil disimpan.',
-                icon: '✅',
-            });
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                scoreData.loading = false;
+            },
+            onSuccess: () => {
+                toast.success('Berhasil', {
+                    description: 'Nilai berhasil disimpan.',
+                });
+            },
+            onError: (errors) => {
+                const firstError =
+                    Object.values(errors)[0] ||
+                    'Terjadi kesalahan saat menyimpan nilai.';
+                toast.error('Gagal', {
+                    description: String(firstError),
+                });
+            },
         },
-        onError: (errors) => {
-            const firstError = Object.values(errors)[0] || 'Terjadi kesalahan saat menyimpan nilai.';
-            toast.error('Gagal', {
-                description: String(firstError),
-                icon: '⚠️',
-            });
-        }
-    });
+    );
 };
 </script>
 
@@ -386,7 +459,7 @@ const saveScores = (studentId: number) => {
                     <div
                         v-if="classroom.description"
                         v-html="classroom.description"
-                        class="mt-2 max-w-3xl text-[14px] leading-relaxed font-medium text-slate-600 rich-text-content"
+                        class="rich-text-content mt-2 max-w-3xl text-[14px] leading-relaxed font-medium text-slate-600"
                     ></div>
                     <p
                         v-else
@@ -419,11 +492,13 @@ const saveScores = (studentId: number) => {
                 </button>
             </div>
 
-            <div class="mb-6 flex items-center gap-6 border-b border-slate-200 overflow-x-auto scrollbar-none pb-0.5">
+            <div
+                class="mb-6 flex scrollbar-none items-center gap-6 overflow-x-auto border-b border-slate-200 pb-0.5"
+            >
                 <button
                     @click="handleTabChange('topik')"
                     :class="[
-                        'relative pb-3 text-[14px] font-bold transition-all shrink-0',
+                        'relative shrink-0 pb-3 text-[14px] font-bold transition-all',
                         activeTab === 'topik'
                             ? 'text-indigo-600'
                             : 'text-slate-500 hover:text-slate-700',
@@ -439,7 +514,7 @@ const saveScores = (studentId: number) => {
                 <button
                     @click="handleTabChange('siswa')"
                     :class="[
-                        'relative pb-3 text-[14px] font-bold transition-all shrink-0',
+                        'relative shrink-0 pb-3 text-[14px] font-bold transition-all',
                         activeTab === 'siswa'
                             ? 'text-indigo-600'
                             : 'text-slate-500 hover:text-slate-700',
@@ -459,13 +534,14 @@ const saveScores = (studentId: number) => {
                 <button
                     @click="handleTabChange('chatLogs')"
                     :class="[
-                        'relative pb-3 text-[14px] font-bold transition-all shrink-0',
+                        'relative shrink-0 pb-3 text-[14px] font-bold transition-all',
                         activeTab === 'chatLogs'
                             ? 'text-indigo-600'
                             : 'text-slate-500 hover:text-slate-700',
                     ]"
                 >
-                    <i class="pi pi-comments mr-1.5 text-[12px]"></i> Log Chatbot AI
+                    <i class="pi pi-comments mr-1.5 text-[12px]"></i> Log
+                    Chatbot AI
                     <div
                         v-if="activeTab === 'chatLogs'"
                         class="absolute bottom-0 left-0 h-0.5 w-full rounded-t-full bg-indigo-600"
@@ -474,13 +550,14 @@ const saveScores = (studentId: number) => {
                 <button
                     @click="handleTabChange('rekapNilai')"
                     :class="[
-                        'relative pb-3 text-[14px] font-bold transition-all shrink-0',
+                        'relative shrink-0 pb-3 text-[14px] font-bold transition-all',
                         activeTab === 'rekapNilai'
                             ? 'text-indigo-600'
                             : 'text-slate-500 hover:text-slate-700',
                     ]"
                 >
-                    <i class="pi pi-percentage mr-1.5 text-[12px]"></i> Rekap Nilai
+                    <i class="pi pi-percentage mr-1.5 text-[12px]"></i> Rekap
+                    Nilai
                     <div
                         v-if="activeTab === 'rekapNilai'"
                         class="absolute bottom-0 left-0 h-0.5 w-full rounded-t-full bg-indigo-600"
@@ -602,121 +679,208 @@ const saveScores = (studentId: number) => {
                 v-show="activeTab === 'siswa'"
                 class="animate-in duration-300 fade-in"
             >
-                <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div
+                    class="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                >
                     <div>
                         <h2 class="text-[16px] font-bold text-slate-800">
                             Siswa Terdaftar
                         </h2>
-                        <p class="text-[12px] text-slate-500 mt-1">
-                            Daftar seluruh siswa aktif yang terdaftar di kelas ini.
+                        <p class="mt-1 text-[12px] text-slate-500">
+                            Daftar seluruh siswa aktif yang terdaftar di kelas
+                            ini.
                         </p>
                     </div>
-                    
+
                     <!-- Controls -->
-                    <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                    <div
+                        class="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row"
+                    >
                         <!-- Entries Selector (DataTable Style) -->
-                        <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1 rounded-xl h-9 w-full sm:w-auto justify-between sm:justify-start">
-                            <span class="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Tampilkan</span>
+                        <div
+                            class="flex h-9 w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 sm:w-auto sm:justify-start"
+                        >
+                            <span
+                                class="text-[11px] font-bold tracking-wider text-slate-500 uppercase"
+                                >Tampilkan</span
+                            >
                             <select
                                 v-model="itemsPerPage"
-                                class="h-6 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer"
+                                class="h-6 cursor-pointer rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-bold text-slate-700 outline-none focus:border-indigo-500"
                             >
                                 <option :value="5">5</option>
                                 <option :value="10">10</option>
                                 <option :value="25">25</option>
                                 <option :value="50">50</option>
                             </select>
-                            <span class="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Data</span>
+                            <span
+                                class="text-[11px] font-bold tracking-wider text-slate-500 uppercase"
+                                >Data</span
+                            >
                         </div>
 
                         <Button
                             @click="copyCode"
                             variant="outline"
-                            class="h-9 border-slate-200 bg-white text-[12px] w-full sm:w-auto inline-flex items-center justify-center gap-1.5"
+                            class="inline-flex h-9 w-full items-center justify-center gap-1.5 border-slate-200 bg-white text-[12px] sm:w-auto"
                         >
                             <i class="pi pi-copy text-[12px]"></i>
                             <span>Salin Kode</span>
                         </Button>
-                        
+
                         <!-- Search Input -->
                         <div class="relative w-full sm:w-64">
-                            <i class="pi pi-search absolute top-1/2 left-3 -translate-y-1/2 text-[12px] text-slate-400"></i>
+                            <i
+                                class="pi pi-search absolute top-1/2 left-3 -translate-y-1/2 text-[12px] text-slate-400"
+                            ></i>
                             <input
                                 v-model="studentSearchQuery"
                                 type="text"
                                 placeholder="Cari nama siswa..."
-                                class="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pr-3 pl-8 text-[12px] font-medium text-slate-800 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                class="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pr-3 pl-8 text-[12px] font-medium text-slate-800 transition-colors focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 focus:outline-none"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div v-if="classroom.students && classroom.students.length > 0" class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <table class="w-full border-collapse text-left text-[13px] text-slate-600">
-                        <thead class="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                <div
+                    v-if="classroom.students && classroom.students.length > 0"
+                    class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"
+                >
+                    <table
+                        class="w-full border-collapse text-left text-[13px] text-slate-600"
+                    >
+                        <thead
+                            class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold tracking-wider text-slate-500 uppercase"
+                        >
                             <tr>
                                 <th class="px-6 py-4 font-bold">No</th>
                                 <th class="px-6 py-4 font-bold">Nama Siswa</th>
-                                <th class="px-6 py-4 font-bold text-center">Tanggal Bergabung</th>
-                                <th class="px-6 py-4 font-bold text-center">Status Evaluasi</th>
-                                <th class="px-6 py-4 font-bold text-center">Aksi</th>
+                                <th class="px-6 py-4 text-center font-bold">
+                                    Tanggal Bergabung
+                                </th>
+                                <th class="px-6 py-4 text-center font-bold">
+                                    Status Evaluasi
+                                </th>
+                                <th class="px-6 py-4 text-center font-bold">
+                                    Aksi
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <tr v-if="filteredStudents.length === 0">
-                                <td colspan="5" class="px-6 py-10 text-center text-slate-400 italic">
-                                    <i class="pi pi-users text-2xl mb-2 block"></i>
+                                <td
+                                    colspan="5"
+                                    class="px-6 py-10 text-center text-slate-400 italic"
+                                >
+                                    <i
+                                        class="pi pi-users mb-2 block text-2xl"
+                                    ></i>
                                     Tidak ada data siswa ditemukan.
                                 </td>
                             </tr>
                             <tr
                                 v-for="(siswa, idx) in paginatedStudents"
                                 :key="siswa.id"
-                                class="hover:bg-slate-50/50 transition-colors"
+                                class="transition-colors hover:bg-slate-50/50"
                             >
-                                <td class="px-6 py-4 font-medium text-slate-400">
-                                    {{ (currentPage - 1) * itemsPerPage + idx + 1 }}
+                                <td
+                                    class="px-6 py-4 font-medium text-slate-400"
+                                >
+                                    {{
+                                        (currentPage - 1) * itemsPerPage +
+                                        idx +
+                                        1
+                                    }}
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
-                                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[11px] text-indigo-600 font-bold uppercase border border-indigo-100">
+                                        <div
+                                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-indigo-100 bg-indigo-50 text-[11px] font-bold text-indigo-600 uppercase"
+                                        >
                                             {{ siswa.name.substring(0, 2) }}
                                         </div>
                                         <div>
-                                            <p class="font-bold text-slate-900 leading-tight">{{ siswa.name }}</p>
-                                            <p class="text-[11px] text-slate-400 mt-0.5">{{ siswa.email }}</p>
+                                            <p
+                                                class="leading-tight font-bold text-slate-900"
+                                            >
+                                                {{ siswa.name }}
+                                            </p>
+                                            <p
+                                                class="mt-0.5 text-[11px] text-slate-400"
+                                            >
+                                                {{ siswa.email }}
+                                            </p>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <span class="text-[12.5px] font-medium text-slate-600">
-                                        {{ siswa.pivot?.created_at ? formatDate(siswa.pivot.created_at) : '-' }}
+                                    <span
+                                        class="text-[12.5px] font-medium text-slate-600"
+                                    >
+                                        {{
+                                            siswa.pivot?.created_at
+                                                ? formatDate(
+                                                      siswa.pivot.created_at,
+                                                  )
+                                                : '-'
+                                        }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <span v-if="siswa.pivot?.is_evaluation_sent" class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-0.5 rounded-full text-[10px] font-extrabold">
-                                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Telah Dikirim
+                                    <span
+                                        v-if="siswa.pivot?.is_evaluation_sent"
+                                        class="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-extrabold text-emerald-600"
+                                    >
+                                        <span
+                                            class="h-1.5 w-1.5 rounded-full bg-emerald-500"
+                                        ></span>
+                                        Telah Dikirim
                                     </span>
-                                    <span v-else class="inline-flex items-center gap-1 bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded-full text-[10px] font-extrabold">
-                                        <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span> Belum Dikirim
+                                    <span
+                                        v-else
+                                        class="inline-flex items-center gap-1 rounded-full border border-amber-100 bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold text-amber-600"
+                                    >
+                                        <span
+                                            class="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500"
+                                        ></span>
+                                        Belum Dikirim
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="flex justify-center items-center gap-2">
-                                        <Link :href="route('guru.classes.students.show', { classroom: classroom.id, student: siswa.id })">
-                                            <Button class="h-8 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-3 text-[11px] font-bold text-white shadow-sm inline-flex items-center gap-1">
-                                                <i class="pi pi-search text-[10px]"></i>
+                                    <div
+                                        class="flex items-center justify-center gap-2"
+                                    >
+                                        <Link
+                                            :href="
+                                                route(
+                                                    'guru.classes.students.show',
+                                                    {
+                                                        classroom: classroom.id,
+                                                        student: siswa.id,
+                                                    },
+                                                )
+                                            "
+                                        >
+                                            <Button
+                                                class="inline-flex h-8 items-center gap-1 rounded-xl bg-indigo-600 px-3 text-[11px] font-bold text-white shadow-sm hover:bg-indigo-700"
+                                            >
+                                                <i
+                                                    class="pi pi-search text-[10px]"
+                                                ></i>
                                                 <span>Detail Evaluasi</span>
                                             </Button>
                                         </Link>
 
-                                        <Button 
+                                        <Button
                                             @click="kickStudent(siswa)"
                                             variant="outline"
-                                            class="h-8 rounded-xl border-rose-100 text-rose-600 hover:bg-rose-50 hover:text-rose-700 px-3 text-[11px] font-bold inline-flex items-center gap-1.5"
+                                            class="inline-flex h-8 items-center gap-1.5 rounded-xl border-rose-100 px-3 text-[11px] font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700"
                                             title="Keluarkan Siswa"
                                         >
-                                            <i class="pi pi-user-minus text-[10px]"></i>
+                                            <i
+                                                class="pi pi-user-minus text-[10px]"
+                                            ></i>
                                             <span>Keluarkan</span>
                                         </Button>
                                     </div>
@@ -726,22 +890,37 @@ const saveScores = (studentId: number) => {
                     </table>
 
                     <!-- Pagination Controls -->
-                    <div v-if="filteredStudents.length > 0" class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white px-6 py-4 border-t border-slate-100">
+                    <div
+                        v-if="filteredStudents.length > 0"
+                        class="flex flex-col items-center justify-between gap-4 border-t border-slate-100 bg-white px-6 py-4 sm:flex-row"
+                    >
                         <p class="text-[12.5px] font-medium text-slate-500">
-                            Menampilkan 
-                            <span class="font-extrabold text-slate-800">{{ (currentPage - 1) * itemsPerPage + 1 }}</span>
-                            sampai 
-                            <span class="font-extrabold text-slate-800">{{ Math.min(currentPage * itemsPerPage, filteredStudents.length) }}</span>
-                            dari 
-                            <span class="font-extrabold text-slate-800">{{ filteredStudents.length }}</span>
+                            Menampilkan
+                            <span class="font-extrabold text-slate-800">{{
+                                (currentPage - 1) * itemsPerPage + 1
+                            }}</span>
+                            sampai
+                            <span class="font-extrabold text-slate-800">{{
+                                Math.min(
+                                    currentPage * itemsPerPage,
+                                    filteredStudents.length,
+                                )
+                            }}</span>
+                            dari
+                            <span class="font-extrabold text-slate-800">{{
+                                filteredStudents.length
+                            }}</span>
                             siswa
                         </p>
 
-                        <div v-if="totalPages > 1" class="flex items-center gap-1.5">
+                        <div
+                            v-if="totalPages > 1"
+                            class="flex items-center gap-1.5"
+                        >
                             <Button
                                 variant="outline"
                                 size="icon"
-                                class="h-8 w-8 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
+                                class="h-8 w-8 cursor-pointer rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
                                 :disabled="currentPage === 1"
                                 @click="currentPage--"
                             >
@@ -752,8 +931,12 @@ const saveScores = (studentId: number) => {
                                 v-for="page in totalPages"
                                 :key="page"
                                 variant="outline"
-                                class="h-8 w-8 rounded-lg border text-[12px] font-bold transition-all cursor-pointer"
-                                :class="currentPage === page ? 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700 hover:text-white' : 'border-slate-200 hover:bg-slate-50 text-slate-600'"
+                                class="h-8 w-8 cursor-pointer rounded-lg border text-[12px] font-bold transition-all"
+                                :class="
+                                    currentPage === page
+                                        ? 'border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700 hover:text-white'
+                                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                                "
                                 @click="currentPage = page"
                             >
                                 {{ page }}
@@ -762,7 +945,7 @@ const saveScores = (studentId: number) => {
                             <Button
                                 variant="outline"
                                 size="icon"
-                                class="h-8 w-8 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
+                                class="h-8 w-8 cursor-pointer rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
                                 :disabled="currentPage === totalPages"
                                 @click="currentPage++"
                             >
@@ -797,37 +980,54 @@ const saveScores = (studentId: number) => {
                 v-show="activeTab === 'chatLogs'"
                 class="animate-in duration-300 fade-in"
             >
-                <div class="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div
+                    class="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+                >
                     <div>
                         <h2 class="text-[16px] font-bold text-slate-800">
                             Log Interaksi AI Chatbot
                         </h2>
                         <p class="mt-1 text-[13px] font-medium text-slate-500">
-                            Pantau riwayat pertanyaan siswa ke AI Tutor beserta respon jawabannya di kelas ini.
+                            Pantau riwayat pertanyaan siswa ke AI Tutor beserta
+                            respon jawabannya di kelas ini.
                         </p>
                     </div>
-                    <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                    <div
+                        class="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row"
+                    >
                         <a
-                            :href="route('guru.classes.print.chat-logs', { classroom: classroom.id, search: searchQuery })"
+                            :href="
+                                route('guru.classes.print.chat-logs', {
+                                    classroom: classroom.id,
+                                    search: searchQuery,
+                                })
+                            "
                             target="_blank"
-                            class="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[12.5px] font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm w-full sm:w-auto"
+                            class="inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[12.5px] font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 sm:w-auto"
                         >
-                            <i class="pi pi-print text-[13px] text-slate-500"></i>
+                            <i
+                                class="pi pi-print text-[13px] text-slate-500"
+                            ></i>
                             <span>Cetak Laporan (PDF)</span>
                         </a>
                         <div class="relative w-full sm:w-64">
-                            <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[13px]"></i>
+                            <i
+                                class="pi pi-search absolute top-1/2 left-3 -translate-y-1/2 text-[13px] text-slate-400"
+                            ></i>
                             <Input
                                 v-model="searchQuery"
                                 type="text"
                                 placeholder="Cari nama siswa..."
-                                class="h-9 pl-9 pr-4 rounded-xl border-slate-200 text-[13px] bg-white shadow-sm focus-visible:ring-indigo-500"
+                                class="h-9 rounded-xl border-slate-200 bg-white pr-4 pl-9 text-[13px] shadow-sm focus-visible:ring-indigo-500"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div v-if="chatLogs && chatLogs.data && chatLogs.data.length > 0" class="flex flex-col gap-5">
+                <div
+                    v-if="chatLogs && chatLogs.data && chatLogs.data.length > 0"
+                    class="flex flex-col gap-5"
+                >
                     <Card
                         v-for="log in chatLogs.data"
                         :key="log.id"
@@ -835,82 +1035,157 @@ const saveScores = (studentId: number) => {
                     >
                         <div class="flex flex-col gap-4">
                             <!-- Header Info -->
-                            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div
+                                class="flex items-center justify-between border-b border-slate-100 pb-3"
+                            >
                                 <div class="flex items-center gap-3">
-                                    <div class="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-50 text-[13px] font-extrabold text-indigo-600 uppercase border border-indigo-100">
-                                        {{ (log.user?.name || 'S').substring(0, 2) }}
+                                    <div
+                                        class="flex h-9 w-9 items-center justify-center rounded-full border border-indigo-100 bg-indigo-50 text-[13px] font-extrabold text-indigo-600 uppercase"
+                                    >
+                                        {{
+                                            (log.user?.name || 'S').substring(
+                                                0,
+                                                2,
+                                            )
+                                        }}
                                     </div>
                                     <div>
-                                        <h4 class="text-[14px] font-bold text-slate-900 leading-none">
-                                            {{ log.user?.name || 'Siswa Terhapus' }}
+                                        <h4
+                                            class="text-[14px] leading-none font-bold text-slate-900"
+                                        >
+                                            {{
+                                                log.user?.name ||
+                                                'Siswa Terhapus'
+                                            }}
                                         </h4>
-                                        <span class="mt-1 text-[11px] font-semibold text-slate-400 block">
+                                        <span
+                                            class="mt-1 block text-[11px] font-semibold text-slate-400"
+                                        >
                                             Siswa
                                         </span>
                                     </div>
                                 </div>
-                                <span class="text-[11px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
-                                    <i class="pi pi-clock mr-1 text-[9px]"></i>{{ formatDate(log.created_at) }}
+                                <span
+                                    class="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-400"
+                                >
+                                    <i class="pi pi-clock mr-1 text-[9px]"></i
+                                    >{{ formatDate(log.created_at) }}
                                 </span>
                             </div>
 
                             <!-- Q&A Content -->
                             <div class="space-y-4">
                                 <!-- Student Prompt -->
-                                <div class="rounded-xl bg-slate-50 p-4 border border-slate-100 relative overflow-hidden group">
-                                    <div class="absolute top-0 left-0 w-1 h-full bg-indigo-400"></div>
-                                    <div class="flex items-center gap-2 mb-2 text-[11px] font-bold text-indigo-500 tracking-wide uppercase">
-                                        <i class="pi pi-user text-[10px]"></i> Pertanyaan Siswa
+                                <div
+                                    class="group relative overflow-hidden rounded-xl border border-slate-100 bg-slate-50 p-4"
+                                >
+                                    <div
+                                        class="absolute top-0 left-0 h-full w-1 bg-indigo-400"
+                                    ></div>
+                                    <div
+                                        class="mb-2 flex items-center gap-2 text-[11px] font-bold tracking-wide text-indigo-500 uppercase"
+                                    >
+                                        <i class="pi pi-user text-[10px]"></i>
+                                        Pertanyaan Siswa
                                     </div>
-                                    <div class="text-[13.5px] text-slate-700 font-medium whitespace-pre-wrap leading-relaxed">
+                                    <div
+                                        class="text-[13.5px] leading-relaxed font-medium whitespace-pre-wrap text-slate-700"
+                                    >
                                         {{ log.prompt }}
                                     </div>
                                 </div>
 
                                 <!-- AI Response -->
-                                <div v-if="!log.response" class="rounded-xl border border-dashed p-4 relative overflow-hidden"
-                                    :class="isLogTimedOut(log.created_at) 
-                                        ? 'border-rose-200 bg-rose-50/40' 
-                                        : 'border-amber-200 bg-amber-50/40 animate-pulse'"
+                                <div
+                                    v-if="!log.response"
+                                    class="relative overflow-hidden rounded-xl border border-dashed p-4"
+                                    :class="
+                                        isLogTimedOut(log.created_at)
+                                            ? 'border-rose-200 bg-rose-50/40'
+                                            : 'animate-pulse border-amber-200 bg-amber-50/40'
+                                    "
                                 >
-                                    <div class="absolute top-0 left-0 w-1 h-full"
-                                        :class="isLogTimedOut(log.created_at) ? 'bg-rose-400' : 'bg-amber-400'"
+                                    <div
+                                        class="absolute top-0 left-0 h-full w-1"
+                                        :class="
+                                            isLogTimedOut(log.created_at)
+                                                ? 'bg-rose-400'
+                                                : 'bg-amber-400'
+                                        "
                                     ></div>
-                                    <div class="flex items-center gap-2 text-[11px] font-bold tracking-wide uppercase"
-                                        :class="isLogTimedOut(log.created_at) ? 'text-rose-600' : 'text-amber-600'"
+                                    <div
+                                        class="flex items-center gap-2 text-[11px] font-bold tracking-wide uppercase"
+                                        :class="
+                                            isLogTimedOut(log.created_at)
+                                                ? 'text-rose-600'
+                                                : 'text-amber-600'
+                                        "
                                     >
-                                        <i class="pi text-[10px]"
-                                            :class="isLogTimedOut(log.created_at) ? 'pi-exclamation-triangle' : 'pi-spinner pi-spin'"
+                                        <i
+                                            class="pi text-[10px]"
+                                            :class="
+                                                isLogTimedOut(log.created_at)
+                                                    ? 'pi-exclamation-triangle'
+                                                    : 'pi-spinner pi-spin'
+                                            "
                                         ></i>
-                                        {{ isLogTimedOut(log.created_at) ? 'Gagal mendapatkan respon AI (Timeout / Kuota Limit)' : 'Menunggu respon AI...' }}
+                                        {{
+                                            isLogTimedOut(log.created_at)
+                                                ? 'Gagal mendapatkan respon AI (Timeout / Kuota Limit)'
+                                                : 'Menunggu respon AI...'
+                                        }}
                                     </div>
                                 </div>
-                                <div v-else class="rounded-xl border border-emerald-100 bg-emerald-50/10 p-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-                                    <div class="absolute top-0 left-0 w-1 h-full bg-emerald-400"></div>
-                                    <div class="flex items-center gap-2 mb-2 text-[11px] font-bold text-emerald-600 tracking-wide uppercase">
-                                        <i class="pi pi-sparkles text-[10px]"></i> Jawaban AI Tutor
+                                <div
+                                    v-else
+                                    class="relative overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/10 p-4 shadow-sm transition-shadow hover:shadow-md"
+                                >
+                                    <div
+                                        class="absolute top-0 left-0 h-full w-1 bg-emerald-400"
+                                    ></div>
+                                    <div
+                                        class="mb-2 flex items-center gap-2 text-[11px] font-bold tracking-wide text-emerald-600 uppercase"
+                                    >
+                                        <i
+                                            class="pi pi-sparkles text-[10px]"
+                                        ></i>
+                                        Jawaban AI Tutor
                                     </div>
-                                    <div v-html="renderMarkdown(log.response)" class="prose prose-sm prose-slate max-w-none text-[13.5px] text-slate-700 leading-relaxed break-words"></div>
+                                    <div
+                                        v-html="renderMarkdown(log.response)"
+                                        class="prose prose-sm prose-slate max-w-none text-[13.5px] leading-relaxed break-words text-slate-700"
+                                    ></div>
                                 </div>
                             </div>
                         </div>
                     </Card>
 
                     <!-- Pagination -->
-                    <div v-if="chatLogs.links && chatLogs.links.length > 3" class="border-t border-slate-200 bg-slate-50/50 p-4 px-6 flex items-center justify-between mt-4 rounded-xl border">
-                        <span class="text-[13px] font-medium text-slate-500 hidden sm:block">Paginasi Halaman</span>
+                    <div
+                        v-if="chatLogs.links && chatLogs.links.length > 3"
+                        class="mt-4 flex items-center justify-between rounded-xl border border-t border-slate-200 bg-slate-50/50 p-4 px-6"
+                    >
+                        <span
+                            class="hidden text-[13px] font-medium text-slate-500 sm:block"
+                            >Paginasi Halaman</span
+                        >
                         <div class="flex items-center gap-1">
                             <Component
                                 :is="link.url ? Link : 'span'"
                                 v-for="(link, index) in chatLogs.links"
                                 :key="index"
                                 :href="link.url"
-                                v-html="link.label"
-                                class="px-3 py-1.5 rounded-md text-[13px] font-semibold transition-colors"
-                                :class="link.active 
-                                    ? 'bg-white border border-slate-200 shadow-sm text-slate-900' 
-                                    : (link.url ? 'text-slate-600 hover:bg-slate-200/50' : 'text-slate-300 cursor-not-allowed')"
-                            ></Component>
+                                class="rounded-md px-3 py-1.5 text-[13px] font-semibold transition-colors"
+                                :class="
+                                    link.active
+                                        ? 'border border-slate-200 bg-white text-slate-900 shadow-sm'
+                                        : link.url
+                                          ? 'text-slate-600 hover:bg-slate-200/50'
+                                          : 'cursor-not-allowed text-slate-300'
+                                "
+                            >
+                                <span v-html="link.label"></span>
+                            </Component>
                         </div>
                     </div>
                 </div>
@@ -930,7 +1205,9 @@ const saveScores = (studentId: number) => {
                     <p
                         class="max-w-[350px] text-[13px] font-medium text-slate-500"
                     >
-                        Belum ada pertanyaan siswa yang terekam untuk kelas ini, atau pencarian Anda tidak mencocokkan nama siswa mana pun.
+                        Belum ada pertanyaan siswa yang terekam untuk kelas ini,
+                        atau pencarian Anda tidak mencocokkan nama siswa mana
+                        pun.
                     </p>
                 </div>
             </div>
@@ -940,108 +1217,171 @@ const saveScores = (studentId: number) => {
                 v-show="activeTab === 'rekapNilai'"
                 class="animate-in duration-300 fade-in"
             >
-                <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div
+                    class="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                >
                     <div>
                         <h2 class="text-[16px] font-bold text-slate-800">
                             Rekap Nilai Pre-test & Post-test Siswa
                         </h2>
-                        <p class="text-[12px] text-slate-500 mt-1">
-                            Inputkan nilai awal (sebelum pembelajaran) dan nilai akhir (setelah pembelajaran) untuk masing-masing siswa.
+                        <p class="mt-1 text-[12px] text-slate-500">
+                            Inputkan nilai awal (sebelum pembelajaran) dan nilai
+                            akhir (setelah pembelajaran) untuk masing-masing
+                            siswa.
                         </p>
                     </div>
-                    
+
                     <!-- Controls (Ekspor & Cari) -->
-                    <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                    <div
+                        class="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row"
+                    >
                         <a
-                            :href="route('guru.classes.export.grades', { classroom: classroom.id })"
-                            class="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[12.5px] font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm w-full sm:w-auto"
+                            :href="
+                                route('guru.classes.export.grades', {
+                                    classroom: classroom.id,
+                                })
+                            "
+                            class="inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[12.5px] font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 sm:w-auto"
                         >
-                            <i class="pi pi-file-excel text-[13px] text-emerald-600"></i>
+                            <i
+                                class="pi pi-file-excel text-[13px] text-emerald-600"
+                            ></i>
                             <span>Ekspor Excel (.csv)</span>
                         </a>
-                        
+
                         <!-- Search Input -->
                         <div class="relative w-full sm:w-64">
-                            <i class="pi pi-search absolute top-1/2 left-3 -translate-y-1/2 text-[12px] text-slate-400"></i>
+                            <i
+                                class="pi pi-search absolute top-1/2 left-3 -translate-y-1/2 text-[12px] text-slate-400"
+                            ></i>
                             <input
                                 v-model="studentSearchQuery"
                                 type="text"
                                 placeholder="Cari nama siswa..."
-                                class="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pr-3 pl-8 text-[12px] font-medium text-slate-800 transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                class="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pr-3 pl-8 text-[12px] font-medium text-slate-800 transition-colors focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 focus:outline-none"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <table class="w-full border-collapse text-left text-[13px] text-slate-600">
-                        <thead class="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                <div
+                    class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"
+                >
+                    <table
+                        class="w-full border-collapse text-left text-[13px] text-slate-600"
+                    >
+                        <thead
+                            class="border-b border-slate-200 bg-slate-50 text-[11px] font-bold tracking-wider text-slate-500 uppercase"
+                        >
                             <tr>
                                 <th class="px-6 py-4 font-bold">No</th>
                                 <th class="px-6 py-4 font-bold">Nama Siswa</th>
-                                <th class="px-6 py-4 font-bold text-center">Nilai Awal (Pre-test)</th>
-                                <th class="px-6 py-4 font-bold text-center">Nilai Akhir (Post-test)</th>
-                                <th class="px-6 py-4 font-bold text-center">Aksi</th>
+                                <th class="px-6 py-4 text-center font-bold">
+                                    Nilai Awal (Pre-test)
+                                </th>
+                                <th class="px-6 py-4 text-center font-bold">
+                                    Nilai Akhir (Post-test)
+                                </th>
+                                <th class="px-6 py-4 text-center font-bold">
+                                    Aksi
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <tr v-if="filteredStudents.length === 0">
-                                <td colspan="5" class="px-6 py-10 text-center text-slate-400 italic">
-                                    <i class="pi pi-users text-2xl mb-2 block"></i>
+                                <td
+                                    colspan="5"
+                                    class="px-6 py-10 text-center text-slate-400 italic"
+                                >
+                                    <i
+                                        class="pi pi-users mb-2 block text-2xl"
+                                    ></i>
                                     Tidak ada data siswa ditemukan.
                                 </td>
                             </tr>
                             <tr
                                 v-for="(siswa, idx) in filteredStudents"
                                 :key="siswa.id"
-                                class="hover:bg-slate-50/50 transition-colors"
+                                class="transition-colors hover:bg-slate-50/50"
                             >
-                                <td class="px-6 py-4 font-medium text-slate-400">
+                                <td
+                                    class="px-6 py-4 font-medium text-slate-400"
+                                >
                                     {{ idx + 1 }}
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
-                                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[11px] text-indigo-600 font-bold uppercase">
+                                        <div
+                                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[11px] font-bold text-indigo-600 uppercase"
+                                        >
                                             {{ siswa.name.substring(0, 2) }}
                                         </div>
                                         <div>
-                                            <p class="font-bold text-slate-900">{{ siswa.name }}</p>
-                                            <p class="text-[11px] text-slate-400">{{ siswa.email }}</p>
+                                            <p class="font-bold text-slate-900">
+                                                {{ siswa.name }}
+                                            </p>
+                                            <p
+                                                class="text-[11px] text-slate-400"
+                                            >
+                                                {{ siswa.email }}
+                                            </p>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="flex justify-center" v-if="scoresForm[siswa.id]">
+                                    <div
+                                        class="flex justify-center"
+                                        v-if="scoresForm[siswa.id]"
+                                    >
                                         <input
-                                            v-model.number="scoresForm[siswa.id].pre_test_score"
+                                            v-model.number="
+                                                scoresForm[siswa.id]
+                                                    .pre_test_score
+                                            "
                                             type="number"
                                             min="0"
                                             max="100"
                                             placeholder="-"
-                                            class="h-9 w-20 rounded-xl border border-slate-200 bg-white text-center text-[13px] font-bold text-slate-800 transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                            class="h-9 w-20 rounded-xl border border-slate-200 bg-white text-center text-[13px] font-bold text-slate-800 transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
                                         />
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="flex justify-center" v-if="scoresForm[siswa.id]">
+                                    <div
+                                        class="flex justify-center"
+                                        v-if="scoresForm[siswa.id]"
+                                    >
                                         <input
-                                            v-model.number="scoresForm[siswa.id].post_test_score"
+                                            v-model.number="
+                                                scoresForm[siswa.id]
+                                                    .post_test_score
+                                            "
                                             type="number"
                                             min="0"
                                             max="100"
                                             placeholder="-"
-                                            class="h-9 w-20 rounded-xl border border-slate-200 bg-white text-center text-[13px] font-bold text-slate-800 transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                            class="h-9 w-20 rounded-xl border border-slate-200 bg-white text-center text-[13px] font-bold text-slate-800 transition-colors focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
                                         />
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="flex justify-center" v-if="scoresForm[siswa.id]">
+                                    <div
+                                        class="flex justify-center"
+                                        v-if="scoresForm[siswa.id]"
+                                    >
                                         <Button
                                             @click="saveScores(siswa.id)"
-                                            :disabled="scoresForm[siswa.id].loading"
-                                            class="h-9 rounded-xl bg-indigo-600 px-4 text-[12px] font-bold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50 inline-flex items-center gap-1.5"
+                                            :disabled="
+                                                scoresForm[siswa.id].loading
+                                            "
+                                            class="inline-flex h-9 items-center gap-1.5 rounded-xl bg-indigo-600 px-4 text-[12px] font-bold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
                                         >
-                                            <i v-if="scoresForm[siswa.id].loading" class="pi pi-spin pi-spinner"></i>
+                                            <i
+                                                v-if="
+                                                    scoresForm[siswa.id].loading
+                                                "
+                                                class="pi pi-spin pi-spinner"
+                                            ></i>
                                             <i v-else class="pi pi-save"></i>
                                             <span>Simpan</span>
                                         </Button>
@@ -1058,23 +1398,28 @@ const saveScores = (studentId: number) => {
     <Teleport to="body">
         <div
             v-if="isCreateTopicModalOpen"
-            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 dark:bg-black/60 px-4 backdrop-blur-[6px] transition-all"
+            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 px-4 backdrop-blur-[6px] transition-all dark:bg-black/60"
         >
             <div
-                class="w-full max-w-[450px] animate-in overflow-hidden rounded-3xl bg-white dark:bg-slate-950 border border-slate-100/80 dark:border-slate-800/50 shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] duration-200 zoom-in-95 fade-in"
+                class="w-full max-w-[450px] animate-in overflow-hidden rounded-3xl border border-slate-100/80 bg-white shadow-[0_20px_50px_rgba(245,158,11,0.08),_0_10px_30px_rgba(99,102,241,0.05)] duration-200 zoom-in-95 fade-in dark:border-slate-800/50 dark:bg-slate-950 dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
             >
                 <div
-                    class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-amber-50/50 via-rose-50/30 to-orange-50/40 dark:from-slate-900/50 dark:via-slate-900/30 dark:to-slate-900/40 px-6 py-4.5"
+                    class="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-amber-50/50 via-rose-50/30 to-orange-50/40 px-6 py-4.5 dark:border-slate-800 dark:from-slate-900/50 dark:via-slate-900/30 dark:to-slate-900/40"
                 >
                     <div class="flex items-center gap-3">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/30 text-amber-600 dark:text-amber-400">
+                        <div
+                            class="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-200/50 bg-amber-50 text-amber-600 dark:border-amber-900/30 dark:bg-amber-950/30 dark:text-amber-400"
+                        >
                             <i class="pi pi-folder-plus text-[15px]"></i>
                         </div>
-                        <span class="text-base font-extrabold text-slate-800 dark:text-slate-100">Buat Topik Baru</span>
+                        <span
+                            class="text-base font-extrabold text-slate-800 dark:text-slate-100"
+                            >Buat Topik Baru</span
+                        >
                     </div>
                     <button
                         @click="closeTopicModal"
-                        class="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900"
+                        class="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-900 dark:hover:text-slate-300"
                     >
                         <i class="pi pi-times text-sm"></i>
                     </button>
@@ -1083,7 +1428,7 @@ const saveScores = (studentId: number) => {
                     <div class="space-y-5">
                         <div>
                             <label
-                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 dark:text-slate-300 uppercase"
+                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 uppercase dark:text-slate-300"
                                 >Judul Topik
                                 <span class="text-rose-500">*</span></label
                             >
@@ -1091,7 +1436,7 @@ const saveScores = (studentId: number) => {
                                 v-model="topicForm.title"
                                 type="text"
                                 required
-                                class="h-11 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[14px] shadow-sm focus-visible:ring-amber-500/20 focus-visible:border-amber-500 focus:border-amber-500 focus:ring-amber-500/20"
+                                class="h-11 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus:border-amber-500 focus:ring-amber-500/20 focus-visible:border-amber-500 focus-visible:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-900"
                             />
                             <span
                                 v-if="topicForm.errors.title"
@@ -1101,7 +1446,7 @@ const saveScores = (studentId: number) => {
                         </div>
                         <div>
                             <label
-                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 dark:text-slate-300 uppercase"
+                                class="mb-2 block text-[12px] font-bold tracking-wider text-slate-700 uppercase dark:text-slate-300"
                                 >Deskripsi (Opsional)</label
                             >
                             <RichTextEditor
@@ -1115,13 +1460,13 @@ const saveScores = (studentId: number) => {
                             type="button"
                             variant="outline"
                             @click="closeTopicModal"
-                            class="h-10 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 px-5 font-bold text-[13px] text-slate-600 dark:text-slate-300"
+                            class="h-10 rounded-xl border border-slate-200 px-5 text-[13px] font-bold text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-900"
                             >Batal</Button
                         >
                         <Button
                             type="submit"
                             :disabled="topicForm.processing"
-                            class="h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 px-6 font-bold text-white shadow-md shadow-indigo-100 dark:shadow-none text-[13px]"
+                            class="h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 text-[13px] font-bold text-white shadow-md shadow-indigo-100 hover:from-indigo-700 hover:to-indigo-800 dark:shadow-none"
                         >
                             <i
                                 v-if="topicForm.processing"
@@ -1139,56 +1484,75 @@ const saveScores = (studentId: number) => {
     <Teleport to="body">
         <div
             v-if="isKickModalOpen"
-            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 dark:bg-black/60 px-4 backdrop-blur-[6px] transition-all"
+            class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1e36]/40 px-4 backdrop-blur-[6px] transition-all dark:bg-black/60"
         >
             <div
-                class="w-full max-w-[420px] animate-in overflow-hidden rounded-3xl bg-white dark:bg-slate-950 border border-slate-100/80 dark:border-slate-800/50 shadow-[0_20px_50px_rgba(244,63,94,0.08),_0_10px_30px_rgba(244,63,94,0.03)] duration-200 zoom-in-95 fade-in"
+                class="w-full max-w-[420px] animate-in overflow-hidden rounded-3xl border border-slate-100/80 bg-white shadow-[0_20px_50px_rgba(244,63,94,0.08),_0_10px_30px_rgba(244,63,94,0.03)] duration-200 zoom-in-95 fade-in dark:border-slate-800/50 dark:bg-slate-950"
             >
                 <!-- Header -->
                 <div
-                    class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-rose-50/50 to-rose-100/20 dark:from-slate-900/50 px-6 py-4.5"
+                    class="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-rose-50/50 to-rose-100/20 px-6 py-4.5 dark:border-slate-800 dark:from-slate-900/50"
                 >
                     <div class="flex items-center gap-3">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200/50 text-rose-600">
-                            <i class="pi pi-exclamation-triangle text-[15px]"></i>
+                        <div
+                            class="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200/50 bg-rose-50 text-rose-600 dark:bg-rose-950/30"
+                        >
+                            <i
+                                class="pi pi-exclamation-triangle text-[15px]"
+                            ></i>
                         </div>
-                        <span class="text-base font-extrabold text-slate-800 dark:text-slate-100">Keluarkan Siswa?</span>
+                        <span
+                            class="text-base font-extrabold text-slate-800 dark:text-slate-100"
+                            >Keluarkan Siswa?</span
+                        >
                     </div>
                     <button
                         @click="closeKickModal"
-                        class="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-600 transition-colors hover:bg-slate-50"
+                        class="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600 dark:text-slate-500"
                     >
                         <i class="pi pi-times text-sm"></i>
                     </button>
                 </div>
-                
+
                 <!-- Body -->
                 <div class="p-6">
-                    <p class="text-[14px] leading-relaxed text-slate-600 dark:text-slate-350">
-                        Apakah Anda yakin ingin mengeluarkan <strong>{{ studentToKick?.name }}</strong> dari kelas?
+                    <p
+                        class="dark:text-slate-350 text-[14px] leading-relaxed text-slate-600"
+                    >
+                        Apakah Anda yakin ingin mengeluarkan
+                        <strong>{{ studentToKick?.name }}</strong> dari kelas?
                     </p>
-                    <div class="mt-3 rounded-2xl bg-rose-50/50 border border-rose-100 p-4 text-[12px] text-rose-700 leading-normal flex gap-2.5 items-start">
-                        <i class="pi pi-info-circle text-[14px] mt-0.5 shrink-0"></i>
+                    <div
+                        class="mt-3 flex items-start gap-2.5 rounded-2xl border border-rose-100 bg-rose-50/50 p-4 text-[12px] leading-normal text-rose-700"
+                    >
+                        <i
+                            class="pi pi-info-circle mt-0.5 shrink-0 text-[14px]"
+                        ></i>
                         <span>
-                            <strong>Tindakan ini tidak bisa dibatalkan!</strong> Semua data pengerjaan, nilai pre-test/post-test, dan jawaban lembar kerja siswa ini di kelas ini akan dihapus secara permanen dari sistem.
+                            <strong>Tindakan ini tidak bisa dibatalkan!</strong>
+                            Semua data pengerjaan, nilai pre-test/post-test, dan
+                            jawaban lembar kerja siswa ini di kelas ini akan
+                            dihapus secara permanen dari sistem.
                         </span>
                     </div>
                 </div>
 
                 <!-- Footer / Action Buttons -->
-                <div class="border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 p-6 flex justify-end gap-3">
+                <div
+                    class="flex justify-end gap-3 border-t border-slate-100 bg-slate-50/50 p-6 dark:border-slate-800"
+                >
                     <Button
                         type="button"
                         variant="outline"
                         @click="closeKickModal"
-                        class="h-10 rounded-xl border border-slate-200 hover:bg-slate-50 px-5 font-bold text-[13px] text-slate-600"
+                        class="h-10 rounded-xl border border-slate-200 px-5 text-[13px] font-bold text-slate-600 hover:bg-slate-50"
                     >
                         Batal
                     </Button>
                     <Button
                         type="button"
                         @click="executeKickStudent"
-                        class="h-10 rounded-xl bg-rose-600 hover:bg-rose-700 px-6 font-bold text-white shadow-md shadow-rose-100 text-[13px]"
+                        class="h-10 rounded-xl bg-rose-600 px-6 text-[13px] font-bold text-white shadow-md shadow-rose-100 hover:bg-rose-700"
                     >
                         Ya, Keluarkan
                     </Button>

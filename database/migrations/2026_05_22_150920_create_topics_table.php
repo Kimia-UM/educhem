@@ -12,10 +12,10 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->text('description')->nullable();
-            
+
             // Kolom baru untuk Publish/Unpublish (Default langsung terpublish)
-            $table->boolean('is_published')->default(true); 
-            
+            $table->boolean('is_published')->default(true);
+
             $table->timestamps();
         });
     }

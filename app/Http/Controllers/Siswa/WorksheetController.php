@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Siswa;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\EvaluateStudentAnswerJob;
 use App\Models\Classroom;
+use App\Models\PhaseContent;
+use App\Models\PhaseDiscussion;
+use App\Models\StudentAnswer;
 use App\Models\Topic;
 use App\Models\TopicPhase;
-use App\Models\StudentAnswer;
-use App\Models\PhaseDiscussion;
-use App\Jobs\EvaluateStudentAnswerJob;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
 
 class WorksheetController extends Controller
 {
@@ -21,13 +23,13 @@ class WorksheetController extends Controller
     public function show(Request $request, Classroom $classroom, Topic $topic, TopicPhase $phase)
     {
         // 1. Siswa harus terdaftar di kelas ini
-        if (!$request->user()->joinedClasses()->where('class_id', $classroom->id)->exists()) {
+        if (! $request->user()->joinedClasses()->where('class_id', $classroom->id)->exists()) {
             abort(403, 'Akses ditolak. Anda tidak terdaftar di kelas ini.');
         }
 
         // 2. Topic harus terdaftar di kelas ini dan sudah dipublish
         $topicAccess = $classroom->topics()->where('topic_id', $topic->id)->first();
-        if (!$topicAccess || !$topic->is_published) {
+        if (! $topicAccess || ! $topic->is_published) {
             abort(403, 'Materi ini masih berstatus DRAFT dan belum dipublikasikan oleh Guru.');
         }
 
@@ -36,7 +38,7 @@ class WorksheetController extends Controller
             abort(403, 'Akses ditolak. Fase ini bukan bagian dari materi yang diminta.');
         }
 
-        $phase->load(['contents' => function($query) {
+        $phase->load(['contents' => function ($query) {
             $query->orderBy('order', 'asc');
         }]);
 
@@ -48,6 +50,12 @@ class WorksheetController extends Controller
         // Pisahkan menjadi array yang mudah dibaca Vue
         $studentAnswers = $studentData->pluck('answer_data', 'content_id')->toArray();
         $aiFeedbacks = $studentData->pluck('ai_feedback', 'content_id')->toArray();
+        $aiStatuses = $studentData->mapWithKeys(fn (StudentAnswer $answer) => [
+            $answer->content_id => [
+                'status' => $answer->effectiveAiStatus(),
+                'answer_version' => max(1, (int) ($answer->answer_version ?? 1)),
+            ],
+        ])->toArray();
 
         // Ambil data diskusi untuk fase ini (komentar level atas + replies + user)
         $discussions = PhaseDiscussion::where('phase_id', $phase->id)
@@ -77,17 +85,19 @@ class WorksheetController extends Controller
 
         if ($isEvaluationSent) {
             $evaluations = $studentData->pluck('evaluation', 'content_id')->toArray();
-            
+
             $totalScore = 0;
             $maxScore = 0;
-            
+
             foreach ($phase->contents as $content) {
-                if (!in_array($content->type, ['eval_mcq', 'eval_cmcq', 'eval_short', 'eval_essay', 'input_text', 'eval_file'])) {
+                if (! in_array($content->type, ['eval_mcq', 'eval_cmcq', 'eval_short', 'eval_essay', 'input_text', 'eval_file'])) {
                     continue;
                 }
 
                 $answer = $studentData->where('content_id', $content->id)->first();
-                if (!$answer) continue;
+                if (! $answer) {
+                    continue;
+                }
 
                 // Jika guru mengecualikan dari penilaian
                 if ($answer->evaluation === 'tidak_dinilai') {
@@ -97,43 +107,48 @@ class WorksheetController extends Controller
                 if (in_array($content->type, ['eval_mcq', 'eval_cmcq'])) {
                     $correctIndices = $content->correct_answers ?? [];
                     $options = $content->content_data['options'] ?? [];
-                    
+
                     // Resolve indeks kunci jawaban menjadi teks opsi
                     $correctTexts = [];
                     foreach ($correctIndices as $idx) {
-                        if (isset($options[(int)$idx])) {
-                            $correctTexts[] = $options[(int)$idx];
+                        if (isset($options[(int) $idx])) {
+                            $correctTexts[] = $options[(int) $idx];
                         }
                     }
-                    
+
                     // Kirim teks opsi yang benar ke frontend (bukan indeks)
                     $correctAnswersList[$content->id] = $correctTexts;
                     $studentAns = $answer->answer_data;
-                    
+
                     $isCorrect = false;
                     if ($content->type === 'eval_mcq') {
                         // PG biasa: jawaban siswa berupa teks opsi, bandingkan langsung
-                        $isCorrect = in_array((string)$studentAns, $correctTexts);
-                    } else if ($content->type === 'eval_cmcq') {
+                        $isCorrect = in_array((string) $studentAns, $correctTexts);
+                    } elseif ($content->type === 'eval_cmcq') {
                         // PG kompleks: jawaban siswa berupa JSON array teks opsi
                         $studentAnsArray = is_array($studentAns) ? $studentAns : json_decode($studentAns, true) ?? [];
                         if (is_array($studentAnsArray)) {
                             $isSameLength = count($studentAnsArray) === count($correctTexts);
-                            $hasAllCorrect = collect($correctTexts)->every(fn($c) => in_array((string)$c, array_map('strval', $studentAnsArray)));
+                            $hasAllCorrect = collect($correctTexts)->every(fn ($c) => in_array((string) $c, array_map('strval', $studentAnsArray)));
                             $isCorrect = $isSameLength && $hasAllCorrect;
                         }
                     }
 
                     $maxScore += 1;
-                    if ($isCorrect) $totalScore += 1;
-                    
+                    if ($isCorrect) {
+                        $totalScore += 1;
+                    }
+
                 } else {
                     $maxScore += 2;
-                    if ($answer->evaluation === 'benar') $totalScore += 2;
-                    else if ($answer->evaluation === 'setengah_benar') $totalScore += 1;
+                    if ($answer->evaluation === 'benar') {
+                        $totalScore += 2;
+                    } elseif ($answer->evaluation === 'setengah_benar') {
+                        $totalScore += 1;
+                    }
                 }
             }
-            
+
             if ($maxScore > 0) {
                 $finalScore = round(($totalScore / $maxScore) * 100);
             } else {
@@ -147,6 +162,7 @@ class WorksheetController extends Controller
             'phase' => $phase,
             'studentAnswers' => (object) $studentAnswers,
             'aiFeedbacks' => (object) $aiFeedbacks,
+            'aiStatuses' => (object) $aiStatuses,
             'discussions' => $discussions,
             'isLocked' => $isLocked,
             'isEvaluationSent' => $isEvaluationSent,
@@ -162,34 +178,38 @@ class WorksheetController extends Controller
     public function storeAnswer(Request $request, TopicPhase $phase)
     {
         $validated = $request->validate([
-            'content_id' => 'required|integer|exists:phase_contents,id',
+            'content_id' => 'required|integer',
             'answer_text' => 'nullable|string',
             'answer_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
         ]);
 
         $userId = $request->user()->id;
 
-        // 1. Pastikan phase punya topic
-        $topic = $phase->topic;
-        if (!$topic) {
-            abort(404, 'Topik tidak ditemukan.');
+        $classroomMember = $this->accessibleClassroomMember($request, $phase);
+        $content = $phase->contents()->whereKey($validated['content_id'])->firstOrFail();
+
+        if (! in_array($content->type, PhaseContent::ANSWERABLE_TYPES, true)) {
+            throw ValidationException::withMessages([
+                'content_id' => 'Konten ini tidak menerima jawaban siswa.',
+            ]);
         }
 
-        // 2. Pastikan siswa terdaftar di minimal satu kelas yang punya akses ke topic ini
-        //    dan topic tersebut sudah dipublish di kelas itu
-        if (!$topic->is_published) {
-            abort(403, 'Akses ditolak. Materi ini belum dipublikasikan.');
+        if ($content->type === 'eval_file' && ! $request->hasFile('answer_file')) {
+            throw ValidationException::withMessages([
+                'answer_file' => 'File jawaban wajib dipilih.',
+            ]);
         }
 
-        $classroomMember = DB::table('class_members')
-            ->join('class_topic_accesses', 'class_topic_accesses.class_id', '=', 'class_members.class_id')
-            ->where('class_members.user_id', $userId)
-            ->where('class_topic_accesses.topic_id', $topic->id)
-            ->select('class_members.class_id', 'class_members.is_evaluation_finished')
-            ->first();
+        if ($content->type !== 'eval_file' && $request->hasFile('answer_file')) {
+            throw ValidationException::withMessages([
+                'answer_file' => 'Konten ini tidak menerima jawaban file.',
+            ]);
+        }
 
-        if (!$classroomMember) {
-            abort(403, 'Akses ditolak. Anda tidak memiliki akses ke materi ini.');
+        if ($content->type !== 'eval_file' && ! $request->filled('answer_text')) {
+            throw ValidationException::withMessages([
+                'answer_text' => 'Jawaban wajib diisi.',
+            ]);
         }
 
         // 3. Cek penguncian fase
@@ -207,30 +227,125 @@ class WorksheetController extends Controller
 
         if ($request->hasFile('answer_file')) {
             $path = $request->file('answer_file')->store('student_uploads', 'public');
-            $answerData = '/storage/' . $path;
+            $answerData = '/storage/'.$path;
         } else {
             $answerData = $request->input('answer_text');
         }
 
-        // 3. SIMPAN ATAU UPDATE KE DATABASE
-        $answer = StudentAnswer::updateOrCreate(
-            ['user_id' => $userId, 'content_id' => $validated['content_id']],
-            [
-                'phase_id' => $phase->id, 
+        $shouldEvaluateWithAi = $phase->is_ai_enabled && $content->supportsAiEvaluation();
+
+        $answer = DB::transaction(function () use (
+            $answerData,
+            $content,
+            $phase,
+            $shouldEvaluateWithAi,
+            $userId,
+        ) {
+            $answer = StudentAnswer::query()
+                ->where('user_id', $userId)
+                ->where('content_id', $content->id)
+                ->lockForUpdate()
+                ->first();
+
+            $answerVersion = $answer
+                ? max(1, (int) ($answer->answer_version ?? 1)) + 1
+                : 1;
+            $answerChanged = ! $answer || $answer->answer_data !== $answerData;
+
+            $answer ??= new StudentAnswer([
+                'user_id' => $userId,
+                'content_id' => $content->id,
+            ]);
+
+            $answer->fill([
+                'phase_id' => $phase->id,
                 'answer_data' => $answerData,
-                'ai_feedback' => null // <-- TAMBAHKAN INI UNTUK MERESET FEEDBACK LAMA
-            ]
-        );
+                'answer_version' => $answerVersion,
+                'ai_feedback' => null,
+                'ai_status' => $shouldEvaluateWithAi
+                    ? StudentAnswer::AI_STATUS_QUEUED
+                    : StudentAnswer::AI_STATUS_NOT_REQUIRED,
+                'ai_requested_at' => $shouldEvaluateWithAi ? now() : null,
+                'ai_completed_at' => null,
+                'ai_error_code' => null,
+            ]);
 
-        // --- PENTING: Load relasi sebelum Dispatch Job ---
-        // Ini memastikan Job AI memiliki data 'content' untuk dibaca (pertanyaan)
-        $answer->load('content');
+            if ($answerChanged) {
+                $answer->evaluation = null;
+            }
 
-        if ($phase->is_ai_enabled && in_array($answer->content->type, ['eval_essay', 'eval_short'])) {
-             EvaluateStudentAnswerJob::dispatch($answer, $phase->ai_prompt_setting);
+            $answer->save();
+
+            if ($shouldEvaluateWithAi) {
+                EvaluateStudentAnswerJob::dispatch(
+                    $answer,
+                    $phase->ai_prompt_setting,
+                    $answerVersion,
+                )->afterCommit();
+            }
+
+            return $answer;
+        });
+
+        $payload = [
+            'saved' => true,
+            'content_id' => $answer->content_id,
+            'answer_data' => $answer->answer_data,
+            'ai_status' => $answer->effectiveAiStatus(),
+            'answer_version' => max(1, (int) $answer->answer_version),
+        ];
+
+        if ($request->expectsJson()) {
+            return response()->json($payload, $shouldEvaluateWithAi ? 202 : 200);
         }
 
         return back()->with('success', 'Jawaban berhasil disimpan!');
+    }
+
+    /**
+     * Endpoint ringan untuk memeriksa status evaluasi AI tanpa reload Inertia.
+     */
+    public function aiFeedbackStatus(Request $request, TopicPhase $phase)
+    {
+        $validated = $request->validate([
+            'content_ids' => 'nullable|array|max:50',
+            'content_ids.*' => 'integer|distinct',
+        ]);
+
+        $this->accessibleClassroomMember($request, $phase);
+
+        $answers = StudentAnswer::query()
+            ->where('user_id', $request->user()->id)
+            ->where('phase_id', $phase->id)
+            ->when(
+                ! empty($validated['content_ids']),
+                fn ($query) => $query->whereIn('content_id', $validated['content_ids']),
+            )
+            ->get([
+                'content_id',
+                'ai_status',
+                'ai_feedback',
+                'answer_version',
+                'ai_error_code',
+                'updated_at',
+            ]);
+
+        $items = $answers->mapWithKeys(fn (StudentAnswer $answer) => [
+            $answer->content_id => [
+                'status' => $answer->effectiveAiStatus(),
+                'feedback' => $answer->ai_feedback,
+                'answer_version' => max(1, (int) ($answer->answer_version ?? 1)),
+                'error_code' => $answer->ai_error_code,
+                'updated_at' => $answer->updated_at?->toISOString(),
+            ],
+        ]);
+
+        return response()
+            ->json([
+                'items' => (object) $items->all(),
+                'retry_after_seconds' => 15,
+            ])
+            ->header('Cache-Control', 'private, no-store, max-age=0');
     }
 
     /**
@@ -241,7 +356,7 @@ class WorksheetController extends Controller
         $userId = $request->user()->id;
 
         // 1. Siswa harus terdaftar di kelas ini
-        if (!$request->user()->joinedClasses()->where('class_id', $classroom->id)->exists()) {
+        if (! $request->user()->joinedClasses()->where('class_id', $classroom->id)->exists()) {
             abort(403, 'Akses ditolak. Anda tidak terdaftar di kelas ini.');
         }
 
@@ -252,7 +367,7 @@ class WorksheetController extends Controller
             ->where('topics.is_published', true)
             ->exists();
 
-        if (!$topic || !$topicBelongsToClass) {
+        if (! $topic || ! $topicBelongsToClass) {
             abort(403, 'Akses ditolak. Fase ini bukan bagian dari kelas ini.');
         }
 
@@ -287,5 +402,31 @@ class WorksheetController extends Controller
 
         return redirect()->route('siswa.classes.show', $classroom->id)
             ->with('success', 'Fase berhasil diselesaikan!');
+    }
+
+    private function accessibleClassroomMember(Request $request, TopicPhase $phase): object
+    {
+        $topic = $phase->topic;
+
+        if (! $topic) {
+            abort(404, 'Topik tidak ditemukan.');
+        }
+
+        if (! $topic->is_published) {
+            abort(403, 'Akses ditolak. Materi ini belum dipublikasikan.');
+        }
+
+        $classroomMember = DB::table('class_members')
+            ->join('class_topic_accesses', 'class_topic_accesses.class_id', '=', 'class_members.class_id')
+            ->where('class_members.user_id', $request->user()->id)
+            ->where('class_topic_accesses.topic_id', $topic->id)
+            ->select('class_members.class_id', 'class_members.is_evaluation_finished')
+            ->first();
+
+        if (! $classroomMember) {
+            abort(403, 'Akses ditolak. Anda tidak memiliki akses ke materi ini.');
+        }
+
+        return $classroomMember;
     }
 }

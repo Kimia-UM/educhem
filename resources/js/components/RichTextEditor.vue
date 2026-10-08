@@ -30,6 +30,15 @@ const editorPlaceholder = computed(
     () => props.placeholder || 'Ketik materi atau pertanyaan di sini...',
 );
 
+const syncEditorContent = () => {
+    if (!currentQuillInstance) {
+        return;
+    }
+
+    currentQuillInstance.update();
+    emit('update:modelValue', currentQuillInstance.root.innerHTML);
+};
+
 const isContentEmpty = computed(() => {
     const content = props.modelValue || '';
     const hasEmbeddedContent = /<(img|video|audio|iframe|table|hr)\b/i.test(
@@ -388,6 +397,10 @@ const handleDocumentPointerDown = (event: PointerEvent) => {
         return;
     }
 
+    // Commit the current DOM before Vue unmounts Quill. This is especially
+    // important for mobile keyboards whose final composition may not have
+    // reached the parent v-model when the user immediately taps Save.
+    syncEditorContent();
     hideImageResizeOverlay();
     deactivateEditor();
 };
@@ -427,12 +440,14 @@ watch(
     () => props.disabled,
     (isDisabled) => {
         if (isDisabled) {
+            syncEditorContent();
             deactivateEditor();
         }
     },
 );
 
 onBeforeUnmount(() => {
+    syncEditorContent();
     removeDocumentPointerListener();
     deactivateEditor();
     hideImageResizeOverlay();

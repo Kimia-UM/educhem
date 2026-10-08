@@ -60,6 +60,8 @@ const isSubmitting = ref<Record<number, boolean>>({});
 const answerSaveTimers = new Map<number, ReturnType<typeof setTimeout>>();
 const inFlightAnswerSaves = new Map<number, Promise<boolean>>();
 const resaveRequested = new Set<number>();
+const dirtyAnswerIds = new Set<number>();
+const answerRevisions = new Map<number, number>();
 
 const {
     aiFeedbacks,
@@ -117,23 +119,59 @@ const getRequestErrorMessage = (error: unknown, fallback: string) => {
     return error.response?.data?.message || fallback;
 };
 
-const performAnswerSave = async (contentId: number): Promise<boolean> => {
-    const answerData = answers.value[contentId];
+const markAnswerDirty = (contentId: number) => {
+    dirtyAnswerIds.add(contentId);
+    answerRevisions.set(contentId, (answerRevisions.get(contentId) ?? 0) + 1);
+};
 
-    if (Array.isArray(answerData) && answerData.length === 0) {
+const updateRichTextAnswer = (contentId: number, value: string) => {
+    if (answers.value[contentId] === value) {
+        return;
+    }
+
+    answers.value[contentId] = value;
+    markAnswerDirty(contentId);
+};
+
+const handleScheduledAnswerChange = (contentId: number) => {
+    markAnswerDirty(contentId);
+    scheduleAnswerSave(contentId);
+};
+
+const isMeaningfulAnswer = (answerData: unknown) => {
+    if (Array.isArray(answerData)) {
+        return answerData.length > 0;
+    }
+
+    if (answerData === null || answerData === undefined) {
         return false;
     }
 
-    if (
-        !Array.isArray(answerData) &&
-        (answerData === null ||
-            answerData === undefined ||
-            String(answerData).trim() === '')
-    ) {
+    const content = String(answerData);
+    const hasEmbeddedContent = /<(img|video|audio|iframe|table|hr)\b/i.test(
+        content,
+    );
+    const textContent = content
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;|&#160;/gi, ' ')
+        .trim();
+
+    return hasEmbeddedContent || textContent.length > 0;
+};
+
+const performAnswerSave = async (contentId: number): Promise<boolean> => {
+    const answerData = answers.value[contentId];
+    const answerRevision = answerRevisions.get(contentId) ?? 0;
+
+    if (!isMeaningfulAnswer(answerData)) {
         toast.warning('Isi jawaban terlebih dahulu!');
 
         return false;
     }
+
+    const answerPayload = Array.isArray(answerData)
+        ? JSON.stringify(answerData)
+        : answerData;
 
     isSubmitting.value[contentId] = true;
 
@@ -142,9 +180,7 @@ const performAnswerSave = async (contentId: number): Promise<boolean> => {
             route('siswa.answers.store', props.phase.id),
             {
                 content_id: contentId,
-                answer_text: Array.isArray(answerData)
-                    ? JSON.stringify(answerData)
-                    : answerData,
+                answer_text: answerPayload,
             },
             { headers: { Accept: 'application/json' } },
         );
@@ -161,6 +197,12 @@ const performAnswerSave = async (contentId: number): Promise<boolean> => {
             trackAiEvaluation(contentId, answerVersion);
         } else {
             stopTrackingAiEvaluation(contentId);
+        }
+
+        if ((answerRevisions.get(contentId) ?? 0) === answerRevision) {
+            dirtyAnswerIds.delete(contentId);
+        } else {
+            resaveRequested.add(contentId);
         }
 
         toast.success('Jawaban tersimpan!', {
@@ -228,9 +270,11 @@ const flushPendingAnswerSaves = async () => {
     // A save that was edited while in flight may schedule one final save.
     // Loop a few times so phase completion never races that last debounce.
     for (let pass = 0; pass < 3; pass += 1) {
-        const scheduledContentIds = Array.from(answerSaveTimers.keys());
+        const pendingContentIds = Array.from(
+            new Set([...answerSaveTimers.keys(), ...dirtyAnswerIds.values()]),
+        );
 
-        scheduledContentIds.forEach((contentId) => {
+        pendingContentIds.forEach((contentId) => {
             const timer = answerSaveTimers.get(contentId);
 
             if (timer) {
@@ -240,21 +284,24 @@ const flushPendingAnswerSaves = async () => {
             answerSaveTimers.delete(contentId);
         });
 
-        const scheduledSaves = scheduledContentIds.map((contentId) =>
-            saveAnswer(contentId),
-        );
         const activeSaves = Array.from(inFlightAnswerSaves.values());
+        const pendingSaves = pendingContentIds
+            .filter((contentId) => !inFlightAnswerSaves.has(contentId))
+            .map((contentId) => saveAnswer(contentId));
 
-        if (scheduledSaves.length === 0 && activeSaves.length === 0) {
+        if (pendingSaves.length === 0 && activeSaves.length === 0) {
             break;
         }
 
-        results.push(
-            ...(await Promise.all([...scheduledSaves, ...activeSaves])),
-        );
+        results.push(...(await Promise.all([...pendingSaves, ...activeSaves])));
     }
 
-    return results.every(Boolean);
+    return (
+        results.every(Boolean) &&
+        dirtyAnswerIds.size === 0 &&
+        answerSaveTimers.size === 0 &&
+        inFlightAnswerSaves.size === 0
+    );
 };
 
 const uploadFile = async (contentId: number, event: Event) => {
@@ -668,7 +715,9 @@ onUnmounted(() => {
                                 :name="'mcq_' + content.id"
                                 :value="option"
                                 v-model="answers[content.id]"
-                                @change="scheduleAnswerSave(content.id)"
+                                @change="
+                                    handleScheduledAnswerChange(content.id)
+                                "
                                 :disabled="props.isLocked"
                                 class="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
                             />
@@ -759,7 +808,9 @@ onUnmounted(() => {
                                 type="checkbox"
                                 :value="option"
                                 v-model="answers[content.id]"
-                                @change="scheduleAnswerSave(content.id)"
+                                @change="
+                                    handleScheduledAnswerChange(content.id)
+                                "
                                 :disabled="props.isLocked"
                                 class="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500"
                             />
@@ -848,6 +899,7 @@ onUnmounted(() => {
                     <input
                         type="text"
                         v-model="answers[content.id]"
+                        @input="markAnswerDirty(content.id)"
                         placeholder="Ketik jawaban singkat Anda..."
                         class="w-full rounded-xl border border-indigo-200 bg-white p-3.5 text-[14px] text-slate-700 shadow-inner transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-70"
                         :disabled="isSubmitting[content.id] || props.isLocked"
@@ -1075,7 +1127,10 @@ onUnmounted(() => {
                     <!-- Editor aktif saat masih bisa mengisi jawaban -->
                     <RichTextEditor
                         v-else
-                        v-model="answers[content.id]"
+                        :model-value="answers[content.id] ?? ''"
+                        @update:model-value="
+                            updateRichTextAnswer(content.id, $event)
+                        "
                         variant="student"
                         placeholder="Ketik uraian jawaban Anda di sini..."
                         :disabled="isSubmitting[content.id]"

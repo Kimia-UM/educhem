@@ -86,7 +86,7 @@ Route::middleware(['auth', 'role:GURU'])->prefix('guru')->name('guru.')->group(f
 
     Route::get('classes/{classroom}/ai-chat-logs', [AiChatLogController::class, 'index'])->name('classes.ai-chat-logs.index');
 
-    // Rute Ekspor Rekap Nilai (Excel/CSV)
+    // Rute Ekspor Rekap Nilai (Excel XLSX)
     Route::get('classes/{classroom}/export/grades', [StudentAnswerController::class, 'exportGrades'])
         ->name('classes.export.grades');
 

@@ -11,7 +11,21 @@ use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
+use OpenSpout\Common\Entity\Cell\NumericCell;
+use OpenSpout\Common\Entity\Cell\StringCell;
+use OpenSpout\Common\Entity\Row;
+use OpenSpout\Common\Entity\Style\CellAlignment;
+use OpenSpout\Common\Entity\Style\CellVerticalAlignment;
+use OpenSpout\Common\Entity\Style\Color;
+use OpenSpout\Common\Entity\Style\Style;
+use OpenSpout\Writer\AutoFilter;
+use OpenSpout\Writer\XLSX\Entity\SheetView;
+use OpenSpout\Writer\XLSX\Options;
+use OpenSpout\Writer\XLSX\Writer;
+use RuntimeException;
+use Throwable;
 
 class StudentAnswerController extends Controller
 {
@@ -284,7 +298,7 @@ class StudentAnswerController extends Controller
     }
 
     /**
-     * Mengekspor nilai pre-test dan post-test siswa ke format Excel/CSV.
+     * Mengekspor nilai pre-test dan post-test siswa ke workbook Excel.
      */
     public function exportGrades(Classroom $classroom)
     {
@@ -293,40 +307,84 @@ class StudentAnswerController extends Controller
             abort(403, 'Akses ditolak.');
         }
 
-        $headers = [
-            'Content-type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename=Rekap_Nilai_'.str_replace(' ', '_', $classroom->class_name).'.csv',
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
-        ];
+        $students = $classroom->students()->orderBy('name')->get();
+        $temporaryFile = tempnam(sys_get_temp_dir(), 'educhem_grades_');
 
-        $callback = function () use ($classroom) {
-            $file = fopen('php://output', 'w');
+        if ($temporaryFile === false) {
+            throw new RuntimeException('Gagal membuat file sementara untuk ekspor nilai.');
+        }
 
-            // Tambahkan UTF-8 BOM untuk kompatibilitas Excel
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+        try {
+            $options = new Options;
+            $options->DEFAULT_ROW_STYLE = (new Style)
+                ->setFontName('Arial')
+                ->setFontSize(11)
+                ->setCellVerticalAlignment(CellVerticalAlignment::CENTER);
+            $options->setColumnWidth(8, 1);
+            $options->setColumnWidth(28, 2);
+            $options->setColumnWidth(34, 3);
+            $options->setColumnWidth(24, 4, 5);
 
-            // Header kolom
-            fputcsv($file, ['No', 'Nama Siswa', 'Email', 'Nilai Awal (Pre-test)', 'Nilai Akhir (Post-test)']);
+            $writer = new Writer($options);
+            $writer->openToFile($temporaryFile);
 
-            // Ambil semua siswa terdaftar
-            $students = $classroom->students()->orderBy('name', 'asc')->get();
+            $sheet = $writer->getCurrentSheet();
+            $sheet->setName('Rekap Nilai');
+            $sheet->setSheetView((new SheetView)->setFreezeRow(2));
 
-            foreach ($students as $idx => $student) {
-                fputcsv($file, [
-                    $idx + 1,
-                    $student->name,
-                    $student->email,
-                    $student->pivot->pre_test_score ?? '-',
-                    $student->pivot->post_test_score ?? '-',
-                ]);
+            $headerStyle = (new Style)
+                ->setFontName('Arial')
+                ->setFontSize(11)
+                ->setFontBold()
+                ->setFontColor(Color::WHITE)
+                ->setBackgroundColor(Color::DARK_BLUE)
+                ->setCellAlignment(CellAlignment::CENTER)
+                ->setCellVerticalAlignment(CellVerticalAlignment::CENTER)
+                ->setShouldWrapText();
+
+            $header = Row::fromValues([
+                'No',
+                'Nama Siswa',
+                'Email',
+                'Nilai Awal (Pre-test)',
+                'Nilai Akhir (Post-test)',
+            ], $headerStyle)->setHeight(30);
+            $writer->addRow($header);
+
+            foreach ($students as $index => $student) {
+                $writer->addRow(new Row([
+                    new NumericCell($index + 1, null),
+                    // Gunakan StringCell agar nama/email yang diawali "=" tidak dianggap formula Excel.
+                    new StringCell((string) $student->name, null),
+                    new StringCell((string) $student->email, null),
+                    $student->pivot->pre_test_score === null
+                        ? new StringCell('-', null)
+                        : new NumericCell((int) $student->pivot->pre_test_score, null),
+                    $student->pivot->post_test_score === null
+                        ? new StringCell('-', null)
+                        : new NumericCell((int) $student->pivot->post_test_score, null),
+                ]));
             }
 
-            fclose($file);
-        };
+            $sheet->setAutoFilter(new AutoFilter(0, 1, 4, $students->count() + 1));
+            $writer->close();
+        } catch (Throwable $exception) {
+            if (isset($writer)) {
+                $writer->close();
+            }
 
-        return response()->stream($callback, 200, $headers);
+            @unlink($temporaryFile);
+
+            throw $exception;
+        }
+
+        $className = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', Str::ascii($classroom->class_name)) ?? '', '_');
+        $filename = 'Rekap_Nilai_'.($className !== '' ? $className : 'Kelas').'.xlsx';
+
+        return response()->download($temporaryFile, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'private, no-store, no-cache, must-revalidate',
+        ])->deleteFileAfterSend(true);
     }
 
     /**

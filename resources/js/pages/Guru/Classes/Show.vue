@@ -1246,7 +1246,7 @@ const saveScores = (studentId: number) => {
                             <i
                                 class="pi pi-file-excel text-[13px] text-emerald-600"
                             ></i>
-                            <span>Ekspor Excel (.csv)</span>
+                            <span>Ekspor Excel (.xlsx)</span>
                         </a>
 
                         <!-- Search Input -->

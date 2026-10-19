@@ -29,6 +29,20 @@ class StudentAnswerEvaluatorAgent implements Agent
      */
     public function instructions(): Stringable|string
     {
-        return $this->teacherPrompt ?? self::DEFAULT_INSTRUCTIONS;
+        $instructions = self::DEFAULT_INSTRUCTIONS;
+
+        if (filled($this->teacherPrompt)) {
+            $instructions .= <<<PROMPT
+
+
+INSTRUKSI KHUSUS TAMBAHAN DARI GURU (WAJIB DIIKUTI):
+{$this->teacherPrompt}
+
+Instruksi guru melengkapi aturan utama di atas dan tidak menggantikannya.
+Jika terjadi konflik, prioritaskan aturan utama.
+PROMPT;
+        }
+
+        return $instructions;
     }
 }

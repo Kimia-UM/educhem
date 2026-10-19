@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Siswa;
 
+use App\Ai\Agents\StudentAnswerEvaluatorAgent;
 use App\Jobs\EvaluateStudentAnswerJob;
 use App\Models\Classroom;
 use App\Models\PhaseContent;
@@ -263,6 +264,48 @@ class WorksheetAnswerTest extends TestCase
         $this->assertNull($answer->ai_feedback);
         $this->assertSame(StudentAnswer::AI_STATUS_QUEUED, $answer->ai_status);
         $this->assertSame(2, $answer->answer_version);
+    }
+
+    public function test_old_cache_cannot_bypass_the_effective_master_prompt(): void
+    {
+        StudentAnswerEvaluatorAgent::fake(['Feedback baru dengan rumus N₂O₅.']);
+        $content = $this->createContent('eval_essay');
+        $answer = StudentAnswer::create([
+            'user_id' => $this->student->id,
+            'phase_id' => $this->phase->id,
+            'content_id' => $content->id,
+            'answer_data' => 'N2O5',
+            'ai_feedback' => null,
+            'ai_status' => StudentAnswer::AI_STATUS_QUEUED,
+            'answer_version' => 1,
+        ]);
+
+        Cache::put(
+            'ai_eval_v1:'.md5(
+                $content->id.':'.'Berikan feedback singkat.'.':'.'n2o5',
+            ),
+            'Feedback lama dengan $N_2O_5$.',
+        );
+
+        (new EvaluateStudentAnswerJob(
+            $answer,
+            'Berikan feedback singkat.',
+            1,
+        ))->handle();
+
+        $this->assertSame(
+            'Feedback baru dengan rumus N₂O₅.',
+            $answer->fresh()->ai_feedback,
+        );
+        StudentAnswerEvaluatorAgent::assertPrompted(
+            fn ($prompt) => str_contains(
+                (string) $prompt->agent->instructions(),
+                'OUTPUT WAJIB DALAM FORMAT UNICODE',
+            ) && str_contains(
+                (string) $prompt->agent->instructions(),
+                'Berikan feedback singkat.',
+            ),
+        );
     }
 
     private function createContent(string $type): PhaseContent

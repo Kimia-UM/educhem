@@ -66,8 +66,15 @@ class EvaluateStudentAnswerJob implements ShouldQueue
             return;
         }
 
-        // Cek Cache untuk jawaban identik pada pertanyaan ini
-        $cacheKey = 'ai_eval_v1:'.md5(($this->answer->content_id ?? '0').':'.($this->systemPrompt ?? '').':'.trim(mb_strtolower($studentAnswerText)));
+        $agent = new StudentAnswerEvaluatorAgent($this->systemPrompt);
+
+        // Include the complete effective instructions so a master-prompt change
+        // cannot reuse feedback generated under an older instruction set.
+        $cacheKey = 'ai_eval_v2:'.md5(
+            ($this->answer->content_id ?? '0')
+            .':'.hash('sha256', (string) $agent->instructions())
+            .':'.trim(mb_strtolower($studentAnswerText)),
+        );
         $cachedFeedback = Cache::get($cacheKey);
 
         if ($cachedFeedback) {
@@ -92,8 +99,7 @@ Berikan evaluasi atau feedbackmu:
 MSG;
 
         try {
-            $response = (new StudentAnswerEvaluatorAgent($this->systemPrompt))
-                ->prompt($userMessage);
+            $response = $agent->prompt($userMessage);
 
             if ($response) {
                 $feedbackStr = (string) $response;

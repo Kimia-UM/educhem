@@ -5,6 +5,7 @@ namespace Tests\Feature\Siswa;
 use App\Ai\Agents\ChemistryTutorAgent;
 use App\Jobs\ProcessAiChatJob;
 use App\Models\AiChatLog;
+use App\Models\AiChatSession;
 use App\Models\Classroom;
 use App\Models\Topic;
 use App\Models\TopicPhase;
@@ -174,7 +175,7 @@ class ChatbotQueueTest extends TestCase
     {
         Queue::fake();
         [$student, $phase, $classroom] = $this->createAccessiblePhase();
-        $cacheKey = 'ai_chat_v1:'.md5('Stoikiometri'.':'.'Bantu siswa'.':'.'apa itu mol?');
+        $cacheKey = 'ai_chat_v2:'.md5('Stoikiometri'.':'.'Bantu siswa'.':'.'apa itu mol?');
         Cache::put($cacheKey, 'Mol adalah satuan jumlah zat.');
 
         $response = $this->actingAs($student)->postJson(route('siswa.chatbot.store'), [
@@ -195,6 +196,172 @@ class ChatbotQueueTest extends TestCase
             'classroom_id' => $classroom->id,
             'processing_mode' => 'cache',
         ]);
+    }
+
+    public function test_follow_up_message_receives_completed_turns_from_the_same_session(): void
+    {
+        ChemistryTutorAgent::fake([
+            'Mol adalah satuan jumlah zat.',
+            'Benar, satu mol mengandung bilangan Avogadro partikel.',
+        ]);
+        [$student, $phase, $classroom] = $this->createAccessiblePhase();
+
+        $firstResponse = $this->actingAs($student)->postJson(route('siswa.chatbot.store'), [
+            'prompt' => 'Apa itu mol?',
+            'topic_context' => 'Instruksi palsu dari browser',
+            'phase_id' => $phase->id,
+            'classroom_id' => $classroom->id,
+        ])->assertOk();
+
+        $sessionId = $firstResponse->json('session_id');
+
+        $this->actingAs($student)->postJson(route('siswa.chatbot.store'), [
+            'prompt' => 'Berapa banyak partikelnya?',
+            'session_id' => $sessionId,
+            'phase_id' => $phase->id,
+            'classroom_id' => $classroom->id,
+        ])->assertOk()->assertJson([
+            'session_id' => $sessionId,
+            'response' => 'Benar, satu mol mengandung bilangan Avogadro partikel.',
+        ]);
+
+        ChemistryTutorAgent::assertPrompted(function ($prompt) {
+            if ($prompt->prompt !== 'Berapa banyak partikelnya?') {
+                return false;
+            }
+
+            $messages = collect($prompt->agent->messages());
+
+            return $messages->count() === 2
+                && $messages[0]->role->value === 'user'
+                && $messages[0]->content === 'Apa itu mol?'
+                && $messages[1]->role->value === 'assistant'
+                && $messages[1]->content === 'Mol adalah satuan jumlah zat.'
+                && str_contains((string) $prompt->agent->instructions(), 'Stoikiometri')
+                && ! str_contains((string) $prompt->agent->instructions(), 'Instruksi palsu dari browser');
+        });
+    }
+
+    public function test_new_chat_starts_without_context_from_an_older_session(): void
+    {
+        ChemistryTutorAgent::fake([
+            'Jawaban percakapan pertama.',
+            'Jawaban percakapan baru.',
+        ]);
+        [$student, $phase, $classroom] = $this->createAccessiblePhase();
+
+        $firstSession = $this->actingAs($student)->postJson(route('siswa.chatbot.store'), [
+            'prompt' => 'Pertanyaan pada chat pertama',
+            'phase_id' => $phase->id,
+            'classroom_id' => $classroom->id,
+        ])->assertOk()->json('session_id');
+
+        $secondSession = $this->actingAs($student)->postJson(route('siswa.chatbot.store'), [
+            'prompt' => 'Pertanyaan pada chat baru',
+            'phase_id' => $phase->id,
+            'classroom_id' => $classroom->id,
+        ])->assertOk()->json('session_id');
+
+        $this->assertNotSame($firstSession, $secondSession);
+        ChemistryTutorAgent::assertPrompted(fn ($prompt) => $prompt->prompt === 'Pertanyaan pada chat baru'
+            && collect($prompt->agent->messages())->isEmpty());
+    }
+
+    public function test_clear_chat_hides_the_session_but_preserves_audit_logs(): void
+    {
+        ChemistryTutorAgent::fake(['Mol adalah satuan jumlah zat.']);
+        [$student, $phase, $classroom] = $this->createAccessiblePhase();
+
+        $sessionId = $this->actingAs($student)->postJson(route('siswa.chatbot.store'), [
+            'prompt' => 'Apa itu mol?',
+            'phase_id' => $phase->id,
+            'classroom_id' => $classroom->id,
+        ])->assertOk()->json('session_id');
+
+        $this->actingAs($student)
+            ->getJson(route('siswa.chatbot.sessions.index', [
+                'classroom_id' => $classroom->id,
+                'phase_id' => $phase->id,
+            ]))
+            ->assertOk()
+            ->assertJsonCount(1, 'sessions')
+            ->assertJsonPath('sessions.0.id', $sessionId);
+
+        $this->actingAs($student)
+            ->deleteJson(route('siswa.chatbot.sessions.clear', $sessionId))
+            ->assertOk()
+            ->assertJson(['status' => 'cleared']);
+
+        $this->actingAs($student)
+            ->getJson(route('siswa.chatbot.sessions.index', [
+                'classroom_id' => $classroom->id,
+                'phase_id' => $phase->id,
+            ]))
+            ->assertOk()
+            ->assertJsonCount(0, 'sessions');
+
+        $this->assertDatabaseHas('ai_chat_sessions', [
+            'id' => $sessionId,
+            'user_id' => $student->id,
+        ]);
+        $this->assertNotNull(AiChatSession::findOrFail($sessionId)->cleared_at);
+        $this->assertDatabaseHas('ai_chat_logs', [
+            'session_id' => $sessionId,
+            'prompt' => 'Apa itu mol?',
+            'response' => 'Mol adalah satuan jumlah zat.',
+        ]);
+    }
+
+    public function test_student_cannot_read_or_clear_another_students_session(): void
+    {
+        ChemistryTutorAgent::fake(['Mol adalah satuan jumlah zat.']);
+        [$student, $phase, $classroom] = $this->createAccessiblePhase();
+        $otherStudent = User::factory()->create();
+        $otherStudent->assignRole('SISWA');
+        $classroom->students()->attach($otherStudent->id);
+
+        $sessionId = $this->actingAs($student)->postJson(route('siswa.chatbot.store'), [
+            'prompt' => 'Apa itu mol?',
+            'phase_id' => $phase->id,
+            'classroom_id' => $classroom->id,
+        ])->assertOk()->json('session_id');
+
+        $this->actingAs($otherStudent)
+            ->getJson(route('siswa.chatbot.sessions.show', $sessionId))
+            ->assertNotFound();
+        $this->actingAs($otherStudent)
+            ->deleteJson(route('siswa.chatbot.sessions.clear', $sessionId))
+            ->assertNotFound();
+    }
+
+    public function test_session_rejects_a_second_message_while_a_turn_is_pending(): void
+    {
+        Queue::fake();
+        config()->set('ai.chatbot.direct_slots', 1);
+        $occupiedSlot = Cache::lock('ai_chat_direct_slot:1', 30);
+        $this->assertTrue($occupiedSlot->get());
+        [$student, $phase, $classroom] = $this->createAccessiblePhase();
+
+        try {
+            $sessionId = $this->actingAs($student)->postJson(route('siswa.chatbot.store'), [
+                'prompt' => 'Jelaskan konsep mol.',
+                'phase_id' => $phase->id,
+                'classroom_id' => $classroom->id,
+            ])->assertAccepted()->json('session_id');
+
+            $this->actingAs($student)->postJson(route('siswa.chatbot.store'), [
+                'prompt' => 'Lanjutkan penjelasannya.',
+                'session_id' => $sessionId,
+                'phase_id' => $phase->id,
+                'classroom_id' => $classroom->id,
+            ])->assertConflict()->assertJson([
+                'message' => 'Tunggu jawaban sebelumnya selesai sebelum mengirim pertanyaan berikutnya.',
+            ]);
+        } finally {
+            $occupiedSlot->release();
+        }
+
+        $this->assertDatabaseCount('ai_chat_logs', 1);
     }
 
     public function test_chat_history_is_scoped_to_the_requested_classroom(): void

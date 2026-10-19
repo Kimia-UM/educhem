@@ -173,6 +173,15 @@ Route::middleware(['auth', 'role:SISWA'])->prefix('siswa')->name('siswa.')->grou
     Route::get('/chatbot', [ChatbotController::class, 'index'])
         ->middleware('throttle:student-chat-status')
         ->name('chatbot.index');
+    Route::get('/chatbot/sessions', [ChatbotController::class, 'sessions'])
+        ->middleware('throttle:student-chat-status')
+        ->name('chatbot.sessions.index');
+    Route::get('/chatbot/sessions/{chatSession}', [ChatbotController::class, 'history'])
+        ->middleware('throttle:student-chat-status')
+        ->name('chatbot.sessions.show');
+    Route::delete('/chatbot/sessions/{chatSession}', [ChatbotController::class, 'clear'])
+        ->middleware('throttle:student-chatbot')
+        ->name('chatbot.sessions.clear');
     Route::get('/chatbot/{chatLog}/status', [ChatbotController::class, 'status'])
         ->middleware('throttle:student-chat-status')
         ->name('chatbot.status');

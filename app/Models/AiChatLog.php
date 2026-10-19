@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AiChatLog extends Model
 {
@@ -20,6 +21,7 @@ class AiChatLog extends Model
     protected $fillable = [
         'user_id',
         'classroom_id',
+        'session_id',
         'prompt',
         'response',
         'status',
@@ -45,14 +47,19 @@ class AiChatLog extends Model
     ];
 
     // Relasi ke tabel User (Siswa)
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
     // Relasi ke tabel Classroom
-    public function classroom()
+    public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class);
+    }
+
+    public function session(): BelongsTo
+    {
+        return $this->belongsTo(AiChatSession::class, 'session_id');
     }
 }

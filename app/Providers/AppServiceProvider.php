@@ -60,7 +60,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('student-ai-status', fn (Request $request) => Limit::perMinute(10)
             ->by((string) ($request->user()?->id ?? $request->ip())));
 
-        RateLimiter::for('student-chat-status', fn (Request $request) => Limit::perMinute(10)
+        RateLimiter::for('student-chat-status', fn (Request $request) => Limit::perMinute(30)
             ->by((string) ($request->user()?->id ?? $request->ip())));
 
         RateLimiter::for('student-chatbot', fn (Request $request) => Limit::perMinute(6)

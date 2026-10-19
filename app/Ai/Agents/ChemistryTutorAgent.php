@@ -3,17 +3,27 @@
 namespace App\Ai\Agents;
 
 use Laravel\Ai\Contracts\Agent;
+use Laravel\Ai\Contracts\Conversational;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-class ChemistryTutorAgent implements Agent
+class ChemistryTutorAgent implements Agent, Conversational
 {
     use Promptable;
 
     public function __construct(
         private string $topicContext,
         private ?string $teacherPrompt = null,
+        private array $conversationHistory = [],
     ) {}
+
+    /**
+     * Get the messages that form the current conversation context.
+     */
+    public function messages(): iterable
+    {
+        return $this->conversationHistory;
+    }
 
     /**
      * Get the instructions that the agent should follow.
